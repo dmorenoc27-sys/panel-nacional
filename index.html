@@ -1,0 +1,108 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Panel de Inversiones · Perú</title>
+<meta name="description" content="Seguimiento diario de la inversión pública del Perú: gobierno nacional, regional y local. Herramienta no oficial con datos abiertos del MEF.">
+<style>
+:root{color-scheme:light;--bg:#f9f9f7;--sup:#fcfcfb;--ink:#0b0b0b;--ink2:#52514e;--mut:#898781;--grid:#e1e0d9;--line:#c3c2b7;--ring:rgba(11,11,11,.1);
+ --s1:#2a78d6;--s2:#eb6834;--s3:#1baf7a;--ok:#0ca30c;--warn:#fab219;--bad:#d03b3b;--seq:#256abf}
+@media (prefers-color-scheme:dark){:root:not([data-theme=light]){color-scheme:dark;--bg:#0d0d0d;--sup:#1a1a19;--ink:#fff;--ink2:#c3c2b7;--grid:#2c2c2a;--line:#383835;--ring:rgba(255,255,255,.1);--s1:#3987e5;--s2:#d95926;--s3:#199e70}}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:14px/1.45 system-ui,-apple-system,"Segoe UI",sans-serif}
+header{display:flex;flex-wrap:wrap;gap:8px 16px;align-items:baseline;padding:14px 20px;border-bottom:1px solid var(--grid);background:var(--sup)}
+header h1{font-size:18px;margin:0;font-weight:650}header .mut{color:var(--mut);font-size:12px}header .sp{flex:1}
+main{max-width:1200px;margin:0 auto;padding:16px 20px 48px}
+.crumbs{margin:8px 0 14px;color:var(--ink2)}.crumbs a{color:var(--s1);text-decoration:none;cursor:pointer}.crumbs span{margin:0 6px;color:var(--mut)}
+.tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:16px}
+.tile{background:var(--sup);border:1px solid var(--ring);border-radius:10px;padding:12px 14px}
+.tile .k{font-size:11px;color:var(--mut);text-transform:uppercase;letter-spacing:.04em}.tile .v{font-size:22px;font-weight:650;margin-top:2px}.tile .s{font-size:12px;color:var(--ink2)}
+.row{display:grid;grid-template-columns:2fr 3fr;gap:14px;margin-bottom:16px}@media(max-width:820px){.row{grid-template-columns:1fr}}
+.card{background:var(--sup);border:1px solid var(--ring);border-radius:10px;padding:12px 14px;min-width:0}
+.card h2{font-size:13px;margin:0 0 8px;color:var(--ink2);font-weight:600}
+table{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums}th{font-size:11px;color:var(--mut);text-align:right;font-weight:600;padding:6px 8px;border-bottom:1px solid var(--grid)}
+th:first-child,td:first-child{text-align:left}td{padding:6px 8px;border-bottom:1px solid var(--grid);text-align:right;white-space:nowrap}
+td:first-child{white-space:normal;max-width:420px}tr.l{cursor:pointer}tr.l:hover{background:color-mix(in oklab,var(--s1) 8%,transparent)}
+.bar{display:inline-block;height:8px;border-radius:4px;background:var(--seq);vertical-align:middle;margin-right:6px}
+.pct{display:inline-block;min-width:44px}.pct.ok{color:var(--ok)}.pct.warn{color:#b07a00}.pct.bad{color:var(--bad)}
+input[type=search]{width:100%;padding:9px 12px;border:1px solid var(--line);border-radius:8px;background:var(--sup);color:var(--ink);font:inherit}
+.sug{list-style:none;margin:4px 0 0;padding:0;max-height:260px;overflow:auto}.sug li{padding:7px 10px;border-bottom:1px solid var(--grid);cursor:pointer}.sug li:hover{background:color-mix(in oklab,var(--s1) 8%,transparent)}
+.sug small{color:var(--mut)}svg text{fill:var(--mut);font-size:11px}.tabs{display:flex;gap:6px;margin-bottom:10px;flex-wrap:wrap}
+.tabs button{border:1px solid var(--line);background:var(--sup);color:var(--ink);border-radius:999px;padding:5px 12px;cursor:pointer;font:inherit}.tabs button.on{background:var(--s1);color:#fff;border-color:var(--s1)}
+footer{color:var(--mut);font-size:12px;text-align:center;padding:24px}footer a{color:var(--s1)}
+.wrap{overflow-x:auto}
+</style>
+</head>
+<body>
+<header><h1>Panel de Inversiones · Perú</h1><span class="mut">Gobierno nacional · regional · local</span><span class="sp"></span><span class="mut" id="corte"></span></header>
+<main>
+<div class="crumbs" id="crumbs"></div>
+<div class="tiles" id="tiles"></div>
+<div class="row">
+  <div class="card"><h2 id="tit-serie">Devengado mensual de inversiones (S/ millones)</h2><svg id="serie" viewBox="0 0 520 190" width="100%" preserveAspectRatio="none" role="img" aria-label="Devengado mensual"></svg></div>
+  <div class="card"><h2>Buscar unidad ejecutora, pliego o CUI</h2><input type="search" id="q" placeholder="Ej. Municipalidad de Piura, MTC, 2233850…" autocomplete="off"><ul class="sug" id="sug"></ul></div>
+</div>
+<div class="card"><div class="tabs" id="tabs"></div><div class="wrap"><table id="tabla"></table></div></div>
+</main>
+<footer>Herramienta no oficial elaborada con datos abiertos del MEF (Consulta Amigable y Banco de Inversiones). Los montos se muestran en soles; avance = devengado / PIM. Un producto de <a href="https://www.arkaproyectos.com.pe">ARKA PROYECTOS</a> · consultas@arkaproyectos.com.pe</footer>
+<script>
+const M=n=>(n/1e6).toLocaleString('es-PE',{maximumFractionDigits:1});
+const P=v=>{const c=v>=70?'ok':v>=40?'warn':'bad';return `<span class="pct ${c}">${(v||0).toFixed(1)}%</span>`};
+const NIV={E:'Gobierno nacional',R:'Gobiernos regionales',M:'Gobiernos locales'};
+const ms=o=>Array.from({length:12},(_,i)=>(o&&o['m'+(i+1)])||0);
+const MES=['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Set','Oct','Nov','Dic'];
+let R,S,U,estado={nivel:null,sector:null,pliego:null,ue:null},tab='niveles';
+const $=id=>document.getElementById(id);
+async function j(u){const r=await fetch(u+'?v='+Date.now());return r.json()}
+const SH={};async function ficha(cod){const k=(parseInt(cod,10)%64).toString().padStart(2,'0');SH[k]=SH[k]||await j(`data/ue/${k}.json`);return SH[k][cod]}
+function tiles(t){$('tiles').innerHTML=[['PIM',t.pim,'presupuesto modificado'],['Certificado',t.cert,`${(100*t.cert/t.pim||0).toFixed(1)}% del PIM`],['Comprometido',t.comp,`${(100*t.comp/t.pim||0).toFixed(1)}% del PIM`],['Devengado',t.dev,`avance ${(t.avance||0).toFixed(1)}%`],['Girado',t.gir,`${(100*t.gir/t.dev||0).toFixed(1)}% del devengado`]]
+ .map(([k,v,s])=>`<div class="tile"><div class="k">${k}</div><div class="v">S/ ${M(v)} M</div><div class="s">${s}</div></div>`).join('')+
+ (t.n_cui!=null?`<div class="tile"><div class="k">Inversiones</div><div class="v">${t.n_cui.toLocaleString('es-PE')}</div><div class="s">${(t.n_ue||0).toLocaleString('es-PE')} unidades ejecutoras</div></div>`:'')}
+function serie(vals,vals2){const W=520,H=190,pad=28,bw=W/12;const max=Math.max(...vals,...(vals2||[0]),1);
+ let s='';for(let i=0;i<12;i++){const h=(vals[i]||0)/max*(H-pad-10),x=i*bw+6,y=H-pad-h;
+  if(vals2){const h2=(vals2[i]||0)/max*(H-pad-10);s+=`<rect x="${x}" y="${H-pad-h2}" width="${bw/2-5}" height="${h2}" fill="var(--line)" rx="3"/>`}
+  s+=`<rect x="${vals2?x+bw/2-3:x}" y="${y}" width="${vals2?bw/2-5:bw-12}" height="${h}" fill="var(--s1)" rx="3"><title>${MES[i]}: S/ ${M(vals[i]||0)} M${vals2?` · año anterior S/ ${M(vals2[i]||0)} M`:''}</title></rect>`;
+  s+=`<text x="${x+(bw-12)/2}" y="${H-10}" text-anchor="middle">${MES[i]}</text>`}
+ $('serie').innerHTML=`<line x1="0" x2="${W}" y1="${H-pad}" y2="${H-pad}" stroke="var(--line)"/>`+s}
+function crumbs(){const c=[['Perú',()=>go({})]];if(estado.nivel)c.push([NIV[estado.nivel],()=>go({nivel:estado.nivel})]);
+ if(estado.sector){const sName=R.sectores.find(x=>x.nivel===estado.nivel&&x.cod===estado.sector)?.nombre;c.push([sName,()=>go({nivel:estado.nivel,sector:estado.sector})])}
+ if(estado.pliego){const p=R.pliegos.find(x=>x.nivel===estado.nivel&&x.cod===estado.pliego);c.push([p?.nombre,()=>go({nivel:estado.nivel,sector:estado.sector,pliego:estado.pliego})])}
+ if(estado.ue)c.push([U?.nombre||estado.ue,null]);
+ $('crumbs').innerHTML=c.map(([t,f],i)=>i<c.length-1?`<a data-i="${i}">${t}</a><span>›</span>`:`<b>${t}</b>`).join('');
+ $('crumbs').querySelectorAll('a').forEach((a,i)=>a.onclick=c[i][1])}
+function fila(nombre,t,click){return `<tr class="${click?'l':''}" ${click?`data-k="${click}"`:''}><td>${nombre}</td><td>${M(t.pia)}</td><td>${M(t.pim)}</td><td>${M(t.cert)}</td><td>${M(t.comp)}</td><td>${M(t.dev)}</td><td>${M(t.gir)}</td><td><span class="bar" style="width:${Math.min(100,t.avance||0)*.6}px"></span>${P(t.avance)}</td>${t.n_cui!=null?`<td>${t.n_cui.toLocaleString('es-PE')}</td>`:'<td></td>'}</tr>`}
+const HEAD='<tr><th>Nombre</th><th>PIA</th><th>PIM</th><th>Certificado</th><th>Comprometido</th><th>Devengado</th><th>Girado</th><th>Avance</th><th>CUI</th></tr>';
+function tabla(){let filas=[],tabs=[];
+ if(estado.ue){tabs=[['cuis','Inversiones de la UE']];filas=U.cuis.map(c=>fila(`<b>${c.cui}</b> ${c.nombre}<br><small style="color:var(--mut)">${c.tipo||''} · ${c.situacion||''} · ${c.dpto||''}${c.avance_fisico!=null?` · avance físico ${c.avance_fisico}%`:''}</small>`,{...c,avance:c.pim?100*c.dev/c.pim:0},null))}
+ else if(estado.pliego){tabs=[['ues','Unidades ejecutoras']];filas=(window.UES||[]).filter(u=>u.nivel===estado.nivel&&u.pliego===estado.pliego).map(u=>fila(u.nombre,u,'ue:'+u.cod))}
+ else if(estado.sector){tabs=[['pliegos','Pliegos'],['ues','Unidades ejecutoras']];
+  filas=tab==='ues'?(window.UES||[]).filter(u=>u.nivel===estado.nivel&&u.sector===estado.sector).map(u=>fila(u.nombre,u,'ue:'+u.cod)):R.pliegos.filter(p=>p.nivel===estado.nivel&&p.sector===estado.sector).map(p=>fila(p.nombre,p,'pliego:'+p.cod))}
+ else if(estado.nivel){tabs=[['sectores','Sectores'],['pliegos','Pliegos'],['ues','Unidades ejecutoras']];
+  filas=tab==='ues'?(window.UES||[]).filter(u=>u.nivel===estado.nivel).slice(0,300).map(u=>fila(u.nombre,u,'ue:'+u.cod)):tab==='pliegos'?R.pliegos.filter(p=>p.nivel===estado.nivel).map(p=>fila(p.nombre,p,'pliego:'+p.cod)):R.sectores.filter(s=>s.nivel===estado.nivel).map(s=>fila(s.nombre,s,'sector:'+s.cod))}
+ else{tabs=[['niveles','Niveles de gobierno'],['departamentos','Departamentos'],['pliegos','Pliegos (todos)']];
+  filas=tab==='departamentos'?(window.DEP||[]).map(d=>fila(d.nombre,d,null)):tab==='pliegos'?R.pliegos.map(p=>fila(`${p.nombre} <small style="color:var(--mut)">${NIV[p.nivel]}</small>`,p,'npliego:'+p.nivel+':'+p.sector+':'+p.cod)):R.niveles.map(n=>fila(n.nombre,n,'nivel:'+n.cod))}
+ if(!tabs.find(t=>t[0]===tab))tab=tabs[0][0];
+ $('tabs').innerHTML=tabs.map(([k,t])=>`<button class="${k===tab?'on':''}" data-t="${k}">${t}</button>`).join('');
+ $('tabs').querySelectorAll('button').forEach(b=>b.onclick=()=>{tab=b.dataset.t;tabla()});
+ $('tabla').innerHTML=HEAD+filas.join('');
+ $('tabla').querySelectorAll('tr.l').forEach(tr=>tr.onclick=()=>{const [k,...v]=tr.dataset.k.split(':');
+  if(k==='nivel')go({nivel:v[0]});else if(k==='sector')go({nivel:estado.nivel,sector:v[0]});else if(k==='pliego')go({nivel:estado.nivel,sector:estado.sector,pliego:v[0]});
+  else if(k==='npliego')go({nivel:v[0],sector:v[1],pliego:v[2]});else if(k==='ue')go({...estado,ue:v[0]})})}
+async function go(e){estado={nivel:null,sector:null,pliego:null,ue:null,...e};U=null;
+ if(estado.ue){U=await ficha(estado.ue);estado.nivel=U.nivel;estado.sector=U.sector;estado.pliego=U.pliego;tiles({...U,n_ue:1});serie(U.serie);$('tit-serie').textContent='Devengado mensual de la UE (S/ millones)'}
+ else if(estado.pliego){const p=R.pliegos.find(x=>x.nivel===estado.nivel&&x.cod===estado.pliego);tiles(p);const ues=(window.UES||[]).filter(u=>u.nivel===estado.nivel&&u.pliego===estado.pliego);
+  const s=Array(12).fill(0);/* serie del pliego = suma de fichas UE, se carga bajo demanda */for(const u of ues.slice(0,60)){try{const f=await ficha(u.cod);f.serie.forEach((v,i)=>s[i]+=v)}catch(e){}}serie(s);$('tit-serie').textContent='Devengado mensual del pliego (S/ millones)'}
+ else if(estado.sector){tiles(R.sectores.find(x=>x.nivel===estado.nivel&&x.cod===estado.sector));serie(ms(S.niveles[S.anio][estado.nivel]));$('tit-serie').textContent=`Devengado mensual · ${NIV[estado.nivel]} (S/ millones)`}
+ else if(estado.nivel){tiles(R.niveles.find(n=>n.cod===estado.nivel));const a=S.niveles[S.anio][estado.nivel],b=S.niveles[S.anio-1]?.[estado.nivel];serie(ms(a),b?ms(b):null);$('tit-serie').textContent=`Devengado mensual · ${NIV[estado.nivel]} vs año anterior (S/ millones)`}
+ else{tiles(R.pais);const a=S.pais[S.anio],b=S.pais[S.anio-1];serie(ms(a),b?ms(b):null);$('tit-serie').textContent='Devengado mensual de inversiones · Perú vs año anterior (S/ millones)'}
+ crumbs();tabla();window.scrollTo({top:0,behavior:'smooth'})}
+$('q').oninput=()=>{const q=$('q').value.trim().toLowerCase();const ul=$('sug');if(q.length<3){ul.innerHTML='';return}
+ const hits=[];for(const p of R.pliegos)if(p.nombre.toLowerCase().includes(q))hits.push(`<li data-k="npliego:${p.nivel}:${p.sector}:${p.cod}">${p.nombre} <small>pliego · ${NIV[p.nivel]}</small></li>`);
+ for(const u of (window.UES||[]))if(u.nombre.toLowerCase().includes(q)||u.cod===q)hits.push(`<li data-k="ue:${u.cod}">${u.nombre} <small>UE ${u.cod} · ${u.dpto||''} · PIM S/ ${M(u.pim)} M</small></li>`);
+ ul.innerHTML=hits.slice(0,25).join('')||'<li><small>Sin resultados. Para un CUI, abre su unidad ejecutora.</small></li>';
+ ul.querySelectorAll('li[data-k]').forEach(li=>li.onclick=()=>{const [k,...v]=li.dataset.k.split(':');ul.innerHTML='';$('q').value='';k==='ue'?go({ue:v[0]}):go({nivel:v[0],sector:v[1],pliego:v[2]})})};
+(async()=>{[R,S]=await Promise.all([j('data/resumen.json'),j('data/serie_mensual.json')]);$('corte').textContent=`Datos al ${R.corte} · año ${R.anio}`;
+ j('data/ues.json').then(x=>{window.UES=x.ues;tabla()});j('data/departamentos.json').then(x=>window.DEP=x);go({})})();
+</script>
+</body>
+</html>
