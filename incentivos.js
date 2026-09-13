@@ -58,6 +58,46 @@
     return null;
   }
 
+  const Fm = n => 'S/ ' + Number(n || 0).toLocaleString('es-PE', { maximumFractionDigits: 0 });
+  function diagnostico(c, ev, S, E) {
+    const hoyS = hoy(), venc = c.hitos.filter(([f], i) => f < hoyS && !S['hito' + c.n + '_' + i]).length, prox = c.hitos.filter(([f]) => f >= hoyS)[0];
+    const d = { color: 'p', titulo: '', frases: [], accion: '' };
+    if (ev && (c.siaf.tipo === 'producto' || c.siaf.tipo === 'pp')) {
+      const t = ev.t;
+      if (!ev.metas.length) { d.color = 'bad'; d.titulo = 'Sin presupuesto asignado'; d.frases.push(`La municipalidad no tiene metas en ${c.siaf.tipo === 'producto' ? 'el producto ' : 'el programa presupuestal '}${c.siaf.codigos.join(', ')}. Si el compromiso aplica, hay que habilitar presupuesto con una nota modificatoria.`); }
+      else {
+        const av = 100 * t.dev / (t.pim || 1), avc = 100 * t.cert / (t.pim || 1);
+        d.frases.push(`Presupuesto ${Fm(t.pim)} en ${ev.metas.length} meta(s): certificado ${avc.toFixed(0)} %, devengado ${av.toFixed(1)} % al ${E.corte}.`);
+        if (ev.reglas.length) {
+          const pend = ev.reglas.filter(r => !r.cumple), next = pend[0];
+          if (!next) { d.color = 'ok'; d.titulo = 'Hitos presupuestales cumplidos'; }
+          else { const falta = Math.max(0, t.pim * next.min / 100 - t[next.campo]); d.color = next.vencido ? 'bad' : (falta / (t.pim || 1) > 0.3 ? 'bad' : 'warn'); d.titulo = `Falta ${next.campo === 'cert' ? 'certificar' : 'devengar'} ${Fm(falta)}`;
+            d.frases.push(`Para llegar al ${next.min} % ${next.campo === 'cert' ? 'certificado' : 'devengado'} exigido al ${next.fecha} ${next.vencido ? '(plazo vencido)' : ''} hay que ${next.campo === 'cert' ? 'certificar' : 'devengar'} ${Fm(falta)} más${next.campo === 'dev' ? '; hoy hay ' + Fm(t.cert - t.dev) + ' ya certificados que aún no se han ejecutado' : ''}.`);
+            const peor = ev.metas.filter(m => m.pim).map(m => ({ m, saldo: m.pim - m[next.campo] })).sort((a, b) => b.saldo - a.saldo).slice(0, 3);
+            if (peor.length) d.accion = 'Dónde está el saldo: ' + peor.map(x => `${x.m.act_proy.startsWith('2') ? 'CUI ' + x.m.act_proy : 'meta ' + x.m.meta + ' ' + (x.m.finalidad_n ? x.m.finalidad_n.toLowerCase() : x.m.finalidad || '')} ${Fm(x.saldo)}`).join(' · ') + '.';
+            ev.reglas.filter(r => r.cumple).forEach(r => d.frases.push(`✓ ${r.fecha}: ${r.campo === 'cert' ? 'certificado' : 'devengado'} ${r.pct.toFixed(1)} % ≥ ${r.min} %.`)); }
+        } else { d.color = av >= 50 ? 'ok' : av >= 25 ? 'warn' : 'bad'; d.titulo = av >= 50 ? 'Gasto asociado en marcha' : av >= 25 ? 'Gasto asociado lento' : 'Gasto asociado casi sin ejecutar'; d.frases.push(`El SIAF no mide este compromiso directamente; el gasto del programa es la señal de que se está trabajando. Quedan ${Fm(t.pim - t.dev)} por devengar.`); }
+      }
+    } else if (ev && c.siaf.tipo === 'ingreso') {
+      const base = S['base' + c.n] || 0, meses = Object.keys(ev.mensual).sort(), n = meses.length || 1, prom = ev.total / n, proy = ev.total + prom * (12 - n);
+      d.frases.push(`Predial recaudado ${Fm(ev.total)} en ${n} meses (${(100 * ev.total / (ev.pim || 1)).toFixed(0)} % del presupuesto de ${Fm(ev.pim)}); ritmo ${Fm(prom)} al mes, proyección a diciembre ${Fm(proy)}.`);
+      if (base) { const inc = 100 * (proy - base) / base; d.color = inc >= 0 ? 'ok' : 'bad'; d.titulo = inc >= 0 ? `Proyecta +${inc.toFixed(1)} % vs 2025` : `Proyecta ${inc.toFixed(1)} % vs 2025`; d.frases.push(inc >= 0 ? `Al ritmo actual superaría la recaudación 2025 (${Fm(base)}).` : `Al ritmo actual quedaría ${Fm(base - proy)} por debajo de 2025 (${Fm(base)}): hay que recaudar ${Fm((base - ev.total) / Math.max(1, 12 - n))} al mes en lo que queda del año solo para igualarla.`); }
+      else { d.color = ev.pim && ev.total / ev.pim >= n / 12 ? 'ok' : 'warn'; d.titulo = ev.pim && ev.total / ev.pim >= n / 12 ? 'Recaudación al día con el presupuesto' : 'Recaudación por debajo del ritmo'; d.accion = 'Ingresa la recaudación 2025 en el detalle para calcular el indicador 2.2.'; }
+    } else {
+      d.color = venc ? 'warn' : 'p'; d.titulo = venc ? `${venc} hito(s) vencido(s) sin marcar` : 'Seguimiento por hitos';
+      d.frases.push(c.siaf.nota); if (ev?.exps?.length) d.frases.push(`${ev.exps.length} expediente(s) con gasto relacionado en el SIAF.`);
+    }
+    if (prox) d.frases.push(`Próximo hito: ${prox[0]} · ${prox[1]}.`);
+    if (venc && d.color === 'ok') d.color = 'warn';
+    return d;
+  }
+  function resumenCard(c, S, E, META) {
+    const aplica = S['aplica' + c.n] !== false; if (!aplica) return `<div class="al" data-abrir="${c.n}" style="border-left-color:var(--line);opacity:.55"><div class="t"><b>${c.n}. ${c.corto}</b><br>No aplica a esta municipalidad</div></div>`;
+    const estado = S['estado' + c.n] || 'pend', ev = evaluarSIAF(c, E, META), d = diagnostico(c, ev, S, E), col = estado === 'ok' ? 'ok' : estado === 'no' ? 'bad' : d.color;
+    return `<div class="al ${col}" data-abrir="${c.n}" style="padding:10px 12px;display:flex;gap:10px"><div style="font-size:22px;font-weight:900;color:var(--${col});width:26px;flex:0 0 auto">${c.n}</div><div style="min-width:0"><div class="t" style="margin:0"><b style="font-size:12.5px;color:var(--ink)">${c.corto}</b> <span class="tag ${col}" style="margin-left:4px">${estado === 'ok' ? 'Cumplido' : estado === 'no' ? 'No cumplido' : d.titulo}</span></div>
+      <div style="font-size:11.5px;color:var(--ink);margin-top:5px;line-height:1.45">${d.frases.map(f => `<div>${f}</div>`).join('')}${d.accion ? `<div style="color:var(--p2);font-weight:600;margin-top:3px">${d.accion}</div>` : ''}</div><div class="mutx" style="font-size:10.5px;margin-top:5px">${c.ente} · clic para ver indicadores, hitos y el detalle SIAF</div></div></div>`;
+  }
+  let abiertoN = null;
   function render(el, E, META, ue, onExp) {
     const S = st.get(ue), corte = E.corte, aplicables = PI.compromisos.filter(c => S['aplica' + c.n] !== false);
     const resumen = PI.compromisos.map(c => { const e = S['estado' + c.n] || 'pend'; return { c, e, aplica: S['aplica' + c.n] !== false }; });
@@ -65,10 +105,12 @@
     el.innerHTML = `<div style="padding:8px">
      <div class="pd-lbl">Programa de Incentivos a la Mejora de la Gestión Municipal ${PI.anio}<small>${PI.norma}</small></div>
      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:10px">${[['ok', 'Cumplidos', 'ok'], ['proc', 'En proceso', 'warn'], ['pend', 'Pendientes', 'p'], ['no', 'No cumplidos', 'bad']].map(([k, t, c]) => `<div class="al ${c}" style="padding:8px 10px;cursor:default"><div class="n" style="font-size:20px">${cnt(k)}</div><div class="t"><b>${t}</b><br>de ${aplicables.length} compromisos aplicables</div></div>`).join('')}</div>
-     <p class="mutx" style="font-size:11.5px;margin:0 0 10px">Marca qué compromisos aplican a tu municipalidad según el Anexo IV del DS 003-2026-EF (clasificación A–G) y actualiza el estado de cada uno. Los compromisos 2 y 4 se verifican con los datos del SIAF; el resto se sigue por hitos y por el gasto asociado. Corte SIAF: ${corte}. Todo lo que marques se guarda en este navegador.</p>
-     ${PI.compromisos.map(c => tarjeta(c, S, E, META, corte)).join('')}
+     <p class="mutx" style="font-size:11.5px;margin:0 0 10px">Cada tarjeta resume automáticamente cómo va el compromiso con los datos del SIAF al ${corte}: qué falta, cuánto y dónde. Los compromisos 2 y 4 los mide el propio SIAF; los demás se siguen por sus hitos y por el gasto asociado. Clic en una tarjeta para abrir indicadores, plazos, verificación y el detalle.</p>
+     <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">${PI.compromisos.map(c => resumenCard(c, S, E, META)).join('')}</div>
+     <div id="pi-det" style="margin-top:12px">${abiertoN ? tarjeta(PI.compromisos.find(c => c.n === abiertoN), S, E, META, corte) : ''}</div>
      <div class="pd-lbl" style="margin-top:14px">Calendario del MEF</div><table class="pd-tbl">${PI.calendario.map(([f, t]) => `<tr><td>${f}</td><td style="text-align:left">${t}</td></tr>`).join('')}</table>
      <p class="mutx" style="font-size:10.5px;margin-top:10px">Fuente: DS 003-2026-EF, RD 0003-2026-EF/50.01 y guías de cumplimiento del MEF (Programa de Incentivos 2026). Las fechas y porcentajes provienen de las fichas técnicas; verificar siempre la versión vigente en gob.pe/mef.</p></div>`;
+    el.querySelectorAll('[data-abrir]').forEach(x => x.onclick = () => { abiertoN = abiertoN === +x.dataset.abrir ? null : +x.dataset.abrir; render(el, E, META, ue, onExp); if (abiertoN) $('pi-det').scrollIntoView({ behavior: 'smooth', block: 'start' }); });
     el.querySelectorAll('[data-aplica]').forEach(x => x.onchange = () => { S['aplica' + x.dataset.aplica] = x.checked; st.set(ue, S); render(el, E, META, ue, onExp); });
     el.querySelectorAll('[data-estado]').forEach(x => x.onchange = () => { S['estado' + x.dataset.estado] = x.value; st.set(ue, S); render(el, E, META, ue, onExp); });
     el.querySelectorAll('[data-hito]').forEach(x => x.onchange = () => { S['hito' + x.dataset.hito] = x.checked; st.set(ue, S); render(el, E, META, ue, onExp); });
@@ -83,7 +125,7 @@
     if (ev && (c.siaf.tipo === 'producto' || c.siaf.tipo === 'pp')) {
       const t = ev.t, av = t.pim ? 100 * t.dev / t.pim : 0, avc = t.pim ? 100 * t.cert / t.pim : 0;
       siaf = `<div class="pd-row" style="margin:6px 0"><b>Lo que dice el SIAF</b><span style="font-weight:500">${c.siaf.nota}</span></div>
-        ${ev.metas.length ? `<table class="pd-tbl"><tr><th>Meta SIAF</th><th>PIM</th><th>Certificado</th><th>Devengado</th><th>Avance</th></tr>${ev.metas.map(m => `<tr><td style="white-space:normal"><b>${m.act_proy}</b> ${(m.nombre_ap || m.nombre || '').slice(0, 70)} <small class="mutx">meta ${m.meta}</small></td><td>${F(m.pim)}</td><td>${F(m.cert)}</td><td>${F(m.dev)}</td><td>${P(m.pim ? 100 * m.dev / m.pim : 0)}</td></tr>`).join('')}<tr><td><b>Total</b></td><td><b>${F(t.pim)}</b></td><td><b>${F(t.cert)}</b> <small class="mutx">${avc.toFixed(0)} %</small></td><td><b>${F(t.dev)}</b></td><td>${P(av)}</td></tr></table>` : `<p class="mutx" style="font-size:11px">La entidad no tiene metas presupuestales en ${c.siaf.tipo === 'producto' ? 'el producto ' : 'el programa presupuestal '}${c.siaf.codigos.join(', ')} este año: si el compromiso aplica, falta presupuesto para cumplirlo.</p>`}
+        ${ev.metas.length ? `<table class="pd-tbl"><tr><th>Meta SIAF</th><th>PIM</th><th>Certificado</th><th>Devengado</th><th>Avance</th></tr>${ev.metas.map(m => `<tr><td style="white-space:normal"><b>${m.act_proy}</b> ${(m.nombre_ap || m.nombre || '').slice(0, 60)} <small class="mutx">meta ${m.meta}${m.finalidad_n ? ' · ' + m.finalidad_n : ''}</small></td><td>${F(m.pim)}</td><td>${F(m.cert)}</td><td>${F(m.dev)}</td><td>${P(m.pim ? 100 * m.dev / m.pim : 0)}</td></tr>`).join('')}<tr><td><b>Total</b></td><td><b>${F(t.pim)}</b></td><td><b>${F(t.cert)}</b> <small class="mutx">${avc.toFixed(0)} %</small></td><td><b>${F(t.dev)}</b></td><td>${P(av)}</td></tr></table>` : `<p class="mutx" style="font-size:11px">La entidad no tiene metas presupuestales en ${c.siaf.tipo === 'producto' ? 'el producto ' : 'el programa presupuestal '}${c.siaf.codigos.join(', ')} este año: si el compromiso aplica, falta presupuesto para cumplirlo.</p>`}
         ${ev.reglas.length ? `<table class="pd-tbl" style="margin-top:6px"><tr><th>Hito presupuestal (ficha técnica)</th><th>Exigido</th><th>Logrado al ${corte}</th><th>Estado</th></tr>${ev.reglas.map(r => `<tr><td style="text-align:left">${r.fecha} · ${r.campo === 'cert' ? 'Certificado' : 'Devengado'} del PIM del producto</td><td>≥ ${r.min} %</td><td><b>${r.pct.toFixed(1)} %</b></td><td>${r.cumple ? '<span class="tag ok">Cumplido</span>' : r.vencido ? '<span class="tag bad">Vencido sin cumplir</span>' : `<span class="tag warn">Faltan ${(r.min - r.pct).toFixed(1)} puntos</span>`}</td></tr>`).join('')}</table>` : ''}`;
     } else if (ev && c.siaf.tipo === 'ingreso') {
       const base = S['base' + c.n] || 0, meses = Object.keys(ev.mensual).sort(), acum = meses.reduce((a, m) => a + ev.mensual[m], 0), inc = base ? 100 * (ev.total - base) / base : null;
