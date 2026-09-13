@@ -75,13 +75,13 @@ footer{color:var(--mut);font-size:12px;text-align:center;padding:26px 16px;line-
 <div class="tiles" id="tiles"></div>
 <div id="alertas"></div>
 <div class="row">
-  <div class="card"><h2><span id="tit-serie">Devengado mensual</span><small>S/ millones</small></h2><svg id="serie" viewBox="0 0 520 190" width="100%" preserveAspectRatio="none" role="img" aria-label="Devengado mensual"></svg><div class="leg" id="leg-serie"></div></div>
-  <div class="card"><h2><span id="tit-hist">Evolución anual</span><small>S/ millones</small></h2><svg id="hist" viewBox="0 0 520 190" width="100%" preserveAspectRatio="none" role="img" aria-label="Evolución anual"></svg><div class="leg"><i style="background:var(--line)"></i> PIM <i style="background:var(--p);margin-left:8px"></i> Devengado</div></div>
-</div>
-<div class="row">
-  <div class="card"><h2><span>Avance por departamento</span><small>devengado / PIM · clic para explorar</small></h2><svg id="mapa" viewBox="0 0 400 520" width="100%" style="max-height:520px" role="img" aria-label="Mapa del Perú"></svg>
+  <div class="card"><h2><span id="tit-mapa">Avance por departamento</span><small>devengado / PIM</small></h2><svg id="mapa" viewBox="0 0 400 520" width="100%" style="max-height:520px" role="img" aria-label="Mapa del Perú"></svg>
    <div class="leg">menor <i style="background:var(--q1)"></i><i style="background:var(--q2)"></i><i style="background:var(--q3)"></i><i style="background:var(--q4)"></i><i style="background:var(--q5)"></i><i style="background:var(--q6)"></i> mayor avance</div></div>
   <div class="card"><h2><span>¿De dónde sale el dinero y a qué va?</span></h2><div class="tabs" id="tabs2"></div><div class="wrap"><table id="tabla2"></table></div></div>
+</div>
+<div class="row">
+  <div class="card"><h2><span id="tit-serie">Devengado mensual</span><small>S/ millones</small></h2><svg id="serie" viewBox="0 0 520 190" width="100%" preserveAspectRatio="none" role="img" aria-label="Devengado mensual"></svg><div class="leg" id="leg-serie"></div></div>
+  <div class="card"><h2><span id="tit-hist">Evolución anual</span><small>S/ millones</small></h2><svg id="hist" viewBox="0 0 520 190" width="100%" preserveAspectRatio="none" role="img" aria-label="Evolución anual"></svg><div class="leg"><i style="background:var(--line)"></i> PIM <i style="background:var(--p);margin-left:8px"></i> Devengado</div></div>
 </div>
 <div class="card"><div class="tabs" id="tabs"></div><div class="filt" id="filt"></div><div class="wrap"><table id="tabla"></table></div></div>
 </main>
@@ -97,7 +97,7 @@ const NIV={E:'Gobierno nacional',R:'Gobiernos regionales',M:'Gobiernos locales'}
 const DEF={PIM:'Presupuesto Institucional Modificado: lo que la entidad tiene autorizado gastar este año, con todas las modificaciones.',Certificado:'Monto con certificación de crédito presupuestario: la entidad ya reservó el dinero para un gasto concreto.',Comprometido:'Monto comprometido anual: ya hay un contrato u orden firmada por ese importe.',Devengado:'Gasto reconocido: la obra o el servicio ya se recibió y la entidad debe pagarlo. Es la medida oficial de ejecución.',Girado:'Dinero efectivamente transferido al proveedor o contratista.',Saldo:'Lo que falta por devengar respecto al PIM. Al cierre del año se pierde si no se ejecuta.'};
 const ms=o=>Array.from({length:12},(_,i)=>(o&&o['m'+(i+1)])||0);
 const MES=['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Set','Oct','Nov','Dic'];
-let R,S,H,C,A,U,UES=[],DEP=[],GEO,modo='inv',estado={},tab='niveles',tab2='fuente',orden={k:'pim',d:-1},ANIO,ANIO_ACTUAL,BASE={},fdpto='',ftxt='',alerta='';
+let R,S,H,C,A,U,T,UES=[],DEP=[],GEO,GEOC={},DEPCODE={},modo='inv',estado={},tab='niveles',tab2='fuente',orden={k:'pim',d:-1},ANIO,ANIO_ACTUAL,BASE={},fdpto='',ftxt='',alerta='';
 const $=id=>document.getElementById(id);
 async function j(u){const r=await fetch(u+'?v='+Date.now());if(!r.ok)throw new Error(u);return r.json()}
 const SH={};async function ficha(cod){const k=(parseInt(cod,10)%64).toString().padStart(2,'0');SH[k]=SH[k]||await j(`data/ue/${k}.json`);return SH[k][cod]}
@@ -119,6 +119,8 @@ function histo(rows,tit){const r=rows.filter(x=>x.pim>0);barras('hist',r.map(x=>
 function serieUI(vals,vals2,tit){barras('serie',vals,vals2,MES);$('tit-serie').textContent=tit;$('leg-serie').innerHTML=vals2?`<i style="background:var(--line)"></i> ${ANIO-1} <i style="background:var(--p);margin-left:8px"></i> ${ANIO}`:`<i style="background:var(--p)"></i> ${ANIO}`}
 function crumbs(){const c=[['Perú',()=>go({})]];
  if(estado.dpto)c.push([estado.dpto,()=>go({dpto:estado.dpto})]);
+ if(estado.prov)c.push([(T.prov.find(x=>x.id===estado.prov)||{}).nombre||(estado.dist?'':estado._n)||estado.prov,()=>go({dpto:estado.dpto,prov:estado.prov})]);
+ if(estado.dist)c.push([(T.dist.find(x=>x.id===estado.dist)||{}).nombre||estado._n||estado.dist,()=>go({dpto:estado.dpto,prov:estado.prov,dist:estado.dist})]);
  if(estado.nivel)c.push([NIV[estado.nivel],()=>go({nivel:estado.nivel})]);
  if(estado.sector){const s=R.sectores.find(x=>x.nivel===estado.nivel&&x.cod===estado.sector);c.push([s?.nombre,()=>go({nivel:estado.nivel,sector:estado.sector})])}
  if(estado.pliego&&estado.nivel!=='M'){const p=R.pliegos.find(x=>x.nivel===estado.nivel&&x.cod===estado.pliego);c.push([p?.nombre,()=>go({nivel:estado.nivel,sector:estado.sector,pliego:estado.pliego})])}
@@ -137,6 +139,8 @@ function filtros(conUE){if(!conUE){$('filt').innerHTML=`<span class="sp" style="
 function excel(){const rows=[...$('tabla').querySelectorAll('tr')].map(tr=>[...tr.children].map(td=>td.innerText.replace(/\n/g,' ').trim()));const ws=XLSX.utils.aoa_to_sheet(rows);const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,'Panel');XLSX.writeFile(wb,`panel_inversiones_${ANIO}.xlsx`);toast('Excel descargado')}
 function tabla(){let filas=[],tabs=[];const ok=u=>(!fdpto||u.dpto===fdpto)&&(!ftxt||(u.nombre||'').toLowerCase().includes(ftxt.toLowerCase()));const link=ANIO===ANIO_ACTUAL;const uesN=(f)=>sortear(UES.filter(u=>f(u)&&ok(u))).slice(0,600).map(u=>fila(`${u.nombre} <small class="mutx">${u.dpto||''}</small>`,u,link?'ue:'+u.cod:null));
  if(estado.ue){tabs=[['cuis','Inversiones de la UE']];filas=sortear(U.cuis.filter(ok)).map(c=>{const af=c.avance_fisico;return fila(`<b>${c.cui}</b> ${c.nombre}<br><small class="mutx">${c.tipo||''} · ${c.situacion||''} · ${[c.dpto,c.prov,c.dist].filter(Boolean).join(' / ')}${c.costo?` · costo S/ ${M(c.costo)} M`:''}</small>${af!=null&&af>=0?` <span class="tag ${cls(af)}">físico ${af}%</span>`:''}${c.ult_f12b?` <small class="mutx">F12-B ${c.ult_f12b.slice(0,10)}</small>`:''}`,c,null)})}
+ else if(estado.dist){tabs=[['ues','Unidades ejecutoras del distrito']];filas=uesN(u=>u.dist===estado.dist)}
+ else if(estado.prov){tabs=[['ues','Unidades ejecutoras de la provincia']];filas=uesN(u=>u.prov===estado.prov)}
  else if(estado.dpto){tabs=[['ues','Unidades ejecutoras del departamento']];filas=uesN(u=>u.dpto===estado.dpto)}
  else if(estado.pliego){tabs=[['ues','Unidades ejecutoras']];filas=uesN(u=>u.nivel===estado.nivel&&u.pliego===estado.pliego)}
  else if(estado.sector){tabs=[['pliegos','Pliegos'],['ues','Unidades ejecutoras']];filas=tab==='ues'?uesN(u=>u.nivel===estado.nivel&&u.sector===estado.sector):sortear(R.pliegos.filter(p=>p.nivel===estado.nivel&&p.sector===estado.sector)).map(p=>fila(p.nombre,p,'pliego:'+p.cod))}
@@ -156,16 +160,17 @@ function tabla(){let filas=[],tabs=[];const ok=u=>(!fdpto||u.dpto===fdpto)&&(!ft
   else if(k==='npliego')go({nivel:v[0],sector:v[1],pliego:v[2]});else if(k==='dpto')go({dpto:v.join(':')});else if(k==='ue')go({...estado,ue:v[0]})})}
 function tabla2(){let src=[];const t2=[['fuente','Por fuente de financiamiento'],['funcion','Por función']];
  if(estado.ue)src=tab2==='fuente'?U.fuentes:U.funciones;
- else if(estado.dpto)src=tab2==='funcion'?C.dpto_funcion.filter(x=>x.dpto===estado.dpto):[];
+ else if(estado.dpto&&!estado.prov)src=(tab2==='funcion'?C.dpto_funcion:(C.dpto_fuente||[])).filter(x=>x.dpto===estado.dpto);
+ else if(estado.prov)src=[];
  else if(estado.pliego)src=(tab2==='fuente'?C.pliego_fuente:C.pliego_funcion).filter(x=>x.nivel===estado.nivel&&x.pliego===estado.pliego);
  else if(estado.nivel)src=(tab2==='fuente'?C.nivel_fuente:C.nivel_funcion).filter(x=>x.nivel===estado.nivel);
  else{const g={};for(const x of (tab2==='fuente'?C.nivel_fuente:C.nivel_funcion)){const o=g[x.nombre]=g[x.nombre]||{nombre:x.nombre,pia:0,pim:0,cert:0,comp:0,dev:0,gir:0};for(const k of ['pia','pim','cert','comp','dev','gir'])o[k]+=x[k]}src=Object.values(g)}
  src=[...src].sort((a,b)=>b.pim-a.pim);const tot=src.reduce((s,x)=>s+x.pim,0)||1;
  $('tabs2').innerHTML=t2.map(([k,t])=>`<button class="${k===tab2?'on':''}" data-t="${k}">${t}</button>`).join('');
  $('tabs2').querySelectorAll('button').forEach(b=>b.onclick=()=>{tab2=b.dataset.t;tabla2()});
- $('tabla2').innerHTML='<tr><th>Nombre</th><th>Peso</th><th>PIM</th><th>Devengado</th><th>Avance</th></tr>'+(src.length?src.map(x=>`<tr><td>${x.nombre||'—'}</td><td><span class="bar" style="width:${Math.round(100*x.pim/tot)*.9}px"></span>${(100*x.pim/tot).toFixed(0)}%</td><td>${M(x.pim)}</td><td>${M(x.dev)}</td><td>${P(x.pim?100*x.dev/x.pim:0)}</td></tr>`).join(''):`<tr><td colspan="5" class="mutx">${ANIO!==ANIO_ACTUAL?'Desglose disponible para el año en curso':'Sin desglose para esta vista'}</td></tr>`)}
+ $('tabla2').innerHTML='<tr><th>Nombre</th><th>Peso</th><th>PIM</th><th>Devengado</th><th>Avance</th></tr>'+(src.length?src.map(x=>`<tr><td>${x.nombre||'—'}</td><td><span class="bar" style="width:${Math.round(100*x.pim/tot)*.9}px"></span>${(100*x.pim/tot).toFixed(0)}%</td><td>${M(x.pim)}</td><td>${M(x.dev)}</td><td>${P(x.pim?100*x.dev/x.pim:0)}</td></tr>`).join(''):`<tr><td colspan="5" class="mutx">${ANIO!==ANIO_ACTUAL?'Desglose disponible para el año en curso':estado.prov?'Abre una municipalidad para ver sus fuentes y funciones':'Sin desglose para esta vista'}</td></tr>`)}
 function alertas(){const el=$('alertas');if(!A||ANIO!==ANIO_ACTUAL||estado.ue){el.innerHTML='';return}
- const f=x=>(!estado.nivel||x.nivel===estado.nivel)&&(!estado.dpto||x.dpto===estado.dpto)&&(!estado.pliego||UES.find(u=>u.cod===x.ue)?.pliego===estado.pliego);
+ const uex=c=>UES.find(u=>u.cod===c)||{};const f=x=>(!estado.nivel||x.nivel===estado.nivel)&&(!estado.dpto||x.dpto===estado.dpto)&&(!estado.prov||uex(x.ue||x.cod).prov===estado.prov)&&(!estado.dist||uex(x.ue||x.cod).dist===estado.dist)&&(!estado.pliego||UES.find(u=>u.cod===x.ue)?.pliego===estado.pliego);
  const sets={rezago:['Inversiones grandes rezagadas','PIM ≥ S/ 5 M y avance < 20 %','bad'],f12b:['F12-B desactualizado','PIM ≥ S/ 5 M sin avance físico declarado en 90 días','warn'],por_cerrar:['Obras por cerrar','avance físico ≥ 90 %: toca liquidar y registrar el cierre','ok'],ue_rezago:['Unidades ejecutoras rezagadas','PIM ≥ S/ 20 M y avance < 25 %','bad'],top:['Las 25 inversiones más grandes','por PIM del año','p']};
  const cards=Object.entries(sets).map(([k,[t,d,c]])=>{const n=A[k].filter(f).length;return `<div class="al ${c} ${alerta===k?'on':''}" data-a="${k}"><div class="n">${N(n)}</div><div class="t"><b>${t}</b><br>${d}</div></div>`}).join('');
  let tabla='';if(alerta){const rows=A[alerta].filter(f).slice(0,80);const esUE=alerta==='ue_rezago';
@@ -174,20 +179,33 @@ function alertas(){const el=$('alertas');if(!A||ANIO!==ANIO_ACTUAL||estado.ue){e
  el.innerHTML=`<div class="sec" id="sec-al">Alertas tempranas · ${estado.dpto||NIV[estado.nivel]||'Perú'}</div><div class="alert-grid">${cards}</div>${tabla}`;
  el.querySelectorAll('.al').forEach(a=>a.onclick=()=>{alerta=alerta===a.dataset.a?'':a.dataset.a;alertas()});
  el.querySelectorAll('tr.l').forEach(tr=>tr.onclick=()=>go({...estado,ue:tr.dataset.ue}))}
-function mapa(){if(!GEO)return;const W=400,H=520;const pts=[];GEO.features.forEach(f=>{const g=f.geometry;(g.type==='Polygon'?[g.coordinates]:g.coordinates).forEach(p=>p[0].forEach(c=>pts.push(c)))});
+async function geo(nivel,id){const k=nivel+'/'+id;if(!GEOC[k])GEOC[k]=await j(`geo/${nivel}/${id}.json`).catch(()=>({features:[]}));return GEOC[k]}
+async function mapa(){let feats,color,click,sel,tit;const q=['--q1','--q2','--q3','--q4','--q5','--q6'];const ci=(d)=>d&&d.pim?Math.min(5,Math.floor((100*d.dev/d.pim)/100*6)):0;
+ const tt=(n,d)=>`${n} · avance ${d&&d.pim?(100*d.dev/d.pim).toFixed(1):0}%\nPIM S/ ${M(d?.pim)} M · devengado S/ ${M(d?.dev)} M\n${N(d?.n_cui)} inversiones en ${N(d?.n_ue)} UE`;
+ if(estado.prov||estado.dist){const g=await geo('dist',estado.prov);feats=g.features;const dm={};T.dist.forEach(d=>dm[d.id]=d);
+  color=f=>dm[f.properties.id];click=f=>go({dpto:estado.dpto,prov:estado.prov,dist:f.properties.id,_n:f.properties.n});sel=f=>f.properties.id===estado.dist;tit='Distritos de la provincia · clic para ver su municipalidad'}
+ else if(estado.dpto){const code=DEPCODE[estado.dpto];const g=await geo('prov',code);feats=g.features;const pm={};T.prov.forEach(d=>pm[d.id]=d);
+  color=f=>pm[f.properties.id];click=f=>go({dpto:estado.dpto,prov:f.properties.id,_n:f.properties.n});sel=()=>false;tit='Provincias del departamento · clic para bajar a distritos'}
+ else{feats=GEO.features;const dep={};DEP.forEach(d=>dep[d.nombre]=d);color=f=>dep[f.properties.n];click=f=>go({dpto:f.properties.n});sel=()=>false;tit='Avance por departamento · clic para explorar'}
+ $('tit-mapa').textContent=tit;const W=400,H=520;const pts=[];feats.forEach(f=>{const g=f.geometry;(g.type==='Polygon'?[g.coordinates]:g.coordinates).forEach(p=>p[0].forEach(c=>pts.push(c)))});
+ if(!pts.length){$('mapa').innerHTML='<text x="200" y="260" text-anchor="middle">Sin mapa disponible para esta zona</text>';return}
  const minx=Math.min(...pts.map(p=>p[0])),maxx=Math.max(...pts.map(p=>p[0])),miny=Math.min(...pts.map(p=>p[1])),maxy=Math.max(...pts.map(p=>p[1]));
- const sc=Math.min((W-10)/(maxx-minx),(H-10)/(maxy-miny));const X=x=>5+(x-minx)*sc,Y=y=>5+(maxy-y)*sc;
- const dep={};DEP.forEach(d=>dep[d.nombre]=d);const q=['--q1','--q2','--q3','--q4','--q5','--q6'];
- $('mapa').innerHTML=GEO.features.map(f=>{const g=f.geometry,n=f.properties.n,d=dep[n];const av=d&&d.pim?100*d.dev/d.pim:0;const ci=d?Math.min(5,Math.floor(av/100*6)):0;
+ const sc=Math.min((W-10)/(maxx-minx||1),(H-10)/(maxy-miny||1));const ox=(W-(maxx-minx)*sc)/2,oy=(H-(maxy-miny)*sc)/2;const X=x=>ox+(x-minx)*sc,Y=y=>oy+(maxy-y)*sc;
+ $('mapa').innerHTML=feats.map(f=>{const g=f.geometry,d=color(f),n=f.properties.n;
   const path=(g.type==='Polygon'?[g.coordinates]:g.coordinates).map(p=>p.map(r=>'M'+r.map(c=>X(c[0]).toFixed(1)+' '+Y(c[1]).toFixed(1)).join('L')+'Z').join('')).join('');
-  return `<path d="${path}" fill="var(${q[ci]})" class="${estado.dpto===n?'sel':''}" data-n="${n}" data-t="${n} · avance ${av.toFixed(1)}%\nPIM S/ ${M(d?.pim)} M · devengado S/ ${M(d?.dev)} M\n${N(d?.n_cui)} inversiones en ${N(d?.n_ue)} UE"/>`}).join('');
- const tip=$('tip');$('mapa').querySelectorAll('path').forEach(p=>{p.onmousemove=e=>{tip.style.display='block';tip.style.left=(e.clientX+12)+'px';tip.style.top=(e.clientY+12)+'px';tip.textContent=p.dataset.t};p.onmouseleave=()=>tip.style.display='none';p.onclick=()=>go({dpto:p.dataset.n})})}
-function hash(){const h=['#'];if(estado.ue)h.push('ue',estado.ue);else if(estado.dpto)h.push('dpto',estado.dpto);else if(estado.pliego)h.push('pliego',estado.nivel,estado.sector,estado.pliego);else if(estado.sector)h.push('sector',estado.nivel,estado.sector);else if(estado.nivel)h.push('nivel',estado.nivel);
+  return `<path d="${path}" fill="var(${d?q[ci(d)]:'--grid'})" class="${sel(f)?'sel':''}" data-i="${f.properties.id||n}" data-t="${tt(n,d)}"/>`}).join('')+
+  (feats.length<=60?feats.map(f=>{const g=f.geometry;const ring=(g.type==='Polygon'?g.coordinates:g.coordinates[0])[0];const cx=ring.reduce((a,c)=>a+c[0],0)/ring.length,cy=ring.reduce((a,c)=>a+c[1],0)/ring.length;return `<text x="${X(cx).toFixed(1)}" y="${Y(cy).toFixed(1)}" text-anchor="middle" style="font-size:8px;pointer-events:none">${f.properties.n.length>14?f.properties.n.slice(0,13)+'…':f.properties.n}</text>`}).join(''):'');
+ const tip=$('tip');$('mapa').querySelectorAll('path').forEach((p,i)=>{p.onmousemove=e=>{tip.style.display='block';tip.style.left=(e.clientX+12)+'px';tip.style.top=(e.clientY+12)+'px';tip.textContent=p.dataset.t};p.onmouseleave=()=>tip.style.display='none';p.onclick=()=>{tip.style.display='none';click(feats[i])}})}
+function hash(){const h=['#'];if(estado.ue)h.push('ue',estado.ue);else if(estado.dist)h.push('dist',estado.dist);else if(estado.prov)h.push('prov',estado.prov);else if(estado.dpto)h.push('dpto',estado.dpto);else if(estado.pliego)h.push('pliego',estado.nivel,estado.sector,estado.pliego);else if(estado.sector)h.push('sector',estado.nivel,estado.sector);else if(estado.nivel)h.push('nivel',estado.nivel);
  const s=h.join('/')+(ANIO!==ANIO_ACTUAL?`?anio=${ANIO}`:'');if(location.hash!==s)history.replaceState(null,'',s)}
-async function go(e){estado={...e};U=null;const y=ANIO;
- if(estado.ue){U=await ficha(estado.ue);if(!U){toast('Sin datos para esa UE');return}estado.nivel=U.nivel;estado.sector=U.sector;estado.pliego=U.pliego;
+async function go(e){estado={...e};U=null;const y=ANIO;if(estado.prov&&!estado.dpto){const u=UES.find(x=>x.prov===estado.prov);estado.dpto=u?u.dpto:Object.keys(DEPCODE).find(k=>DEPCODE[k]===estado.prov.slice(0,2))}
+ if(estado.ue){U=await ficha(estado.ue);if(!U){toast('Sin datos para esa UE');return}estado.nivel=U.nivel;estado.sector=U.sector;estado.pliego=U.pliego;const ux=UES.find(x=>x.cod===estado.ue);if(ux&&!estado.dpto){estado.dpto=ux.dpto;if(ux.nivel==='M'){estado.prov=ux.prov;estado.dist=ux.dist}}
   hero(U,`${U.nombre}`,`${NIV[U.nivel]} · ${U.dpto||''} · ${N(U.n_cui)} inversiones con presupuesto ${y}.`);tiles(U);serieUI(U.serie,null,'Devengado mensual de la UE');histo(U.hist,'Evolución anual de la UE · PIM y devengado')}
- else if(estado.dpto){const d=DEP.find(x=>x.nombre===estado.dpto)||{};hero(d,`<em>${estado.dpto}</em>: ${N(d.n_cui)} inversiones en ${N(d.n_ue)} unidades ejecutoras`,`Ejecutoras con sede en el departamento, de los tres niveles de gobierno.`);tiles(d);serieUI([],null,'Serie mensual: abre una unidad ejecutora del departamento');histo([],'Evolución anual: abre una unidad ejecutora')}
+ else if(estado.dist||estado.prov){const t=(estado.dist?T.dist.find(x=>x.id===estado.dist):T.prov.find(x=>x.id===estado.prov))||{pim:0,dev:0,n_cui:0,n_ue:0};const nom=t.nombre||estado._n||(estado.dist?estado.dist:estado.prov);
+  hero(t,`<em>${estado.dist?'Distrito':'Provincia'} de ${nom}</em>: ${N(t.n_cui)} inversiones en ${N(t.n_ue)} unidades ejecutoras`,`${estado.dist?'Municipalidad y demás ejecutoras con sede en el distrito':'Todas las ejecutoras con sede en la provincia'} · ${estado.dpto}.`);tiles(t);
+  const ues=UES.filter(u=>estado.dist?u.dist===estado.dist:u.prov===estado.prov).slice(0,40);const sr=Array(12).fill(0),hh={};if(y===ANIO_ACTUAL)for(const u of ues){const f=await ficha(u.cod);if(!f)continue;f.serie.forEach((v,i)=>sr[i]+=v);f.hist.forEach(h=>{const o=hh[h.anio]=hh[h.anio]||{anio:h.anio,pim:0,dev:0};o.pim+=h.pim;o.dev+=h.dev})}
+  serieUI(sr,null,`Devengado mensual · ${nom}`);histo(Object.values(hh).sort((a,b)=>a.anio-b.anio),`Evolución anual · ${nom}`)}
+ else if(estado.dpto){const d=DEP.find(x=>x.nombre===estado.dpto)||{};hero(d,`<em>${estado.dpto}</em>: ${N(d.n_cui)} inversiones en ${N(d.n_ue)} unidades ejecutoras`,`Ejecutoras con sede en el departamento, de los tres niveles de gobierno.`);tiles(d);serieUI(ms((C.dpto_serie||[]).find(x=>x.dpto===estado.dpto)),null,`Devengado mensual · ${estado.dpto}`);histo((C.dpto_hist||[]).filter(x=>x.dpto===estado.dpto),`Evolución anual · ${estado.dpto}`)}
  else if(estado.pliego){const p=R.pliegos.find(x=>x.nivel===estado.nivel&&x.cod===estado.pliego);hero(p,p.nombre,`${NIV[p.nivel]} · ${N(p.n_cui)} inversiones en ${N(p.n_ue)} unidades ejecutoras.`);tiles(p);
   const ues=UES.filter(u=>u.nivel===estado.nivel&&u.pliego===estado.pliego).slice(0,40);const s=Array(12).fill(0),hh={};if(y===ANIO_ACTUAL)for(const u of ues){const f=await ficha(u.cod);if(!f)continue;f.serie.forEach((v,i)=>s[i]+=v);f.hist.forEach(h=>{const o=hh[h.anio]=hh[h.anio]||{anio:h.anio,pim:0,dev:0};o.pim+=h.pim;o.dev+=h.dev})}
   serieUI(s,null,'Devengado mensual del pliego');histo(Object.values(hh).sort((a,b)=>a.anio-b.anio),'Evolución anual del pliego')}
@@ -195,7 +213,7 @@ async function go(e){estado={...e};U=null;const y=ANIO;
  else if(estado.nivel){const n=(modo==='tot'?R.total.niveles:R.niveles).find(x=>x.cod===estado.nivel);hero(n,`<em>${NIV[estado.nivel]}</em>`,modo==='tot'?`Todo el gasto de ${N(n.n_ue)} unidades ejecutoras.`:`${N(n.n_cui)} inversiones en ${N(n.n_ue)} unidades ejecutoras.`);tiles(n);serieUI(ms(S.niveles[y][estado.nivel]),S.niveles[y-1]?.[estado.nivel]?ms(S.niveles[y-1][estado.nivel]):null,`Devengado mensual de inversiones · ${NIV[estado.nivel]}`);histo(H.niveles.filter(x=>x.cod===estado.nivel),`Evolución anual · ${NIV[estado.nivel]}`)}
  else{const t=modo==='tot'?R.total.pais:R.pais;const av=t.pim?100*t.dev/t.pim:0;hero(t,modo==='tot'?`El Perú ha ejecutado el <em>${av.toFixed(1)} %</em> de su presupuesto ${y}`:`El Perú ha ejecutado el <em>${av.toFixed(1)} %</em> de su inversión pública ${y}`,modo==='tot'?`S/ ${M(t.dev)} millones devengados de S/ ${M(t.pim)} millones en ${N(t.n_ue)} unidades ejecutoras.`:`S/ ${M(t.dev)} millones devengados de S/ ${M(t.pim)} millones en ${N(t.n_cui)} inversiones y ${N(t.n_ue)} unidades ejecutoras de los tres niveles de gobierno.`);tiles(t);serieUI(ms(S.pais[y]),S.pais[y-1]?ms(S.pais[y-1]):null,'Devengado mensual de inversiones · Perú');histo(H.pais,'Evolución anual · Perú')}
  $('sw').style.visibility=(!estado.nivel&&!estado.dpto)||(estado.nivel&&!estado.sector&&!estado.pliego)?'visible':'hidden';
- crumbs();alertas();tabla();tabla2();mapa();hash();if(!e._noscroll)window.scrollTo({top:0,behavior:'smooth'})}
+ crumbs();alertas();tabla();tabla2();hash();mapa();if(!e._noscroll)window.scrollTo({top:0,behavior:'smooth'})}
 $('sw').querySelectorAll('button').forEach(b=>b.onclick=()=>{modo=b.dataset.m;$('sw').querySelectorAll('button').forEach(x=>x.classList.toggle('on',x===b));go(estado)});
 $('share').onclick=()=>{navigator.clipboard?.writeText(location.href).then(()=>toast('Enlace copiado'))};
 $('q').oninput=()=>{const q=$('q').value.trim().toLowerCase();const ul=$('sug');if(q.length<3){ul.innerHTML='';return}
@@ -206,13 +224,13 @@ $('q').oninput=()=>{const q=$('q').value.trim().toLowerCase();const ul=$('sug');
 document.addEventListener('click',e=>{if(!e.target.closest('.qbox'))$('sug').innerHTML=''});
 async function cargarAnio(y,ruta){if(y===ANIO_ACTUAL){R=BASE.R;S=BASE.S;UES=BASE.UES;DEP=BASE.DEP;C=BASE.C}
  else{const [r,u,d,se]=await Promise.all([j(`data/anio/${y}/resumen.json`),j(`data/anio/${y}/ues.json`),j(`data/anio/${y}/departamentos.json`),j(`data/anio/${y}/serie.json`)]);
-  R={...r,corte:BASE.R.corte};UES=u.ues;DEP=d;S={anio:y,pais:{[y]:se.pais,[y-1]:null},niveles:{[y]:se.niveles,[y-1]:{}}};C={nivel_fuente:[],nivel_funcion:[],pliego_fuente:[],pliego_funcion:[],dpto_funcion:[]}}
+  R={...r,corte:BASE.R.corte};UES=u.ues;DEP=d;S={anio:y,pais:{[y]:se.pais,[y-1]:null},niveles:{[y]:se.niveles,[y-1]:{}}};C={nivel_fuente:[],nivel_funcion:[],pliego_fuente:[],pliego_funcion:[],dpto_funcion:[],dpto_fuente:[],dpto_serie:[],dpto_hist:[]}}
  ANIO=y;$('anio').value=y;$('corte').textContent=`Datos al ${BASE.R.corte}`;fdpto='';ftxt='';alerta='';go(ruta||{})}
 function desdeHash(){const [p,qs]=location.hash.slice(1).split('?');const y=+(new URLSearchParams(qs||'').get('anio')||ANIO_ACTUAL);const s=p.split('/').filter(Boolean);let r={};
- if(s[0]==='ue')r={ue:s[1]};else if(s[0]==='dpto')r={dpto:decodeURIComponent(s.slice(1).join('/'))};else if(s[0]==='pliego')r={nivel:s[1],sector:s[2],pliego:s[3]};else if(s[0]==='sector')r={nivel:s[1],sector:s[2]};else if(s[0]==='nivel')r={nivel:s[1]};
+ if(s[0]==='ue')r={ue:s[1]};else if(s[0]==='prov')r={prov:s[1]};else if(s[0]==='dist')r={prov:s[1].slice(0,4),dist:s[1]};else if(s[0]==='dpto')r={dpto:decodeURIComponent(s.slice(1).join('/'))};else if(s[0]==='pliego')r={nivel:s[1],sector:s[2],pliego:s[3]};else if(s[0]==='sector')r={nivel:s[1],sector:s[2]};else if(s[0]==='nivel')r={nivel:s[1]};
  return [y,r]}
 (async()=>{[R,S,H,C]=await Promise.all([j('data/resumen.json'),j('data/serie_mensual.json'),j('data/hist.json'),j('data/cubos.json')]);ANIO=ANIO_ACTUAL=R.anio;
- const [u,d,g,a]=await Promise.all([j('data/ues.json'),j('data/departamentos.json'),j('geo/peru_departamentos.json'),j('data/alertas.json').catch(()=>null)]);UES=u.ues;DEP=d;GEO=g;A=a;BASE={R,S,UES,DEP,C};
+ const [u,d,g,a,t]=await Promise.all([j('data/ues.json'),j('data/departamentos.json'),j('geo/peru_departamentos.json'),j('data/alertas.json').catch(()=>null),j('data/territorio.json').catch(()=>({prov:[],dist:[]}))]);UES=u.ues;DEP=d;GEO=g;A=a;T=t;UES.forEach(x=>{if(x.dpto&&x.prov)DEPCODE[x.dpto]=x.prov.slice(0,2)});BASE={R,S,UES,DEP,C};
  const anios=H.pais.map(x=>x.anio).filter(y=>y<=ANIO_ACTUAL).sort((a,b)=>b-a);$('anio').innerHTML=anios.map(y=>`<option value="${y}">${y}</option>`).join('');
  $('anio').onchange=e=>cargarAnio(+e.target.value);const [y,r]=desdeHash();cargarAnio(y,r);
  window.addEventListener('hashchange',()=>{const [y2,r2]=desdeHash();if(y2!==ANIO)cargarAnio(y2,r2);else go(r2)})})();
