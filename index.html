@@ -28,6 +28,8 @@ th:first-child,td:first-child{text-align:left}td{padding:6px 8px;border-bottom:1
 td:first-child{white-space:normal;max-width:460px}tr.l{cursor:pointer}tr.l:hover{background:color-mix(in oklab,var(--s1) 8%,transparent)}
 .bar{display:inline-block;height:8px;border-radius:4px;background:var(--seq);vertical-align:middle;margin-right:6px}
 .pct{display:inline-block;min-width:44px}.pct.ok{color:var(--ok)}.pct.warn{color:var(--warntxt)}.pct.bad{color:var(--bad)}
+select{padding:4px 8px;border:1px solid var(--line);border-radius:6px;background:var(--sup);color:var(--ink);font:inherit}
+.filt{display:flex;gap:8px;flex-wrap:wrap;margin:0 0 10px}
 input[type=search]{width:100%;padding:9px 12px;border:1px solid var(--line);border-radius:8px;background:var(--sup);color:var(--ink);font:inherit}
 .sug{list-style:none;margin:4px 0 0;padding:0;max-height:250px;overflow:auto}.sug li{padding:7px 10px;border-bottom:1px solid var(--grid);cursor:pointer}.sug li:hover{background:color-mix(in oklab,var(--s1) 8%,transparent)}
 .sug small,.mutx{color:var(--mut)}svg text{fill:var(--mut);font-size:11px}
@@ -39,7 +41,7 @@ footer{color:var(--mut);font-size:12px;text-align:center;padding:24px;line-heigh
 </style>
 </head>
 <body>
-<header><h1>Panel de Inversiones · Perú</h1><span class="mut">Gobierno nacional · regional · local</span><span class="sp"></span><span class="mut" id="corte"></span></header>
+<header><h1>Panel de Inversiones · Perú</h1><span class="mut">Gobierno nacional · regional · local</span><span class="sp"></span><label class="mut">Año <select id="anio"></select></label><span class="mut" id="corte"></span></header>
 <main>
 <div class="top"><div class="crumbs" id="crumbs"></div><div class="sw" id="sw"><button class="on" data-m="inv">Inversiones</button><button data-m="tot">Todo el gasto</button></div></div>
 <div class="tiles" id="tiles"></div>
@@ -53,7 +55,7 @@ footer{color:var(--mut);font-size:12px;text-align:center;padding:24px;line-heigh
   <div class="card"><h2>Buscar unidad ejecutora o pliego</h2><input type="search" id="q" placeholder="Ej. Municipalidad de Piura, Gobierno Regional de Cusco, MTC…" autocomplete="off"><ul class="sug" id="sug"></ul>
    <h2 style="margin-top:14px">Distribución</h2><div class="tabs" id="tabs2"></div><div class="wrap"><table id="tabla2"></table></div></div>
 </div>
-<div class="card"><div class="tabs" id="tabs"></div><div class="wrap"><table id="tabla"></table></div></div>
+<div class="card"><div class="tabs" id="tabs"></div><div class="filt" id="filt"></div><div class="wrap"><table id="tabla"></table></div></div>
 </main>
 <div class="tip" id="tip"></div>
 <footer>Herramienta no oficial elaborada con datos abiertos del MEF (Consulta Amigable y Banco de Inversiones), actualizada cada mañana. Montos en soles; avance = devengado / PIM. Semáforo: verde ≥ 70 %, ámbar 40–70 %, rojo &lt; 40 %.<br>Un producto de <a href="https://www.arkaproyectos.com.pe">ARKA PROYECTOS</a> · consultas@arkaproyectos.com.pe</footer>
@@ -64,7 +66,7 @@ const P=v=>{const c=v>=70?'ok':v>=40?'warn':'bad';return `<span class="pct ${c}"
 const NIV={E:'Gobierno nacional',R:'Gobiernos regionales',M:'Gobiernos locales'};
 const ms=o=>Array.from({length:12},(_,i)=>(o&&o['m'+(i+1)])||0);
 const MES=['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Set','Oct','Nov','Dic'];
-let R,S,H,C,U,UES=[],DEP=[],GEO,modo='inv',estado={},tab='niveles',tab2='fuente',orden={k:'pim',d:-1};
+let R,S,H,C,U,UES=[],DEP=[],GEO,modo='inv',estado={},tab='niveles',tab2='fuente',orden={k:'pim',d:-1},ANIO,ANIO_ACTUAL,BASE={},fdpto='',ftxt='';
 const $=id=>document.getElementById(id);
 async function j(u){const r=await fetch(u+'?v='+Date.now());return r.json()}
 const SH={};async function ficha(cod){const k=(parseInt(cod,10)%64).toString().padStart(2,'0');SH[k]=SH[k]||await j(`data/ue/${k}.json`);return SH[k][cod]}
@@ -90,7 +92,10 @@ function fila(nombre,t,click){const av=t.avance??(t.pim?100*t.dev/t.pim:0);retur
 const COLS=[['nombre','Nombre'],['pia','PIA'],['pim','PIM'],['cert','Certificado'],['comp','Comprometido'],['dev','Devengado'],['gir','Girado'],['saldo','Saldo'],['avance','Avance'],['n_cui','CUI']];
 function head(){return '<tr>'+COLS.map(([k,t])=>`<th data-o="${k}">${t}${orden.k===k?(orden.d<0?' ▾':' ▴'):''}</th>`).join('')+'</tr>'}
 function sortear(arr){const k=orden.k;return [...arr].sort((a,b)=>{const va=k==='saldo'?a.pim-a.dev:k==='avance'?(a.avance??(a.pim?100*a.dev/a.pim:0)):a[k],vb=k==='saldo'?b.pim-b.dev:k==='avance'?(b.avance??(b.pim?100*b.dev/b.pim:0)):b[k];return (typeof va==='string')?va.localeCompare(vb)*-orden.d:(va-vb)*orden.d})}
-function tabla(){let filas=[],tabs=[];const uesN=(f)=>sortear(UES.filter(f)).slice(0,400).map(u=>fila(`${u.nombre} <small class="mutx">${u.dpto||''}</small>`,u,'ue:'+u.cod));
+function filtros(conUE){if(!conUE){$('filt').innerHTML='';return}const dps=[...new Set(UES.map(u=>u.dpto).filter(Boolean))].sort();
+ $('filt').innerHTML=`<select id="fd"><option value="">Todos los departamentos</option>${dps.map(d=>`<option ${d===fdpto?'selected':''}>${d}</option>`).join('')}</select><input type="search" id="ft" style="flex:1;min-width:180px;padding:5px 10px" placeholder="Filtrar por nombre…" value="${ftxt}">`;
+ $('fd').onchange=e=>{fdpto=e.target.value;tabla()};$('ft').oninput=e=>{ftxt=e.target.value;tabla()}}
+function tabla(){let filas=[],tabs=[];const ok=u=>(!fdpto||u.dpto===fdpto)&&(!ftxt||u.nombre.toLowerCase().includes(ftxt.toLowerCase()));const link=ANIO===ANIO_ACTUAL;const uesN=(f)=>sortear(UES.filter(u=>f(u)&&ok(u))).slice(0,500).map(u=>fila(`${u.nombre} <small class="mutx">${u.dpto||''}</small>`,u,link?'ue:'+u.cod:null));
  if(estado.ue){tabs=[['cuis','Inversiones de la UE']];filas=sortear(U.cuis.map(c=>({...c,nombre:c.nombre}))).map(c=>fila(`<b>${c.cui}</b> ${c.nombre}<br><small class="mutx">${c.tipo||''} · ${c.situacion||''} · ${[c.dpto,c.prov,c.dist].filter(Boolean).join(' / ')}${c.avance_fisico!=null?` · avance físico ${c.avance_fisico}%`:''}${c.costo?` · costo S/ ${M(c.costo)} M`:''}</small>`,c,null))}
  else if(estado.dpto){tabs=[['ues','Unidades ejecutoras del departamento']];filas=uesN(u=>u.dpto===estado.dpto)}
  else if(estado.pliego){tabs=[['ues','Unidades ejecutoras']];filas=uesN(u=>u.nivel===estado.nivel&&u.pliego===estado.pliego)}
@@ -102,6 +107,8 @@ function tabla(){let filas=[],tabs=[];const uesN=(f)=>sortear(UES.filter(f)).sli
  if(!tabs.find(t=>t[0]===tab))tab=tabs[0][0];
  $('tabs').innerHTML=tabs.map(([k,t])=>`<button class="${k===tab?'on':''}" data-t="${k}">${t}</button>`).join('');
  $('tabs').querySelectorAll('button').forEach(b=>b.onclick=()=>{tab=b.dataset.t;tabla()});
+ filtros(tab==='ues'||(estado.nivel==='M'&&!estado.ue)||(estado.dpto&&!estado.ue)||estado.pliego);
+ if(!estado.ue&&ANIO!==ANIO_ACTUAL&&filas.length&&tab!=='niveles'&&tab!=='departamentos'&&tab!=='sectores'&&tab!=='pliegos')filas.unshift(`<tr><td colspan="10" class="mutx">Año ${ANIO}: cifras por unidad ejecutora; el detalle por CUI está disponible para el año en curso.</td></tr>`);
  $('tabla').innerHTML=head()+filas.join('');
  $('tabla').querySelectorAll('th').forEach(th=>th.onclick=()=>{const k=th.dataset.o;orden=orden.k===k?{k,d:-orden.d}:{k,d:k==='nombre'?1:-1};tabla()});
  $('tabla').querySelectorAll('tr.l').forEach(tr=>tr.onclick=()=>{const [k,...v]=tr.dataset.k.split(':');
@@ -132,8 +139,8 @@ async function go(e){estado={...e};U=null;const y=S.anio;
   const ues=UES.filter(u=>u.nivel===estado.nivel&&u.pliego===estado.pliego).slice(0,40);const s=Array(12).fill(0),hh={};for(const u of ues){const f=await ficha(u.cod);if(!f)continue;f.serie.forEach((v,i)=>s[i]+=v);f.hist.forEach(h=>{const o=hh[h.anio]=hh[h.anio]||{anio:h.anio,pim:0,dev:0};o.pim+=h.pim;o.dev+=h.dev})}
   barras('serie',s,null,MES);$('tit-serie').textContent='Devengado mensual del pliego (S/ millones)';histo(Object.values(hh).sort((a,b)=>a.anio-b.anio),'Evolución anual del pliego (S/ millones)')}
  else if(estado.sector){const s=R.sectores.find(x=>x.nivel===estado.nivel&&x.cod===estado.sector);tiles(s,`<div class="tile"><div class="k">Inversiones</div><div class="v">${N(s.n_cui)}</div><div class="s">${N(s.n_ue)} unidades ejecutoras</div></div>`);barras('serie',ms(S.niveles[y][estado.nivel]),null,MES);$('tit-serie').textContent=`Devengado mensual · ${NIV[estado.nivel]} (S/ millones)`;histo(H.niveles.filter(x=>x.cod===estado.nivel),`Evolución anual · ${NIV[estado.nivel]} (S/ millones)`)}
- else if(estado.nivel){const n=(modo==='tot'?R.total.niveles:R.niveles).find(x=>x.cod===estado.nivel);tiles(n,`<div class="tile"><div class="k">${modo==='tot'?'Unidades ejecutoras':'Inversiones'}</div><div class="v">${N(modo==='tot'?n.n_ue:n.n_cui)}</div><div class="s">${modo==='tot'?'con presupuesto':N(n.n_ue)+' unidades ejecutoras'}</div></div>`);barras('serie',ms(S.niveles[y][estado.nivel]),ms(S.niveles[y-1]?.[estado.nivel]),MES);$('tit-serie').textContent=`Devengado mensual de inversiones · ${NIV[estado.nivel]} vs año anterior (S/ millones)`;histo(H.niveles.filter(x=>x.cod===estado.nivel),`Evolución anual · ${NIV[estado.nivel]} (S/ millones)`)}
- else{const t=modo==='tot'?R.total.pais:R.pais;tiles(t,`<div class="tile"><div class="k">${modo==='tot'?'Unidades ejecutoras':'Inversiones'}</div><div class="v">${N(modo==='tot'?t.n_ue:t.n_cui)}</div><div class="s">${modo==='tot'?'con presupuesto 2026':N(t.n_ue)+' unidades ejecutoras'}</div></div>`);barras('serie',ms(S.pais[y]),ms(S.pais[y-1]),MES);$('tit-serie').textContent='Devengado mensual de inversiones · Perú vs año anterior (S/ millones)';histo(H.pais)}
+ else if(estado.nivel){const n=(modo==='tot'?R.total.niveles:R.niveles).find(x=>x.cod===estado.nivel);tiles(n,`<div class="tile"><div class="k">${modo==='tot'?'Unidades ejecutoras':'Inversiones'}</div><div class="v">${N(modo==='tot'?n.n_ue:n.n_cui)}</div><div class="s">${modo==='tot'?'con presupuesto':N(n.n_ue)+' unidades ejecutoras'}</div></div>`);barras('serie',ms(S.niveles[y][estado.nivel]),S.niveles[y-1]?.[estado.nivel]?ms(S.niveles[y-1][estado.nivel]):null,MES);$('tit-serie').textContent=`Devengado mensual de inversiones · ${NIV[estado.nivel]} vs año anterior (S/ millones)`;histo(H.niveles.filter(x=>x.cod===estado.nivel),`Evolución anual · ${NIV[estado.nivel]} (S/ millones)`)}
+ else{const t=modo==='tot'?R.total.pais:R.pais;tiles(t,`<div class="tile"><div class="k">${modo==='tot'?'Unidades ejecutoras':'Inversiones'}</div><div class="v">${N(modo==='tot'?t.n_ue:t.n_cui)}</div><div class="s">${modo==='tot'?'con presupuesto 2026':N(t.n_ue)+' unidades ejecutoras'}</div></div>`);barras('serie',ms(S.pais[y]),S.pais[y-1]?ms(S.pais[y-1]):null,MES);$('tit-serie').textContent='Devengado mensual de inversiones · Perú vs año anterior (S/ millones)';histo(H.pais)}
  $('sw').style.visibility=(!estado.nivel&&!estado.dpto)||(estado.nivel&&!estado.sector&&!estado.pliego)?'visible':'hidden';
  crumbs();tabla();tabla2();mapa();window.scrollTo({top:0,behavior:'smooth'})}
 $('sw').querySelectorAll('button').forEach(b=>b.onclick=()=>{modo=b.dataset.m;$('sw').querySelectorAll('button').forEach(x=>x.classList.toggle('on',x===b));go(estado)});
@@ -142,8 +149,14 @@ $('q').oninput=()=>{const q=$('q').value.trim().toLowerCase();const ul=$('sug');
  for(const u of UES)if(u.nombre.toLowerCase().includes(q)||u.cod===q)hits.push(`<li data-k="ue:${u.cod}">${u.nombre} <small>UE ${u.cod} · ${u.dpto||''} · PIM S/ ${M(u.pim)} M</small></li>`);
  ul.innerHTML=hits.slice(0,25).join('')||'<li><small>Sin resultados</small></li>';
  ul.querySelectorAll('li[data-k]').forEach(li=>li.onclick=()=>{const [k,...v]=li.dataset.k.split(':');ul.innerHTML='';$('q').value='';k==='ue'?go({ue:v[0]}):go({nivel:v[0],sector:v[1],pliego:v[2]})})};
-(async()=>{[R,S,H,C]=await Promise.all([j('data/resumen.json'),j('data/serie_mensual.json'),j('data/hist.json'),j('data/cubos.json')]);$('corte').textContent=`Datos al ${R.corte} · año ${R.anio}`;
- const [u,d,g]=await Promise.all([j('data/ues.json'),j('data/departamentos.json'),j('geo/peru_departamentos.json')]);UES=u.ues;DEP=d;GEO=g;go({})})();
+async function cargarAnio(y){if(y===ANIO_ACTUAL){R=BASE.R;S=BASE.S;UES=BASE.UES;DEP=BASE.DEP;C=BASE.C}
+ else{const [r,u,d,se]=await Promise.all([j(`data/anio/${y}/resumen.json`),j(`data/anio/${y}/ues.json`),j(`data/anio/${y}/departamentos.json`),j(`data/anio/${y}/serie.json`)]);
+  R={...r,corte:BASE.R.corte};UES=u.ues;DEP=d;S={anio:y,pais:{[y]:se.pais,[y-1]:BASE.S.pais[y-1]||null},niveles:{[y]:se.niveles,[y-1]:BASE.S.niveles[y-1]||{}}};C={nivel_fuente:[],nivel_funcion:[],pliego_fuente:[],pliego_funcion:[],dpto_funcion:[]}}
+ ANIO=y;$('corte').textContent=`Datos al ${BASE.R.corte} · año ${y}`;fdpto='';ftxt='';go({})}
+(async()=>{[R,S,H,C]=await Promise.all([j('data/resumen.json'),j('data/serie_mensual.json'),j('data/hist.json'),j('data/cubos.json')]);ANIO=ANIO_ACTUAL=R.anio;
+ const [u,d,g]=await Promise.all([j('data/ues.json'),j('data/departamentos.json'),j('geo/peru_departamentos.json')]);UES=u.ues;DEP=d;GEO=g;BASE={R,S,UES,DEP,C};
+ const anios=H.pais.map(x=>x.anio).filter(y=>y<=ANIO_ACTUAL).sort((a,b)=>b-a);$('anio').innerHTML=anios.map(y=>`<option value="${y}" ${y===ANIO_ACTUAL?'selected':''}>${y}</option>`).join('');
+ $('anio').onchange=e=>cargarAnio(+e.target.value);go({})})();
 </script>
 </body>
 </html>
