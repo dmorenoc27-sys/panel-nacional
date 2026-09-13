@@ -1,0 +1,85 @@
+/* entidad.js — módulo "Mi entidad": datos internos del SIAF de una entidad, cifrados; se abren solo con su clave.
+   Depende de helpers globales de index.html: $, j, M, N, P, cls, toast, UES, ficha(), ANIO, R. */
+(function () {
+  const F = n => n == null ? '—' : 'S/ ' + Number(n).toLocaleString('es-PE', { maximumFractionDigits: 0 });
+  const FASE = { C: 'Compromiso', D: 'Devengado', G: 'Girado', P: 'Pagado', R: 'Rendición' };
+  let E = null, META = {}, LAKE = {}, tabE = 'inv', filtroMeta = '', q = '', modoInv = true, abierto = null;
+  const b64 = s => Uint8Array.from(atob(s), c => c.charCodeAt(0));
+
+  async function descifrar(ue, clave) {
+    const p = await j(`data/entidad/${ue}.enc`);
+    const km = await crypto.subtle.importKey('raw', new TextEncoder().encode(clave), 'PBKDF2', false, ['deriveKey']);
+    const key = await crypto.subtle.deriveKey({ name: 'PBKDF2', salt: b64(p.salt), iterations: p.iter, hash: 'SHA-256' }, km, { name: 'AES-GCM', length: 256 }, false, ['decrypt']);
+    const pt = await crypto.subtle.decrypt({ name: 'AES-GCM', iv: b64(p.iv) }, key, b64(p.data));
+    const txt = await new Response(new Blob([pt]).stream().pipeThrough(new DecompressionStream('deflate'))).text();
+    return JSON.parse(txt);
+  }
+
+  async function login() {
+    const el = $('ent'); let lista = [];
+    try { lista = await j('data/entidad/index.json'); } catch (e) { }
+    el.innerHTML = `<div class="card" style="flex:0 0 auto;max-width:560px;margin:30px auto;padding:0"><div class="pd-hdr"><div class="pd-cui">MI ENTIDAD · ACCESO PRIVADO</div><div class="pd-title">Seguimiento interno con datos del SIAF</div><div class="pd-badges"><span class="pd-badge">Cifrado AES-256</span><span class="pd-badge">La clave nunca sale de tu navegador</span></div></div>
+     <div style="padding:16px 18px"><p style="margin:0 0 10px;font-size:12.5px;color:var(--ink2)">Aquí la entidad ve lo que Transparencia no muestra: expediente por expediente, proveedor, documento, glosa y la fase en que está cada pago. La información es de la entidad: se publica cifrada y solo se abre con su clave.</p>
+     ${lista.length ? `<label class="mutx" style="font-size:11px">Entidad</label><select id="ent-ue" style="width:100%;margin:4px 0 10px">${lista.map(x => `<option value="${x.ue}">${x.nombre || 'UE ' + x.ue} · SIAF al ${x.corte || ''}</option>`).join('')}</select>` : '<p class="mutx">Aún no hay entidades publicadas.</p>'}
+     <label class="mutx" style="font-size:11px">Clave de acceso</label><input type="password" id="ent-clave" style="width:100%;padding:8px 10px;border:1.5px solid var(--line);border-radius:8px;font:inherit;margin:4px 0 12px" placeholder="••••••••" autocomplete="current-password">
+     <div style="display:flex;gap:8px;align-items:center"><button class="btn p" id="ent-ir">Entrar</button><span class="mutx" id="ent-msg" style="font-size:12px"></span></div></div></div>`;
+    const ir = async () => { const ue = $('ent-ue')?.value, clave = $('ent-clave').value; if (!ue || !clave) return; $('ent-msg').textContent = 'Descifrando…';
+      try { E = await descifrar(ue, clave); await preparar(ue); render(); } catch (e) { console.warn(e); $('ent-msg').textContent = 'Clave incorrecta o archivo no disponible.'; } };
+    $('ent-ir').onclick = ir; $('ent-clave').onkeydown = e => { if (e.key === 'Enter') ir(); }; $('ent-clave').focus();
+  }
+
+  async function preparar(ue) {
+    META = {}; E.metas.forEach(m => META[m.sec_func] = m);
+    const uf = await ficha(ue).catch(() => null); LAKE = {}; (uf?.cuis || []).forEach(c => LAKE[c.cui] = c); E._ue = UES.find(u => u.cod === ue) || { cod: ue, nombre: 'UE ' + ue }; E._uf = uf;
+  }
+  const inv = () => E.metas.filter(m => m.es_inv);
+  const metasSel = () => modoInv ? inv() : E.metas;
+  function tot() { const o = { cert: 0, comp: 0, dev: 0, gir: 0, pag: 0 }; metasSel().forEach(m => { for (const k in o) o[k] += m[k] || 0; }); o.pim = modoInv ? Object.values(LAKE).reduce((s, c) => s + (c.pim || 0), 0) : (E._uf?.pim_total || 0); return o; }
+  function nombreMeta(m) { const c = LAKE[m.act_proy]; return c?.nombre || m.nombre_ap || m.nombre || `${m.act_proy} · meta ${m.meta}`; }
+
+  function render() {
+    const el = $('ent'), t = tot(), u = E._ue; const kpis = [['Certificado', t.cert, 'var(--p2)'], ['Comprometido', t.comp, 'var(--p)'], ['Devengado', t.dev, 'var(--ok)'], ['Girado', t.gir, 'var(--teal)'], ['Pagado', t.pag, '#5E35B1']];
+    el.innerHTML = `<div class="card" style="flex:0 0 auto;padding:0"><div class="pd-hdr" style="border-radius:var(--rad)"><div class="pd-cui"><span>MI ENTIDAD · UE ${u.cod}</span><span>· SIAF al ${E.corte}</span><span>· Transparencia al ${R.corte}</span><span class="x" id="ent-salir" title="Cerrar sesión">×</span></div><div class="pd-title">${u.nombre}</div>
+      <div class="pd-badges"><span class="pd-badge">${N(E.expedientes.length)} expedientes</span><span class="pd-badge">${N(inv().length)} inversiones · ${N(E.metas.length)} metas</span><span class="pd-badge">${N(Object.keys(E.certificaciones).length)} certificaciones</span><span class="pd-badge bad">${N(E.alertas.dev_sin_girar.length + E.alertas.comp_sin_devengar.length + E.alertas.cert_sin_comp.length)} alertas</span>
+      <span class="sw" style="margin-left:auto"><button class="${modoInv ? 'on' : ''}" data-m="1">Inversiones</button><button class="${modoInv ? '' : 'on'}" data-m="0">Todo el gasto</button></span></div></div>
+      <div class="pd-kpis">${modoInv ? `<div class="pd-kpi"><i style="background:var(--gold)"></i><div class="l">PIM ${ANIO} (Transparencia)</div><div class="v">${M(t.pim)} <small style="font-size:10px">M</small></div><div class="s">presupuesto de las inversiones</div></div>` : ''}${kpis.map(([k, v, c]) => `<div class="pd-kpi"><i style="background:${c}"></i><div class="l">${k} (SIAF)</div><div class="v">${M(v)} <small style="font-size:10px">M</small></div><div class="s">${t.pim ? (100 * v / t.pim).toFixed(1) + ' % del PIM' : ''}</div></div>`).join('')}</div></div>
+     <div class="card" style="flex:1;min-height:0"><div class="ptabs"><button class="${tabE === 'inv' ? 'on' : ''}" data-t="inv">${modoInv ? 'Inversiones' : 'Metas'}</button><button class="${tabE === 'exp' ? 'on' : ''}" data-t="exp">Expedientes${filtroMeta ? ' · meta ' + filtroMeta : ''}</button><button class="${tabE === 'al' ? 'on' : ''}" data-t="al">Alertas</button><button class="${tabE === 'prov' ? 'on' : ''}" data-t="prov">Proveedores</button><button class="${tabE === 'cert' ? 'on' : ''}" data-t="cert">Certificaciones</button><button class="btn" id="ent-xls" style="margin-left:auto">⬇ Excel</button></div>
+      <div class="filt"><input type="search" id="ent-q" placeholder="Buscar en glosas, proveedores, documentos, CUI…" value="${q}"></div><div class="wrap" id="ent-body"></div></div>`;
+    el.querySelectorAll('.ptabs button[data-t]').forEach(b => b.onclick = () => { tabE = b.dataset.t; if (tabE !== 'exp') filtroMeta = ''; render(); });
+    el.querySelectorAll('.sw button').forEach(b => b.onclick = () => { modoInv = b.dataset.m === '1'; filtroMeta = ''; render(); });
+    $('ent-q').oninput = e => { q = e.target.value.trim().toLowerCase(); cuerpo(); }; $('ent-salir').onclick = () => { E = null; login(); };
+    $('ent-xls').onclick = () => { const rows = [...$('ent-body').querySelectorAll('tr:not(.det)')].map(tr => [...tr.children].map(td => td.innerText.replace(/\n/g, ' ').trim())); const ws = XLSX.utils.aoa_to_sheet(rows); const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, 'MiEntidad'); XLSX.writeFile(wb, `mi_entidad_${u.cod}_${tabE}.xlsx`); };
+    cuerpo();
+  }
+  const hit = (s) => !q || (s || '').toLowerCase().includes(q);
+  function cuerpo() {
+    const b = $('ent-body');
+    if (tabE === 'inv') {
+      const rows = metasSel().filter(m => hit(nombreMeta(m) + ' ' + m.act_proy + ' ' + m.sec_func)).sort((a, c) => (LAKE[c.act_proy]?.pim || c.comp) - (LAKE[a.act_proy]?.pim || a.comp));
+      b.innerHTML = `<table><tr><th>${modoInv ? 'CUI · inversión' : 'Meta'}</th><th>PIM (TE)</th><th>Certificado</th><th>Comprometido</th><th>Devengado</th><th>Girado</th><th>Pagado</th><th>Avance dev/PIM</th><th>Exp.</th></tr>${rows.map(m => { const c = LAKE[m.act_proy] || {}; const av = c.pim ? 100 * m.dev / c.pim : null; return `<tr class="l" data-sf="${m.sec_func}"><td><b>${m.act_proy}</b> ${nombreMeta(m)}<br><small class="mutx">sec. func. ${m.sec_func} · meta ${m.meta}${c.cui ? ` · <a class="fc" href="#/cui/${c.cui}">ficha ↗</a>` : ''}</small></td><td>${c.pim ? M(c.pim) : '—'}</td><td>${M(m.cert)}</td><td>${M(m.comp)}</td><td>${M(m.dev)}</td><td>${M(m.gir)}</td><td>${M(m.pag)}</td><td>${av != null ? P(av) : '—'}</td><td>${m.n_exp}</td></tr>`; }).join('')}</table><p class="mutx" style="font-size:11px;padding:6px 8px">Montos en S/ millones. SIAF al ${E.corte}; PIM de Transparencia al ${R.corte}. Clic en una fila para ver sus expedientes.</p>`;
+      b.querySelectorAll('tr.l').forEach(tr => tr.onclick = e => { if (e.target.closest('a')) return; filtroMeta = tr.dataset.sf; tabE = 'exp'; render(); });
+    } else if (tabE === 'exp') {
+      const rows = E.expedientes.filter(e => (!filtroMeta || e.metas.includes(filtroMeta)) && (modoInv ? e.metas.some(s => META[s]?.es_inv) : true) && hit(e.glosa + ' ' + e.proveedor + ' ' + e.exp + ' ' + e.fases.map(f => f.num).join(' ')));
+      b.innerHTML = `<table><tr><th>Expediente</th><th>Proveedor</th><th>Glosa</th><th>Comprom.</th><th>Deveng.</th><th>Girado</th><th>Pagado</th><th>Última fase</th></tr>${rows.slice(0, 400).map(e => `<tr class="l" data-e="${e.exp}"><td><b>${+e.exp}</b><br><small class="mutx">${e.fecha_ing || ''}</small></td><td style="white-space:normal;min-width:120px;font-size:11px">${e.proveedor || (e.ruc ? 'RUC ' + e.ruc : '—')}</td><td style="white-space:normal;min-width:260px;font-size:11px">${(e.glosa || '').slice(0, 160)}</td><td>${F(e.tot.C)}</td><td>${F(e.tot.D)}</td><td>${F(e.tot.G)}</td><td>${F(e.tot.P)}</td><td>${e.ult_fase ? `<span class="tag ${e.ult_fase === 'P' ? 'ok' : e.ult_fase === 'C' ? 'warn' : 'p'}" style="${e.ult_fase === 'D' || e.ult_fase === 'G' ? 'background:#E3F0FB;color:var(--p2)' : ''}">${FASE[e.ult_fase]}</span><br><small class="mutx">${e.ult_fecha || ''}</small>` : '—'}</td></tr><tr class="det" data-d="${e.exp}" hidden><td colspan="8" style="white-space:normal;background:var(--sup2)"></td></tr>`).join('')}</table><p class="mutx" style="font-size:11px;padding:6px 8px">${rows.length} expedientes${rows.length > 400 ? ' (se muestran 400; afina la búsqueda)' : ''}. Clic para ver la cadena de fases con documentos.</p>`;
+      b.querySelectorAll('tr.l').forEach(tr => tr.onclick = () => { const d = b.querySelector(`tr.det[data-d="${tr.dataset.e}"]`); if (!d.hidden) { d.hidden = true; return; } const e = E.expedientes.find(x => x.exp === tr.dataset.e); d.firstChild.innerHTML = cadena(e); d.hidden = false; });
+    } else if (tabE === 'al') {
+      const A = E.alertas; const sec = (t, d, rows, k) => `<div class="sec" style="padding:8px 8px 0">${t} · ${rows.length} <small class="mutx" style="text-transform:none;letter-spacing:0;font-weight:500">${d}</small></div>${rows.length ? `<table><tr><th>${k}</th><th>Proveedor</th><th>Glosa</th><th>Monto</th><th>Días</th><th>Metas</th></tr>${rows.slice(0, 60).map(x => `<tr class="l" data-e="${x.exp || ''}"><td><b>${+(x.exp || x.cert)}</b></td><td style="white-space:normal;font-size:11px">${x.prov || '—'}</td><td style="white-space:normal;min-width:240px;font-size:11px">${(x.glosa || '').slice(0, 140)}</td><td>${F(x.monto)}</td><td><span class="tag ${x.dias > 90 ? 'bad' : x.dias > 45 ? 'warn' : 'ok'}">${x.dias}</span></td><td style="font-size:11px">${x.metas.map(s => META[s] ? (META[s].es_inv ? META[s].act_proy : 'meta ' + META[s].meta) : s).join(', ')}</td></tr>`).join('')}</table>` : '<p class="mutx" style="padding:4px 8px;font-size:11px">Sin casos.</p>'}`;
+      const f = r => !modoInv || r.metas.some(s => META[s]?.es_inv);
+      b.innerHTML = sec('Devengado sin girar', 'la entidad ya reconoció la deuda y el proveedor sigue sin cobrar (más de 15 días)', A.dev_sin_girar.filter(f), 'Expediente') + sec('Comprometido sin devengar', 'contrato u orden firmada sin recepción del bien/servicio en más de 45 días', A.comp_sin_devengar.filter(f), 'Expediente') + sec('Certificación sin compromiso', 'presupuesto reservado hace más de 60 días que no se ha usado', A.cert_sin_comp.filter(f), 'Certificación');
+      b.querySelectorAll('tr.l[data-e]').forEach(tr => tr.onclick = () => { if (!tr.dataset.e) return; q = String(+tr.dataset.e); filtroMeta = ''; tabE = 'exp'; render(); });
+    } else if (tabE === 'prov') {
+      const rows = E.proveedores.filter(p => hit(p.nombre + ' ' + p.ruc));
+      b.innerHTML = `<table><tr><th>RUC</th><th>Proveedor</th><th>Comprometido</th><th>Devengado</th><th>Girado</th><th>Pendiente de giro</th><th>Exp.</th></tr>${rows.slice(0, 300).map(p => `<tr class="l" data-r="${p.ruc}"><td>${p.ruc}</td><td style="white-space:normal">${p.nombre || '—'}</td><td>${F(p.comp)}</td><td>${F(p.dev)}</td><td>${F(p.gir)}</td><td>${F(Math.max(0, p.dev - p.gir))}</td><td>${p.n}</td></tr>`).join('')}</table>`;
+      b.querySelectorAll('tr.l').forEach(tr => tr.onclick = () => { q = tr.dataset.r; tabE = 'exp'; filtroMeta = ''; render(); });
+    } else if (tabE === 'cert') {
+      const rows = Object.entries(E.certificaciones).filter(([k, c]) => (!modoInv || c.metas.some(s => META[s]?.es_inv)) && hit(c.glosa + ' ' + c.prov + ' ' + k)).sort((a, c) => c[1].monto - a[1].monto);
+      b.innerHTML = `<table><tr><th>Certificación</th><th>Fecha</th><th>Documento</th><th>Proveedor</th><th>Glosa</th><th>Certificado</th><th>Comprometido</th><th>Por comprometer</th><th>Metas</th></tr>${rows.slice(0, 400).map(([k, c]) => `<tr><td><b>${+k}</b></td><td>${c.fecha || ''}</td><td style="font-size:11px">${c.doc}</td><td style="white-space:normal;font-size:11px">${c.prov || ''}</td><td style="white-space:normal;min-width:240px;font-size:11px">${(c.glosa || '').slice(0, 140)}</td><td>${F(c.monto)}</td><td>${F(c.comp_anual)}</td><td>${F(Math.max(0, c.monto - c.comp_anual))}</td><td style="font-size:11px">${c.metas.map(s => META[s] ? (META[s].es_inv ? META[s].act_proy : 'meta ' + META[s].meta) : s).join(', ')}</td></tr>`).join('')}</table>`;
+    }
+  }
+  function cadena(e) {
+    const gasto = e.fases.filter(f => f.ciclo === 'G');
+    return `<div style="padding:8px 4px"><div class="pd-row" style="margin-bottom:8px"><b>Glosa</b><span style="font-weight:500">${e.glosa || '—'}</span></div>
+     <table class="pd-tbl"><tr><th>Fecha</th><th>Fase</th><th>Documento</th><th>Monto</th><th>Fuente</th><th>Meta · clasificador</th><th>Pago / beneficiario</th></tr>${gasto.map(f => `<tr><td>${f.fecha || ''}</td><td><b>${FASE[f.fase] || f.fase}</b> <small class="mutx">${f.sec}-${f.corr}</small>${f.cert ? `<br><small class="mutx">cert. ${+f.cert}</small>` : ''}</td><td style="white-space:normal">${f.doc_n || f.doc} <b>${f.num}</b></td><td>${F(f.monto)}</td><td style="font-size:10.5px">${E.fuentes[f.fuente] || f.fuente || ''}</td><td style="white-space:normal;font-size:10.5px">${f.metas.map(m => `${META[m.sec_func] ? (META[m.sec_func].es_inv ? META[m.sec_func].act_proy : 'meta ' + META[m.sec_func].meta) : m.sec_func} · ${E.clasif[m.clasif]?.cod || ''} ${E.clasif[m.clasif]?.nombre || ''} (${F(m.monto)})`).join('<br>')}</td><td style="white-space:normal;font-size:10.5px">${f.docs.map(d => `${d.nombre || ''} ${d.num ? '· ' + d.num : ''} ${d.pago ? '· pagado ' + d.pago : ''}`).join('<br>') || (f.prov || '')}</td></tr>`).join('')}</table></div>`;
+  }
+  window.Entidad = { abrir: async (ue) => { if (E && (!ue || E.ue === ue)) { render(); return; } await login(); if (ue && $('ent-ue')) $('ent-ue').value = ue; } };
+})();
