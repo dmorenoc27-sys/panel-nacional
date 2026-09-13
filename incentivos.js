@@ -91,11 +91,37 @@
     if (venc && d.color === 'ok') d.color = 'warn';
     return d;
   }
-  function resumenCard(c, S, E, META) {
-    const aplica = S['aplica' + c.n] !== false; if (!aplica) return `<div class="al" data-abrir="${c.n}" style="border-left-color:var(--line);opacity:.55"><div class="t"><b>${c.n}. ${c.corto}</b><br>No aplica a esta municipalidad</div></div>`;
-    const estado = S['estado' + c.n] || 'pend', ev = evaluarSIAF(c, E, META), d = diagnostico(c, ev, S, E), col = estado === 'ok' ? 'ok' : estado === 'no' ? 'bad' : d.color;
-    return `<div class="al ${col}" data-abrir="${c.n}" style="padding:10px 12px;display:flex;gap:10px"><div style="font-size:22px;font-weight:900;color:var(--${col});width:26px;flex:0 0 auto">${c.n}</div><div style="min-width:0"><div class="t" style="margin:0"><b style="font-size:12.5px;color:var(--ink)">${c.corto}</b> <span class="tag ${col}" style="margin-left:4px">${estado === 'ok' ? 'Cumplido' : estado === 'no' ? 'No cumplido' : d.titulo}</span></div>
-      <div style="font-size:11.5px;color:var(--ink);margin-top:5px;line-height:1.45">${d.frases.map(f => `<div>${f}</div>`).join('')}${d.accion ? `<div style="color:var(--p2);font-weight:600;margin-top:3px">${d.accion}</div>` : ''}</div><div class="mutx" style="font-size:10.5px;margin-top:5px">${c.ente} · clic para ver indicadores, hitos y el detalle SIAF</div></div></div>`;
+  // ---- infografías SVG ----
+  const COL = { ok: '#2E7D32', warn: '#EF8F00', bad: '#D32F2F', p: '#1E88E5' };
+  function dona(pct, col, meta, label, sub) {
+    const r = 30, c = 2 * Math.PI * r, v = Math.max(0, Math.min(100, pct || 0));
+    return `<svg viewBox="0 0 80 80" width="88" height="88" style="flex:0 0 auto"><circle cx="40" cy="40" r="${r}" fill="none" stroke="#E6EAF0" stroke-width="9"/><circle cx="40" cy="40" r="${r}" fill="none" stroke="${col}" stroke-width="9" stroke-linecap="round" stroke-dasharray="${c * v / 100} ${c}" transform="rotate(-90 40 40)"/>${meta != null ? `<circle cx="40" cy="40" r="${r}" fill="none" stroke="#1C1917" stroke-width="2" stroke-dasharray="2.5 ${c - 2.5}" stroke-dashoffset="${-c * Math.min(100, meta) / 100}" transform="rotate(-90 40 40)" opacity=".7"/>` : ''}<text x="40" y="38" text-anchor="middle" style="font:800 15px Inter,sans-serif;fill:#1C1917">${label}</text><text x="40" y="52" text-anchor="middle" style="font:700 6px Inter,sans-serif;fill:#8A94A6;letter-spacing:.3px">${sub}</text></svg>`;
+  }
+  function linea(hitos, S, n, corte, autoOK) {
+    const y0 = new Date(PI.anio + '-01-01').getTime(), y1 = new Date(PI.anio + '-12-31').getTime(), X = f => (100 * Math.max(0, Math.min(1, (new Date(f).getTime() - y0) / (y1 - y0)))).toFixed(1);
+    const hx = X(hoy());
+    return `<div style="position:relative;height:22px;margin:0 6px"><div style="position:absolute;top:10px;left:0;right:0;height:2px;background:#D5DBE3;border-radius:1px"></div><div style="position:absolute;top:10px;left:0;width:${hx}%;height:2px;background:#1E88E5;opacity:.45"></div><div style="position:absolute;top:2px;left:${hx}%;width:0;height:18px;border-left:1.5px dashed #1C1917;opacity:.6" title="hoy"></div>
+      ${hitos.map(([f, t], i) => { const done = S['hito' + n + '_' + i] || (autoOK || []).some(r => r.fecha === f && t.includes(r.campo === 'cert' ? 'Certificado' : 'Devengado')), venc = f < hoy() && !done, c = done ? COL.ok : venc ? COL.bad : '#fff', b = done ? COL.ok : venc ? COL.bad : '#8A94A6'; return `<div title="${f} · ${t}" style="position:absolute;top:5px;left:calc(${X(f)}% - 6px);width:12px;height:12px;border-radius:50%;background:${c};border:2px solid ${b};box-shadow:0 1px 3px rgba(0,0,0,.2)"></div>`; }).join('')}</div>
+      <div style="display:flex;justify-content:space-between;font-size:8.5px;color:var(--mut);margin:0 6px"><span>ene</span><span>hoy</span><span>dic</span></div>`;
+  }
+  function medidor(c, ev, S, E) {
+    if (ev && (c.siaf.tipo === 'producto' || c.siaf.tipo === 'pp') && ev.metas.length) { const t = ev.t, next = ev.reglas.find(r => !r.cumple), pct = t.pim ? 100 * t[next ? next.campo : 'dev'] / t.pim : 0; return { pct, meta: next ? next.min : null, label: pct.toFixed(0) + '%', sub: next ? 'META ' + next.min + '%' : 'DEVENGADO' }; }
+    if (ev && c.siaf.tipo === 'ingreso') { const base = S['base' + c.n] || 0, n = Object.keys(ev.mensual).length || 1, proy = ev.total / n * 12; const pct = base ? 100 * proy / base : (ev.pim ? 100 * ev.total / ev.pim : 0); return { pct: Math.min(100, pct), meta: base ? 100 : Math.round(100 * n / 12), label: (base ? (100 * (proy - base) / base >= 0 ? '+' : '') + (100 * (proy - base) / base).toFixed(0) : pct.toFixed(0)) + '%', sub: base ? 'VS 2025' : 'DEL PIM' }; }
+    const done = c.hitos.filter((h, i) => S['hito' + c.n + '_' + i]).length; return { pct: 100 * done / c.hitos.length, meta: null, label: done + '/' + c.hitos.length, sub: 'HITOS' };
+  }
+  function resumenCard(c, S, E, META, corte, abierto) {
+    const aplica = S['aplica' + c.n] !== false;
+    if (!aplica) return `<div class="card" data-abrir="${c.n}" style="flex:0 0 auto;cursor:pointer;opacity:.55;padding:12px 14px;border-left:4px solid var(--line)"><b style="color:var(--ink2)">${c.n}. ${c.corto}</b> <span class="mutx" style="font-size:11px">· no aplica a esta municipalidad · clic para activar</span>${abierto ? tarjeta(c, S, E, META, corte, true) : ''}</div>`;
+    const estado = S['estado' + c.n] || 'pend', ev = evaluarSIAF(c, E, META), d = diagnostico(c, ev, S, E), col = estado === 'ok' ? 'ok' : estado === 'no' ? 'bad' : d.color, m = medidor(c, ev, S, E);
+    const bg = { ok: 'linear-gradient(135deg,#F1F8F2,#fff 55%)', warn: 'linear-gradient(135deg,#FFF6E8,#fff 55%)', bad: 'linear-gradient(135deg,#FDEDEC,#fff 55%)', p: 'linear-gradient(135deg,#EAF3FC,#fff 55%)' }[col];
+    return `<div class="card" style="flex:0 0 auto;border-left:5px solid ${COL[col]};background:${bg};${abierto ? 'grid-column:1 / -1' : ''}">
+      <div data-abrir="${c.n}" style="cursor:pointer;padding:12px 14px;display:grid;grid-template-columns:auto 1fr;gap:12px;align-items:start">
+        <div style="display:flex;flex-direction:column;align-items:center;gap:2px">${dona(m.pct, COL[col], m.meta, m.label, m.sub)}<span style="font-size:22px;font-weight:900;color:${COL[col]};line-height:1">${c.n}</span></div>
+        <div style="min-width:0"><div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap"><b style="font-size:14px;color:var(--p2)">${c.corto}</b><span class="tag ${col}">${estado === 'ok' ? 'Cumplido' : estado === 'no' ? 'No cumplido' : d.titulo}</span><span class="mutx" style="font-size:10.5px;margin-left:auto">${c.ente}</span></div>
+          <div style="font-size:11.5px;color:var(--ink);margin-top:6px;line-height:1.45">${d.frases.slice(0, abierto ? 9 : 2).map(f => `<div>${f}</div>`).join('')}${d.accion ? `<div style="color:var(--p2);font-weight:600;margin-top:3px">${d.accion}</div>` : ''}</div>
+          <div style="margin-top:8px">${linea(c.hitos, S, c.n, corte, ev?.reglas?.filter(r => r.cumple))}</div>
+          <div class="mutx" style="font-size:10.5px;margin-top:2px">${abierto ? '▲ clic para contraer' : '▼ clic para ver indicadores, plazos, verificación y detalle SIAF'}</div></div></div>
+      ${abierto ? `<div style="padding:0 14px 12px;border-top:1px solid var(--grid)">${tarjeta(c, S, E, META, corte, true)}</div>` : ''}</div>`;
   }
   let abiertoN = null;
   function render(el, E, META, ue, onExp) {
@@ -104,13 +130,12 @@
     const cnt = k => resumen.filter(r => r.aplica && r.e === k).length;
     el.innerHTML = `<div style="padding:8px">
      <div class="pd-lbl">Programa de Incentivos a la Mejora de la Gestión Municipal ${PI.anio}<small>${PI.norma}</small></div>
-     <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:10px">${[['ok', 'Cumplidos', 'ok'], ['proc', 'En proceso', 'warn'], ['pend', 'Pendientes', 'p'], ['no', 'No cumplidos', 'bad']].map(([k, t, c]) => `<div class="al ${c}" style="padding:8px 10px;cursor:default"><div class="n" style="font-size:20px">${cnt(k)}</div><div class="t"><b>${t}</b><br>de ${aplicables.length} compromisos aplicables</div></div>`).join('')}</div>
+     ${(() => { const dg = aplicables.map(c => { const e = S['estado' + c.n] || 'pend'; const d = diagnostico(c, evaluarSIAF(c, E, META), S, E); return e === 'ok' ? 'ok' : e === 'no' ? 'bad' : d.color; }); const k = x => dg.filter(v => v === x).length; return `<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:10px">${[['ok', 'En verde', 'cumplido o en camino'], ['warn', 'En ámbar', 'requieren atención'], ['bad', 'En rojo', 'plazo vencido o sin presupuesto'], ['p', 'Sin medición SIAF', 'seguimiento por hitos']].map(([c, t, s]) => `<div class="al ${c}" style="padding:8px 12px;cursor:default;display:flex;gap:10px;align-items:center"><div class="n" style="font-size:26px">${k(c)}</div><div class="t"><b>${t}</b><br>${s}</div></div>`).join('')}</div>`; })()}
      <p class="mutx" style="font-size:11.5px;margin:0 0 10px">Cada tarjeta resume automáticamente cómo va el compromiso con los datos del SIAF al ${corte}: qué falta, cuánto y dónde. Los compromisos 2 y 4 los mide el propio SIAF; los demás se siguen por sus hitos y por el gasto asociado. Clic en una tarjeta para abrir indicadores, plazos, verificación y el detalle.</p>
-     <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">${PI.compromisos.map(c => resumenCard(c, S, E, META)).join('')}</div>
-     <div id="pi-det" style="margin-top:12px">${abiertoN ? tarjeta(PI.compromisos.find(c => c.n === abiertoN), S, E, META, corte) : ''}</div>
+     <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">${PI.compromisos.map(c => resumenCard(c, S, E, META, corte, abiertoN === c.n)).join('')}</div>
      <div class="pd-lbl" style="margin-top:14px">Calendario del MEF</div><table class="pd-tbl">${PI.calendario.map(([f, t]) => `<tr><td>${f}</td><td style="text-align:left">${t}</td></tr>`).join('')}</table>
      <p class="mutx" style="font-size:10.5px;margin-top:10px">Fuente: DS 003-2026-EF, RD 0003-2026-EF/50.01 y guías de cumplimiento del MEF (Programa de Incentivos 2026). Las fechas y porcentajes provienen de las fichas técnicas; verificar siempre la versión vigente en gob.pe/mef.</p></div>`;
-    el.querySelectorAll('[data-abrir]').forEach(x => x.onclick = () => { abiertoN = abiertoN === +x.dataset.abrir ? null : +x.dataset.abrir; render(el, E, META, ue, onExp); if (abiertoN) $('pi-det').scrollIntoView({ behavior: 'smooth', block: 'start' }); });
+    el.querySelectorAll('[data-abrir]').forEach(x => x.onclick = () => { abiertoN = abiertoN === +x.dataset.abrir ? null : +x.dataset.abrir; render(el, E, META, ue, onExp); });
     el.querySelectorAll('[data-aplica]').forEach(x => x.onchange = () => { S['aplica' + x.dataset.aplica] = x.checked; st.set(ue, S); render(el, E, META, ue, onExp); });
     el.querySelectorAll('[data-estado]').forEach(x => x.onchange = () => { S['estado' + x.dataset.estado] = x.value; st.set(ue, S); render(el, E, META, ue, onExp); });
     el.querySelectorAll('[data-hito]').forEach(x => x.onchange = () => { S['hito' + x.dataset.hito] = x.checked; st.set(ue, S); render(el, E, META, ue, onExp); });
@@ -119,7 +144,7 @@
     el.querySelectorAll('[data-exp]').forEach(x => x.onclick = () => onExp(x.dataset.exp));
   }
 
-  function tarjeta(c, S, E, META, corte) {
+  function tarjeta(c, S, E, META, corte, emb) {
     const aplica = S['aplica' + c.n] !== false, estado = S['estado' + c.n] || 'pend', col = ESTADOS.find(e => e[0] === estado)[2];
     const ev = aplica ? evaluarSIAF(c, E, META) : null; let siaf = '';
     if (ev && (c.siaf.tipo === 'producto' || c.siaf.tipo === 'pp')) {
@@ -136,16 +161,16 @@
     } else if (ev && ev.exps) {
       siaf = `<div class="pd-row" style="margin:6px 0"><b>Lo que dice el SIAF</b><span style="font-weight:500">${c.siaf.nota}</span></div>${ev.exps.length ? `<table class="pd-tbl"><tr><th>Expediente</th><th>Glosa</th><th>Devengado</th></tr>${ev.exps.map(e => `<tr><td><a class="fc" data-exp="${e.exp}" style="cursor:pointer">${+e.exp}</a></td><td style="text-align:left;white-space:normal">${(e.glosa || '').slice(0, 120)}</td><td>${F(e.tot.D)}</td></tr>`).join('')}</table>` : '<p class="mutx" style="font-size:11px">Sin expedientes con esa glosa.</p>'}`;
     } else if (aplica && c.siaf) siaf = `<div class="pd-row" style="margin:6px 0"><b>Lo que dice el SIAF</b><span style="font-weight:500">${c.siaf.nota}</span></div>`;
-    return `<div class="card" style="flex:0 0 auto;margin-bottom:10px;border-left:4px solid var(--${aplica ? col : 'line'});opacity:${aplica ? 1 : .6}"><div style="padding:10px 14px">
-      <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap"><span style="font-size:22px;font-weight:900;color:var(--p2);width:34px">${c.n}</span><div style="flex:1;min-width:240px"><b style="font-size:13px">${c.nombre}</b><br><small class="mutx">${c.ente} · aplica a ${c.aplica}</small></div>
+    return `<div style="padding:10px 0 0">
+      <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap"><div style="flex:1;min-width:240px"><b style="font-size:13px">${c.nombre}</b><br><small class="mutx">${c.ente} · aplica a ${c.aplica}</small></div>
        <label style="font-size:11.5px;display:flex;gap:4px;align-items:center"><input type="checkbox" data-aplica="${c.n}" ${aplica ? 'checked' : ''}> Aplica a mi municipalidad</label>
        <select data-estado="${c.n}" ${aplica ? '' : 'disabled'} style="font-size:12px">${ESTADOS.map(([k, t]) => `<option value="${k}" ${k === estado ? 'selected' : ''}>${t}</option>`).join('')}</select></div>
       ${aplica ? `<div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:10px"><div>
         <div class="pd-lbl">Indicadores</div>${c.indicadores.map(([k, t]) => `<div class="pd-row"><b>${k}</b><span style="font-weight:500">${t}</span></div>`).join('')}
-        <div class="pd-lbl" style="margin-top:8px">Hitos y plazos</div>${c.hitos.map(([f, t], i) => { const done = S['hito' + c.n + '_' + i]; const venc = f < hoy() && !done; return `<div class="pd-row" style="align-items:center"><b style="min-width:86px;color:${venc ? 'var(--bad)' : done ? 'var(--ok)' : 'var(--ink2)'}">${f}</b><span style="font-weight:500;display:flex;gap:6px;align-items:center"><input type="checkbox" data-hito="${c.n}_${i}" ${done ? 'checked' : ''}> ${t}${venc ? ' <span class="tag bad">vencido</span>' : ''}</span></div>`; }).join('')}
+        <div class="pd-lbl" style="margin-top:8px">Hitos y plazos</div>${c.hitos.map(([f, t], i) => { const auto = ev?.reglas?.find(r => r.fecha === f && t.includes(r.campo === 'cert' ? 'Certificado' : 'Devengado') && r.cumple); const done = auto || S['hito' + c.n + '_' + i]; const venc = f < hoy() && !done; return `<div class="pd-row" style="align-items:center"><b style="min-width:86px;color:${venc ? 'var(--bad)' : done ? 'var(--ok)' : 'var(--ink2)'}">${f}</b><span style="font-weight:500;display:flex;gap:6px;align-items:center"><input type="checkbox" data-hito="${c.n}_${i}" ${done ? 'checked' : ''} ${auto ? 'disabled title="verificado automáticamente en el SIAF"' : ''}> ${t}${auto ? ' <span class="tag ok">SIAF ✓</span>' : venc ? ' <span class="tag bad">vencido</span>' : ''}</span></div>`; }).join('')}
         <div class="pd-lbl" style="margin-top:8px">Medios de verificación</div><div style="font-size:11px;color:var(--ink2)">${c.verif}</div>
         <div class="pd-lbl" style="margin-top:8px">Notas de seguimiento</div><textarea data-nota="${c.n}" rows="2" style="width:100%;font:inherit;font-size:11.5px;border:1.5px solid var(--line);border-radius:6px;padding:5px" placeholder="Responsable, avances, pendientes…">${S['nota' + c.n] || ''}</textarea></div>
-        <div>${siaf}</div></div>` : ''}</div></div>`;
+        <div>${siaf}</div></div>` : ''}</div>`;
   }
   window.Incentivos = { render, PI };
 })();
