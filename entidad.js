@@ -38,7 +38,10 @@
   function nombreMeta(m) { const c = LAKE[m.act_proy]; return c?.nombre || m.nombre_ap || m.nombre || `${m.act_proy} · meta ${m.meta}`; }
 
   const SW = (k, lbl, c) => `<div class="pd-kpi"><i style="background:${c}"></i><div class="l">${lbl}</div><div class="v">${M(k)} <small style="font-size:10px">M</small></div></div>`;
+  const pila = []; let restaurando = false;
   function render() {
+    if (!restaurando) { const cur = [tabE, filtroMeta, modoInv, q].join('|'); if (pila[pila.length - 1] !== cur) pila.push(cur); }
+    restaurando = false;
     const el = $('ent'), u = E._ue, P_ = E.presupuesto, I = E.ingresos, T = modoInv ? P_.inversiones : P_.total, nAl = E.alertas.dev_sin_girar.length + E.alertas.comp_sin_devengar.length + E.alertas.cert_sin_comp.length;
     const tabs = [['res', 'Resumen'], ['ppto', 'Presupuesto'], ['inv', modoInv ? 'Inversiones' : 'Metas'], ['exp', 'Expedientes' + (filtroMeta ? ' · ' + filtroMeta : '')], ['ing', 'Ingresos'], ['pi', '🏅 Incentivos Municipales'], ['al', `Alertas (${nAl})`], ['prov', 'Proveedores'], ['cert', 'Certificaciones']];
     el.innerHTML = `<div class="card" style="flex:0 0 auto;padding:0"><div class="pd-hdr" style="border-radius:var(--rad)"><div class="pd-cui"><span>MI ENTIDAD · UE ${u.cod}</span><span>· SIAF al ${E.corte}</span><span>· Transparencia al ${R.corte}</span><span class="x" id="ent-salir" title="Cerrar sesión">×</span></div><div class="pd-title">${u.nombre}</div>
@@ -115,5 +118,11 @@
     return `<div style="padding:8px 4px"><div class="pd-row" style="margin-bottom:8px"><b>Glosa</b><span style="font-weight:500">${e.glosa || '—'}</span></div>
      <table class="pd-tbl"><tr><th>Fecha</th><th>Fase</th><th>Documento</th><th>Monto</th><th>Fuente</th><th>Meta · clasificador</th><th>Pago / beneficiario</th></tr>${gasto.map(f => `<tr><td>${f.fecha || ''}</td><td><b>${FASE[f.fase] || f.fase}</b> <small class="mutx">${f.sec}-${f.corr}</small>${f.cert ? `<br><small class="mutx">cert. ${+f.cert}</small>` : ''}</td><td style="white-space:normal">${f.doc_n || f.doc} <b>${f.num}</b></td><td>${F(f.monto)}</td><td style="font-size:10.5px">${E.fuentes[f.fuente] || f.fuente || ''}</td><td style="white-space:normal;font-size:10.5px">${f.metas.map(m => `${META[m.sec_func] ? (META[m.sec_func].es_inv ? META[m.sec_func].act_proy : 'meta ' + META[m.sec_func].meta) : m.sec_func} · ${E.clasif[m.clasif]?.cod || ''} ${E.clasif[m.clasif]?.nombre || ''} (${F(m.monto)})`).join('<br>')}</td><td style="white-space:normal;font-size:10.5px">${f.docs.map(d => `${d.nombre || ''} ${d.num ? '· ' + d.num : ''} ${d.pago ? '· pagado ' + d.pago : ''}`).join('<br>') || (f.prov || '')}</td></tr>`).join('')}</table></div>`;
   }
-  window.Entidad = { abrir: async (ue) => { if (E && (!ue || E.ue === ue)) { render(); return; } await login(); if (ue && $('ent-ue')) $('ent-ue').value = ue; } };
+  function atras() {
+    if (!E) return false;
+    if (tabE === 'pi' && window.Incentivos?.atras?.()) return true;
+    if (pila.length < 2) return false;
+    pila.pop(); [tabE, filtroMeta, modoInv, q] = pila[pila.length - 1].split('|'); modoInv = modoInv === 'true'; restaurando = true; render(); return true;
+  }
+  window.Entidad = { atras, abrir: async (ue) => { if (E && (!ue || E.ue === ue)) { render(); return; } await login(); if (ue && $('ent-ue')) $('ent-ue').value = ue; } };
 })();

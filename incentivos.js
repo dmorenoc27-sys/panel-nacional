@@ -123,8 +123,9 @@
           <div class="mutx" style="font-size:10.5px;margin-top:2px">${abierto ? '▲ clic para contraer' : '▼ clic para ver indicadores, plazos, verificación y detalle SIAF'}</div></div></div>
       ${abierto ? `<div style="padding:0 14px 12px;border-top:1px solid var(--grid)">${tarjeta(c, S, E, META, corte, true)}</div>` : ''}</div>`;
   }
-  let abiertoN = null;
+  let abiertoN = null, ultimo = null;
   function render(el, E, META, ue, onExp) {
+    ultimo = [el, E, META, ue, onExp];
     const S = st.get(ue), corte = E.corte, aplicables = PI.compromisos.filter(c => S['aplica' + c.n] !== false);
     const resumen = PI.compromisos.map(c => { const e = S['estado' + c.n] || 'pend'; return { c, e, aplica: S['aplica' + c.n] !== false }; });
     const cnt = k => resumen.filter(r => r.aplica && r.e === k).length;
@@ -172,5 +173,6 @@
         <div class="pd-lbl" style="margin-top:8px">Notas de seguimiento</div><textarea data-nota="${c.n}" rows="2" style="width:100%;font:inherit;font-size:11.5px;border:1.5px solid var(--line);border-radius:6px;padding:5px" placeholder="Responsable, avances, pendientes…">${S['nota' + c.n] || ''}</textarea></div>
         <div>${siaf}</div></div>` : ''}</div>`;
   }
-  window.Incentivos = { render, PI };
+  // ponytail: 'atras' solo contrae la tarjeta abierta; devuelve true si hizo algo
+  window.Incentivos = { render, PI, atras: () => { if (abiertoN === null || !ultimo) return false; abiertoN = null; render(...ultimo); return true; } };
 })();
