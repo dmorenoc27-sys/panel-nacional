@@ -37,6 +37,10 @@
     ]
   };
   const F = n => n == null ? '—' : 'S/ ' + Number(n).toLocaleString('es-PE', { maximumFractionDigits: 0 });
+  let METAS = null, MCUR = null;   // metas por municipalidad (Anexo C del PI 2026, cuadros 2026_M_C1..C7 del MEF) -> Web/data/pi_metas.json
+  function cargarMetas(cb) { if (METAS) return; METAS = {}; fetch('data/pi_metas.json').then(r => r.json()).then(j => { METAS = j; cb && cb(); }).catch(() => { }); }
+  function metasDe(ue) { const ux = (typeof UES !== 'undefined' ? UES : []).find(u => u.cod === ue); return ux && METAS && METAS[ux.dist] || null; }
+  const aplicaA = (c, S, m) => S['aplica' + c.n] !== undefined ? S['aplica' + c.n] : m ? !!m['c' + c.n] : true;
   const st = { get(ue) { try { return JSON.parse(localStorage.getItem('pi_' + ue) || '{}'); } catch (e) { return {}; } }, set(ue, v) { try { localStorage.setItem('pi_' + ue, JSON.stringify(v)); } catch (e) { } } };
   const hoy = () => new Date().toISOString().slice(0, 10);
   const ESTADOS = [['pend', 'Pendiente', 'p'], ['proc', 'En proceso', 'warn'], ['ok', 'Cumplido', 'ok'], ['no', 'No cumplido', 'bad']];
@@ -81,7 +85,7 @@
     } else if (ev && c.siaf.tipo === 'ingreso') {
       const base = S['base' + c.n] || 0, meses = Object.keys(ev.mensual).sort(), n = meses.length || 1, prom = ev.total / n, proy = ev.total + prom * (12 - n);
       d.frases.push(`Predial recaudado ${Fm(ev.total)} en ${n} meses (${(100 * ev.total / (ev.pim || 1)).toFixed(0)} % del presupuesto de ${Fm(ev.pim)}); ritmo ${Fm(prom)} al mes, proyección a diciembre ${Fm(proy)}.`);
-      if (base) { const inc = 100 * (proy - base) / base; d.color = inc >= 0 ? 'ok' : 'bad'; d.titulo = inc >= 0 ? `Proyecta +${inc.toFixed(1)} % vs 2025` : `Proyecta ${inc.toFixed(1)} % vs 2025`; d.frases.push(inc >= 0 ? `Al ritmo actual superaría la recaudación 2025 (${Fm(base)}).` : `Al ritmo actual quedaría ${Fm(base - proy)} por debajo de 2025 (${Fm(base)}): hay que recaudar ${Fm((base - ev.total) / Math.max(1, 12 - n))} al mes en lo que queda del año solo para igualarla.`); }
+      if (base) { const inc = 100 * (proy - base) / base; const mt = MCUR && MCUR.c2 && MCUR.c2['2.2']; d.color = mt ? (inc >= mt[1] ? 'ok' : inc >= mt[0] ? 'warn' : 'bad') : inc >= 0 ? 'ok' : 'bad'; d.titulo = (inc >= 0 ? `Proyecta +${inc.toFixed(1)} % vs 2025` : `Proyecta ${inc.toFixed(1)} % vs 2025`) + (mt ? ` · su meta: umbral ${mt[0]} %, máxima ${mt[1]} %` : ''); d.frases.push(inc >= 0 ? `Al ritmo actual superaría la recaudación 2025 (${Fm(base)}).` : `Al ritmo actual quedaría ${Fm(base - proy)} por debajo de 2025 (${Fm(base)}): hay que recaudar ${Fm((base - ev.total) / Math.max(1, 12 - n))} al mes en lo que queda del año solo para igualarla.`); }
       else { d.color = ev.pim && ev.total / ev.pim >= n / 12 ? 'ok' : 'warn'; d.titulo = ev.pim && ev.total / ev.pim >= n / 12 ? 'Recaudación al día con el presupuesto' : 'Recaudación por debajo del ritmo'; d.accion = 'Ingresa la recaudación 2025 en el detalle para calcular el indicador 2.2.'; }
     } else {
       d.color = venc ? 'warn' : 'p'; d.titulo = venc ? `${venc} hito(s) vencido(s) sin marcar` : 'Seguimiento por hitos';
@@ -110,7 +114,7 @@
     const done = c.hitos.filter((h, i) => S['hito' + c.n + '_' + i]).length; return { pct: 100 * done / c.hitos.length, meta: null, label: done + '/' + c.hitos.length, sub: 'HITOS' };
   }
   function resumenCard(c, S, E, META, corte, abierto) {
-    const aplica = S['aplica' + c.n] !== false;
+    const aplica = aplicaA(c, S, MCUR);
     if (!aplica) return `<div class="card" data-abrir="${c.n}" style="flex:0 0 auto;cursor:pointer;opacity:.55;padding:12px 14px;border-left:4px solid var(--line)"><b style="color:var(--ink2)">${c.n}. ${c.corto}</b> <span class="mutx" style="font-size:11px">· no aplica a esta municipalidad · clic para activar</span>${abierto ? tarjeta(c, S, E, META, corte, true) : ''}</div>`;
     const estado = S['estado' + c.n] || 'pend', ev = evaluarSIAF(c, E, META), d = diagnostico(c, ev, S, E), col = estado === 'ok' ? 'ok' : estado === 'no' ? 'bad' : d.color, m = medidor(c, ev, S, E);
     const bg = { ok: 'linear-gradient(135deg,#F1F8F2,#fff 55%)', warn: 'linear-gradient(135deg,#FFF6E8,#fff 55%)', bad: 'linear-gradient(135deg,#FDEDEC,#fff 55%)', p: 'linear-gradient(135deg,#EAF3FC,#fff 55%)' }[col];
@@ -126,11 +130,12 @@
   let abiertoN = null, ultimo = null;
   function render(el, E, META, ue, onExp) {
     ultimo = [el, E, META, ue, onExp];
-    const S = st.get(ue), corte = E.corte, aplicables = PI.compromisos.filter(c => S['aplica' + c.n] !== false);
-    const resumen = PI.compromisos.map(c => { const e = S['estado' + c.n] || 'pend'; return { c, e, aplica: S['aplica' + c.n] !== false }; });
+    const S = st.get(ue), corte = E.corte; MCUR = metasDe(ue); if (!METAS) cargarMetas(() => render(el, E, META, ue, onExp)); const aplicables = PI.compromisos.filter(c => aplicaA(c, S, MCUR));
+    const resumen = PI.compromisos.map(c => { const e = S['estado' + c.n] || 'pend'; return { c, e, aplica: aplicaA(c, S, MCUR) }; });
     const cnt = k => resumen.filter(r => r.aplica && r.e === k).length;
     el.innerHTML = `<div style="padding:8px">
      <div class="pd-lbl">Programa de Incentivos a la Mejora de la Gestión Municipal ${PI.anio}<small>${PI.norma}</small></div>
+     ${(() => { const ux = (typeof UES !== 'undefined' ? UES : []).find(u => u.cod === ue); const tp = ux && ux.pi; if (!tp) return ''; const D = typeof PI_TIPOS !== 'undefined' ? PI_TIPOS : {}; const m = MCUR; const nA = m ? PI.compromisos.filter(c => m['c' + c.n]).length : null; return `<div class="pd-txt p" style="margin-bottom:10px"><b>Clasificación municipal PI: tipo ${tp}</b> · ${D[tp] || ''}.${nA != null ? ` Según el Anexo C de metas del MEF, a esta municipalidad le aplican <b>${nA} de 7 compromisos</b>; abajo cada tarjeta muestra su umbral mínimo y su meta máxima. Puedes corregir la casilla "Aplica" si el MEF la incluyó o excluyó después.` : ' Cargando metas por municipalidad…'}</div>`; })()}
      ${(() => { const dg = aplicables.map(c => { const e = S['estado' + c.n] || 'pend'; const d = diagnostico(c, evaluarSIAF(c, E, META), S, E); return e === 'ok' ? 'ok' : e === 'no' ? 'bad' : d.color; }); const k = x => dg.filter(v => v === x).length; return `<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:10px">${[['ok', 'En verde', 'cumplido o en camino'], ['warn', 'En ámbar', 'requieren atención'], ['bad', 'En rojo', 'plazo vencido o sin presupuesto'], ['p', 'Sin medición SIAF', 'seguimiento por hitos']].map(([c, t, s]) => `<div class="al ${c}" style="padding:8px 12px;cursor:default;display:flex;gap:10px;align-items:center"><div class="n" style="font-size:26px">${k(c)}</div><div class="t"><b>${t}</b><br>${s}</div></div>`).join('')}</div>`; })()}
      <p class="mutx" style="font-size:11.5px;margin:0 0 10px">Cada tarjeta resume automáticamente cómo va el compromiso con los datos del SIAF al ${corte}: qué falta, cuánto y dónde. Los compromisos 2 y 4 los mide el propio SIAF; los demás se siguen por sus hitos y por el gasto asociado. Clic en una tarjeta para abrir indicadores, plazos, verificación y el detalle.</p>
      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">${PI.compromisos.map(c => resumenCard(c, S, E, META, corte, abiertoN === c.n)).join('')}</div>
@@ -146,7 +151,7 @@
   }
 
   function tarjeta(c, S, E, META, corte, emb) {
-    const aplica = S['aplica' + c.n] !== false, estado = S['estado' + c.n] || 'pend', col = ESTADOS.find(e => e[0] === estado)[2];
+    const aplica = aplicaA(c, S, MCUR), estado = S['estado' + c.n] || 'pend', col = ESTADOS.find(e => e[0] === estado)[2];
     const ev = aplica ? evaluarSIAF(c, E, META) : null; let siaf = '';
     if (ev && (c.siaf.tipo === 'producto' || c.siaf.tipo === 'pp')) {
       const t = ev.t, av = t.pim ? 100 * t.dev / t.pim : 0, avc = t.pim ? 100 * t.cert / t.pim : 0;
@@ -167,7 +172,7 @@
        <label style="font-size:11.5px;display:flex;gap:4px;align-items:center"><input type="checkbox" data-aplica="${c.n}" ${aplica ? 'checked' : ''}> Aplica a mi municipalidad</label>
        <select data-estado="${c.n}" ${aplica ? '' : 'disabled'} style="font-size:12px">${ESTADOS.map(([k, t]) => `<option value="${k}" ${k === estado ? 'selected' : ''}>${t}</option>`).join('')}</select></div>
       ${aplica ? `<div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:10px"><div>
-        <div class="pd-lbl">Indicadores</div>${c.indicadores.map(([k, t]) => `<div class="pd-row"><b>${k}</b><span style="font-weight:500">${t}</span></div>`).join('')}
+        <div class="pd-lbl">Indicadores</div>${c.indicadores.map(([k, t]) => { const v = MCUR && MCUR['c' + c.n] && MCUR['c' + c.n][k]; return `<div class="pd-row"><b>${k}</b><span style="font-weight:500">${t}${MCUR && MCUR['c' + c.n] ? (v ? ` <span class="pd-badge ok" title="Anexo C · metas por municipalidad (MEF)">umbral mínimo ${v[0]}${c.n === 6 ? '' : ' %'} · meta máxima ${v[1]}${c.n === 6 ? '' : ' %'}</span>` : ' <span class="pd-badge">no aplica a esta municipalidad</span>') : ''}</span></div>`; }).join('')}
         <div class="pd-lbl" style="margin-top:8px">Hitos y plazos</div>${c.hitos.map(([f, t], i) => { const auto = ev?.reglas?.find(r => r.fecha === f && t.includes(r.campo === 'cert' ? 'Certificado' : 'Devengado') && r.cumple); const done = auto || S['hito' + c.n + '_' + i]; const venc = f < hoy() && !done; return `<div class="pd-row" style="align-items:center"><b style="min-width:86px;color:${venc ? 'var(--bad)' : done ? 'var(--ok)' : 'var(--ink2)'}">${f}</b><span style="font-weight:500;display:flex;gap:6px;align-items:center"><input type="checkbox" data-hito="${c.n}_${i}" ${done ? 'checked' : ''} ${auto ? 'disabled title="verificado automáticamente en el SIAF"' : ''}> ${t}${auto ? ' <span class="tag ok">SIAF ✓</span>' : venc ? ' <span class="tag bad">vencido</span>' : ''}</span></div>`; }).join('')}
         <div class="pd-lbl" style="margin-top:8px">Medios de verificación</div><div style="font-size:11px;color:var(--ink2)">${c.verif}</div>
         <div class="pd-lbl" style="margin-top:8px">Notas de seguimiento</div><textarea data-nota="${c.n}" rows="2" style="width:100%;font:inherit;font-size:11.5px;border:1.5px solid var(--line);border-radius:6px;padding:5px" placeholder="Responsable, avances, pendientes…">${S['nota' + c.n] || ''}</textarea></div>
