@@ -179,5 +179,7 @@
         <div>${siaf}</div></div>` : ''}</div>`;
   }
   // ponytail: 'atras' solo contrae la tarjeta abierta; devuelve true si hizo algo
-  window.Incentivos = { render, PI, atras: () => { if (abiertoN === null || !ultimo) return false; abiertoN = null; render(...ultimo); return true; } };
+  // resumen para la vista alcalde: un semáforo por compromiso aplicable
+  function resumen(E, META, ue) { const S = st.get(ue); MCUR = metasDe(ue); if (!METAS) cargarMetas(); return PI.compromisos.filter(c => aplicaA(c, S, MCUR)).map(c => { const e = S['estado' + c.n] || 'pend', ev = evaluarSIAF(c, E, META), d = diagnostico(c, ev, S, E); return { n: c.n, corto: c.corto, col: e === 'ok' ? 'ok' : e === 'no' ? 'bad' : d.color, titulo: e === 'ok' ? 'Cumplido' : e === 'no' ? 'No cumplido' : d.titulo, accion: d.accion || d.frases[0] || '' }; }); }
+  window.Incentivos = { render, resumen, PI, atras: () => { if (abiertoN === null || !ultimo) return false; abiertoN = null; render(...ultimo); return true; } };
 })();
