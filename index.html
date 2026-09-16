@@ -409,8 +409,8 @@ function tabla(){let filas=[],tabs=[];if(estado.dpto)fdpto='';const ok=u=>(!fdpt
  else if(estado.dpto){tabs=[['ues','Unidades ejecutoras del departamento']];filas=uesN(u=>u.dpto===estado.dpto)}
  else if(estado.pliego){tabs=[['ues','Unidades ejecutoras']];filas=uesN(u=>u.nivel===estado.nivel&&u.pliego===estado.pliego)}
  else if(estado.sector){tabs=[['pliegos','Pliegos'],['ues','Unidades ejecutoras']];filas=tab==='ues'?uesN(u=>u.nivel===estado.nivel&&u.sector===estado.sector):sortear(R.pliegos.filter(p=>p.nivel===estado.nivel&&p.sector===estado.sector)).map(p=>fila(p.nombre,p,'pliego:'+p.cod))}
- else if(estado.nivel){tabs=estado.nivel==='M'?[['ues','Municipalidades']]:[['sectores','Sectores'],['pliegos','Pliegos'],['ues','Unidades ejecutoras']];
-  filas=tab==='ues'||estado.nivel==='M'?uesN(u=>u.nivel===estado.nivel):tab==='pliegos'?sortear(R.pliegos.filter(p=>p.nivel===estado.nivel)).map(p=>fila(p.nombre,p,'pliego:'+p.cod)):sortear(R.sectores.filter(s=>s.nivel===estado.nivel)).map(s=>fila(s.nombre,s,'sector:'+s.cod))}
+ else if(estado.nivel){tabs=estado.nivel==='M'?[['deptos','Departamentos']]:[['sectores','Sectores'],['pliegos','Pliegos'],['ues','Unidades ejecutoras']];
+  filas=estado.nivel==='M'?(()=>{const g={};for(const u of UES)if(u.nivel==='M'&&u.dpto)(g[u.dpto]=g[u.dpto]||[]).push(u);return sortear(Object.entries(g).map(([d,a])=>({nombre:d,...agg(a)}))).map(d=>fila(d.nombre,d,'dpto:'+d.nombre))})():tab==='ues'?uesN(u=>u.nivel===estado.nivel):tab==='pliegos'?sortear(R.pliegos.filter(p=>p.nivel===estado.nivel)).map(p=>fila(p.nombre,p,'pliego:'+p.cod)):sortear(R.sectores.filter(s=>s.nivel===estado.nivel)).map(s=>fila(s.nombre,s,'sector:'+s.cod))}
  else if(estado.sec==='funcion'){tabs=[['niveles','Por nivel de gobierno'],['departamentos','Por departamento'],['pliegos','Por pliego']];const fn=estado.funcion;
   filas=tab==='departamentos'?sortear(C.dpto_funcion.filter(x=>x.nombre===fn).map(x=>({...x,nombre:x.dpto}))).map(d=>fila(d.nombre,d,'dpto:'+d.nombre)):tab==='pliegos'?sortear(C.pliego_funcion.filter(x=>x.nombre===fn).map(x=>({...x,...(R.pliegos.find(p=>p.nivel===x.nivel&&p.cod===x.pliego)||{}),pim:x.pim,dev:x.dev,pia:x.pia,cert:x.cert,comp:x.comp,gir:x.gir,n_cui:null}))).map(p=>fila(`${p.nombre} <small class="mutx">${NIV[p.nivel]}</small>`,p,'npliego:'+p.nivel+':'+p.sector+':'+p.cod)):sortear(C.nivel_funcion.filter(x=>x.nombre===fn).map(x=>({...x,nombre:NIV[x.nivel]}))).map(n=>fila(n.nombre,n,'nivel:'+n.nivel))}
  else{tabs=[['niveles','Niveles de gobierno'],['departamentos','Departamentos'],['pliegos','Pliegos'],['ues','Ranking de unidades ejecutoras'],['funciones','Funciones']];
@@ -418,7 +418,7 @@ function tabla(){let filas=[],tabs=[];if(estado.dpto)fdpto='';const ok=u=>(!fdpt
  if(!tabs.find(t=>t[0]===tab))tab=tabs[0][0];
  $('tabs').innerHTML=tabs.map(([k,t])=>`<button class="${k===tab?'on':''}" data-t="${k}">${t}</button>`).join('');
  $('tabs').querySelectorAll('button').forEach(b=>b.onclick=()=>{tab=b.dataset.t;tabla()});
- filtros(tab==='ues'||(estado.nivel==='M'&&!estado.ue)||(estado.dpto&&!estado.ue)||estado.pliego||estado.ue);
+ filtros(tab==='ues'||(estado.dpto&&!estado.ue)||estado.pliego||estado.ue);
  if(!estado.ue&&ANIO!==ANIO_ACTUAL&&filas.length&&['ues'].includes(tab))filas.unshift(`<tr><td colspan="10" class="mutx">Año ${ANIO}: cifras por unidad ejecutora. El detalle por CUI está disponible para el año en curso.</td></tr>`);
  $('tabla').innerHTML=head()+filas.join('');
  $('tabla').querySelectorAll('th').forEach(th=>th.onclick=()=>{const k=th.dataset.o;orden=orden.k===k?{k,d:-orden.d}:{k,d:k==='nombre'?1:-1};tabla()});
