@@ -423,7 +423,7 @@ function tabla(){let filas=[],tabs=[];if(estado.dpto)fdpto='';const ok=u=>(!fdpt
  $('tabla').innerHTML=head()+filas.join('');
  $('tabla').querySelectorAll('th').forEach(th=>th.onclick=()=>{const k=th.dataset.o;orden=orden.k===k?{k,d:-orden.d}:{k,d:k==='nombre'?1:-1};tabla()});
  $('tabla').querySelectorAll('tr.l').forEach(tr=>tr.onclick=()=>{const [k,...v]=tr.dataset.k.split(':');
-  if(k==='nivel')go({nivel:v[0]});else if(k==='sector')go({nivel:estado.nivel,sector:v[0]});else if(k==='pliego')go({nivel:estado.nivel,sector:estado.sector,pliego:v[0]});
+  if(k==='nivel'){tab='sectores';go({nivel:v[0]})}else if(k==='sector'){tab='pliegos';go({nivel:estado.nivel,sector:v[0]})}else if(k==='pliego'){tab='ues';go({nivel:estado.nivel,sector:estado.sector,pliego:v[0]})}
   else if(k==='npliego')go({nivel:v[0],sector:v[1],pliego:v[2]});else if(k==='dpto')go({dpto:v.join(':')});else if(k==='ue')go({ue:v[0]});else if(k==='cui')fichaCUI(v[0]);else if(k==='funcion')go({sec:'funcion',funcion:v.join(':')})})}
 function tabla2(){let src=[];const t2=[['fuente','Por fuente de financiamiento'],['funcion','Por función']];if(estado.ue&&(U.ing||U.transf||U.ds))t2.push(['ing','💰 Ingresos y transferencias']);
  if(estado.ue&&tab2==='ing'&&(U.ing||U.transf||U.ds)){$('tabs2').innerHTML=t2.map(([k,t])=>`<button class="${k===tab2?'on':''}" data-t="${k}">${t}</button>`).join('');$('tabs2').querySelectorAll('button').forEach(b=>b.onclick=()=>{tab2=b.dataset.t;tabla2()});$('tabla2').innerHTML=ingresosUI(U);return}
@@ -504,7 +504,7 @@ let ULT_U=null;async function go(e){estado={...e};fchip='';if(U)ULT_U=U;U=null;c
  $('tcard').classList.toggle('sinmapa',sinMapa);
  if(sinMapa){$('ptabs').querySelectorAll('button').forEach(b=>b.classList.toggle('on',b.dataset.p==='rank'));$('pRank').hidden=false;$('pDist').hidden=true}
  crumbs();tabla();tabla2();hash();starUI();nivUI();$('tcard').querySelector('.wrap').scrollTop=0}
-$('niv').querySelectorAll('button').forEach(b=>b.onclick=()=>{nivF=b.dataset.n;if(!terr(estado)&&nivF){go({nivel:nivF});return}if(!terr(estado)&&!nivF&&estado.nivel){go({});return}go(estado)});
+$('niv').querySelectorAll('button').forEach(b=>b.onclick=()=>{nivF=b.dataset.n;if(!terr(estado)&&nivF){tab='sectores';go({nivel:nivF});return}if(!terr(estado)&&!nivF&&estado.nivel){go({});return}go(estado)});
 $('sw').querySelectorAll('button').forEach(b=>b.onclick=()=>{modo=b.dataset.m;$('sw').querySelectorAll('button').forEach(x=>x.classList.toggle('on',x===b));go(estado)});
 $('exp').onclick=()=>{const w=$('board').classList.toggle('wide');$('tcard').classList.toggle('wide',w);$('exp').textContent=w?'⤡ Tablero':'⤢ Ampliar'};
 $('ptabs').querySelectorAll('button:not(#exp)').forEach(b=>b.onclick=()=>{$('ptabs').querySelectorAll('button').forEach(x=>x.classList.toggle('on',x===b));$('pRank').hidden=b.dataset.p!=='rank';$('pDist').hidden=b.dataset.p!=='dist'});
