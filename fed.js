@@ -44,7 +44,7 @@
       ['ART-01.01', 'ART', 'cg', 'Gobiernos locales firmantes del pacto regional que mejoran indicadores priorizados con asistencia técnica del GORE', 'n']
     ]
   };
-  const ESTADOS = [['pend', 'Sin registrar', '#B0BEC5'], ['proc', 'En proceso', '#EF8F00'], ['ok', 'Cumplido', '#2E7D32'], ['no', 'En riesgo', '#D32F2F']];
+  const ESTADOS = [['pend', 'Sin registrar', '#B0BEC5'], ['proc', 'En proceso', '#E39B1E'], ['ok', 'Cumplido', '#1B9E5A'], ['no', 'En riesgo', '#D64545']];
   let METAS = null;
   const st = { get(r) { try { return JSON.parse(localStorage.getItem('fed_' + r) || '{}'); } catch (e) { return {}; } }, set(r, v) { try { localStorage.setItem('fed_' + r, JSON.stringify(v)); } catch (e) { } } };
   const region = u => u.nivel !== 'R' ? null : u.dpto === 'LIMA' ? 'LIMA PROVINCIAS' : /CALLAO/.test(u.dpto || '') ? 'CALLAO' : u.dpto;
@@ -70,7 +70,7 @@
         <select class="fed-e" data-c="${i.code}" style="color:${col}">${ESTADOS.map(e => `<option value="${e[0]}" ${i.e === e[0] ? 'selected' : ''}>${e[1]}</option>`).join('')}</select></div>`; };
     const ex = el.querySelector('.fed'); if (ex) ex.remove();
     el.insertAdjacentHTML('afterbegin', `<div class="fed"><div class="fed-h"><div><b>FED 2025-2026 · FONDO DE ESTÍMULO AL DESEMPEÑO</b><small>${FED.norma} · el incentivo de los gobiernos regionales</small></div>
-      <div class="fed-k"><b>${R.items.length}</b> indicadores le aplican · <b style="color:#2E7D32">${cnt('ok')}</b> cumplidos · <b style="color:#EF8F00">${cnt('proc')}</b> en proceso · <b style="color:#D32F2F">${cnt('no')}</b> en riesgo · ${cnt('pend')} sin registrar</div></div>
+      <div class="fed-k"><b>${R.items.length}</b> indicadores le aplican · <b style="color:#1B9E5A">${cnt('ok')}</b> cumplidos · <b style="color:#E39B1E">${cnt('proc')}</b> en proceso · <b style="color:#D64545">${cnt('no')}</b> en riesgo · ${cnt('pend')} sin registrar</div></div>
       <div class="fed-fase">${FED.periodo.map(p => `<span class="${p === fase ? 'on' : ''}">${p[1]} · ${p[2].slice(0, 7)} → ${p[3].slice(0, 7)}</span>`).join('')}<span class="mutx">El pago llega por DS tras cada verificación; cumplimiento parcial paga en proporción (art. 8.10 y 10).</span></div>
       ${cats.map(c => `<div class="fed-cat"><span>${FED.cat[c][0]}</span><small>${FED.cat[c][1]}</small></div>${R.items.filter(i => i.cat === c).map(fila).join('')}`).join('')}
       <details class="fed-reglas"><summary>Cómo se verifica y se paga (DS 012-2025-MIDIS)</summary><ul>${FED.reglas.map(x => `<li>${x}</li>`).join('')}</ul><p class="mutx">El estado por indicador lo registra la entidad aquí (se guarda solo en este navegador); las metas son las del Anexo II. Las fichas técnicas están en www.gob.pe/midis.</p></details></div>`);

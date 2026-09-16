@@ -96,7 +96,7 @@
     return d;
   }
   // ---- infografías SVG ----
-  const COL = { ok: '#2E7D32', warn: '#EF8F00', bad: '#D32F2F', p: '#1E88E5' };
+  const COL = { ok: '#1B9E5A', warn: '#E39B1E', bad: '#D64545', p: '#1E5AA8' };
   function dona(pct, col, meta, label, sub) {
     const r = 30, c = 2 * Math.PI * r, v = Math.max(0, Math.min(100, pct || 0));
     return `<svg viewBox="0 0 80 80" width="88" height="88" style="flex:0 0 auto"><circle cx="40" cy="40" r="${r}" fill="none" stroke="#E6EAF0" stroke-width="9"/><circle cx="40" cy="40" r="${r}" fill="none" stroke="${col}" stroke-width="9" stroke-linecap="round" stroke-dasharray="${c * v / 100} ${c}" transform="rotate(-90 40 40)"/>${meta != null ? `<circle cx="40" cy="40" r="${r}" fill="none" stroke="#1C1917" stroke-width="2" stroke-dasharray="2.5 ${c - 2.5}" stroke-dashoffset="${-c * Math.min(100, meta) / 100}" transform="rotate(-90 40 40)" opacity=".7"/>` : ''}<text x="40" y="38" text-anchor="middle" style="font:800 15px Inter,sans-serif;fill:#1C1917">${label}</text><text x="40" y="52" text-anchor="middle" style="font:700 6px Inter,sans-serif;fill:#8A94A6;letter-spacing:.3px">${sub}</text></svg>`;
@@ -104,7 +104,7 @@
   function linea(hitos, S, n, corte, autoOK) {
     const y0 = new Date(PI.anio + '-01-01').getTime(), y1 = new Date(PI.anio + '-12-31').getTime(), X = f => (100 * Math.max(0, Math.min(1, (new Date(f).getTime() - y0) / (y1 - y0)))).toFixed(1);
     const hx = X(hoy());
-    return `<div style="position:relative;height:22px;margin:0 6px"><div style="position:absolute;top:10px;left:0;right:0;height:2px;background:#D5DBE3;border-radius:1px"></div><div style="position:absolute;top:10px;left:0;width:${hx}%;height:2px;background:#1E88E5;opacity:.45"></div><div style="position:absolute;top:2px;left:${hx}%;width:0;height:18px;border-left:1.5px dashed #1C1917;opacity:.6" title="hoy"></div>
+    return `<div style="position:relative;height:22px;margin:0 6px"><div style="position:absolute;top:10px;left:0;right:0;height:2px;background:#D5DBE3;border-radius:1px"></div><div style="position:absolute;top:10px;left:0;width:${hx}%;height:2px;background:#1E5AA8;opacity:.45"</div><div style="position:absolute;top:2px;left:${hx}%;width:0;height:18px;border-left:1.5px dashed #1C1917;opacity:.6" title="hoy"></div>
       ${hitos.map(([f, t], i) => { const done = S['hito' + n + '_' + i] || (autoOK || []).some(r => r.fecha === f && t.includes(r.campo === 'cert' ? 'Certificado' : 'Devengado')), venc = f < hoy() && !done, c = done ? COL.ok : venc ? COL.bad : '#fff', b = done ? COL.ok : venc ? COL.bad : '#8A94A6'; return `<div title="${f} · ${t}" style="position:absolute;top:5px;left:calc(${X(f)}% - 6px);width:12px;height:12px;border-radius:50%;background:${c};border:2px solid ${b};box-shadow:0 1px 3px rgba(0,0,0,.2)"></div>`; }).join('')}</div>
       <div style="display:flex;justify-content:space-between;font-size:8.5px;color:var(--mut);margin:0 6px"><span>ene</span><span>hoy</span><span>dic</span></div>`;
   }
