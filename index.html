@@ -6,7 +6,7 @@
 <title>Panel de Inversiones · Perú</title>
 <meta name="description" content="El pulso diario de la inversión pública del Perú: gobierno nacional, regional y local, con alertas tempranas. Herramienta no oficial con datos abiertos del MEF.">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Manrope:wght@500;600;700;800&display=swap" rel="stylesheet">
 <style>
 :root{color-scheme:light;--bg:#F0F2F5;--sup:#fff;--sup2:#F5F7FA;--ink:#1C1917;--ink2:#44546A;--mut:#8A94A6;--grid:#E6EAF0;--line:#D5DBE3;--ring:transparent;
  --p:#1E88E5;--p2:#0F2A43;--gold:#F9A825;--teal:#00897B;--ok:#2E7D32;--warn:#EF8F00;--bad:#D32F2F;--okbg:#E8F5E9;--warnbg:#FFF3E0;--badbg:#FFEBEE;
@@ -134,6 +134,40 @@ body{background:#EAF0F6}
 .fed-e{font:inherit;font-size:11px;font-weight:700;border:1.5px solid var(--line);border-radius:6px;padding:2px 4px;background:#fff}
 .fed-reglas{margin-top:8px;font-size:11px}.fed-reglas summary{cursor:pointer;color:var(--p2);font-weight:700}.fed-reglas ul{margin:6px 0 0 16px;padding:0}.fed-reglas li{margin:2px 0}
 @media(max-width:700px){.fed-i{grid-template-columns:1fr;gap:4px}}
+
+/* v7 · Sala de mando en gris perla (opción A estructura + paleta 2): Inicio / Explorar / Función, una pantalla, cifras grandes */
+body.sala{background:#EEF1F5;color:#0F172A;font-family:Manrope,Inter,"Segoe UI",system-ui,sans-serif;--sup:#FFFFFF;--sup2:#F4F6F9;--ink:#0F172A;--ink2:#334155;--mut:#64748B;--grid:#E3E8EE;--line:#D5DCE5;--sh:0 1px 2px rgba(15,23,42,.04);--rad:14px;--p:#1E5AA8;--p2:#0F2A43;--ok:#1B9E5A;--warn:#E39B1E;--bad:#D64545;--okbg:#E4F5EC;--warnbg:#FDF1DC;--badbg:#FBE5E5;--q1:#DCE7F5;--q2:#B9D0EC;--q3:#8FB4E0;--q4:#5F94D1;--q5:#3572BE;--q6:#1E5AA8}
+body.sala .top{background:#EEF1F5;border-bottom:0;color:#334155}body.sala .top .btn,body.sala .top .star,body.sala .geo select,body.sala .sw{background:#fff;color:#0F172A;border-color:#D5DCE5}body.sala .sw button{color:#64748B}body.sala .sw button.on{background:#1E5AA8;color:#fff}body.sala .crumbs b{color:#0F172A}body.sala .crumbs a{color:#1E5AA8}
+body.sala main{padding:0;gap:0}body.sala .kpis{display:block;background:#fff;border-bottom:1px solid #D5DCE5}
+body.sala .tiles{display:grid;grid-template-columns:repeat(6,1fr);gap:0}body.sala .tile{background:transparent;border-left:0;border-right:1px solid #E3E8EE;border-radius:0;box-shadow:none;padding:14px 26px 12px}body.sala .tile:last-child{border-right:0}
+body.sala .tile .k{font-size:10.5px;letter-spacing:.12em;color:#64748B}body.sala .tile .k span{display:none}body.sala .tile .tb{display:block}body.sala .tile .ring{display:none}
+body.sala .tile .v{font-size:clamp(22px,2.15vw,34px);font-weight:800;letter-spacing:-.03em;margin-top:6px;line-height:1;color:#0F172A}body.sala .tile .v small{font-size:13px;color:#64748B;font-weight:600}
+body.sala .tile .s{font-size:12px;color:#64748B;margin-top:8px;overflow:visible;white-space:normal}body.sala .tile .s:before{content:"";display:block;height:4px;border-radius:2px;background:#E6EBF1;margin-bottom:8px;background-image:linear-gradient(var(--tc,#1E5AA8),var(--tc,#1E5AA8));background-repeat:no-repeat;background-size:var(--pc,100%) 100%}
+body.sala .tile:nth-child(1){--tc:#0F172A}body.sala .tile:nth-child(2){--tc:#1E5AA8}body.sala .tile:nth-child(3){--tc:#4C8BE0}body.sala .tile:nth-child(4){--tc:#1B9E5A}body.sala .tile:nth-child(5){--tc:#0FA3A0}body.sala .tile:nth-child(6){--tc:#E39B1E}
+body.sala .board{padding:22px 32px 18px;gap:24px}body.sala #board{display:flex}
+body.sala .hero{flex:0 0 30%;background:none;border:0;padding:0;display:flex;flex-direction:column;align-items:stretch;gap:10px;min-height:0;box-shadow:none}
+body.sala .gauge{width:auto;height:auto;order:1}body.sala .gauge svg{display:none}body.sala .gauge .c{position:static;display:flex;flex-direction:row;align-items:baseline;gap:10px;width:auto;height:auto;text-align:left}
+body.sala .gauge .c b{font-size:clamp(56px,5.6vw,84px);font-weight:800;letter-spacing:-.05em;color:#1E5AA8;line-height:1}body.sala .gauge .c small{font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:#64748B;font-weight:700}
+body.sala .hero>div:not(.gauge){order:2;display:flex;flex-direction:column;gap:8px;min-height:0;flex:1;overflow:hidden}body.sala .hero h1{font-size:15px;font-weight:700;color:#0F172A;-webkit-line-clamp:3}body.sala .hero h1 em{color:#1E5AA8}body.sala .hero p{font-size:12px;color:#64748B;-webkit-line-clamp:3}
+body.sala .hero .chips{display:flex;flex-direction:column;flex-wrap:nowrap;gap:7px;margin-top:8px;overflow:auto;min-height:0;flex:1}body.sala .hero .chips:before{content:"Requiere decisión";font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:#64748B;font-weight:700;margin-bottom:2px}
+body.sala .hero .chip{display:flex;align-items:center;gap:12px;padding:9px 13px;border-radius:10px;background:#fff;border:1px solid #D5DCE5;font-size:12.5px;color:#334155;white-space:normal;flex:none}body.sala .hero .chip i{width:9px;height:9px;border-radius:50%;flex:none}body.sala .hero .chip b{font-size:21px;font-weight:800;min-width:54px;color:#0F172A;letter-spacing:-.02em}body.sala .hero .chip:hover{border-color:#1E5AA8}
+body.sala .hero .chip.ok,body.sala .hero .chip.warn,body.sala .hero .chip.bad{background:#fff}body.sala .hero span.chip{border:1px dashed #C8D1DC;background:transparent;margin-top:auto;font-size:12px;color:#64748B}body.sala .hero span.chip b{font-size:14px;min-width:0}
+body.sala #rowmapa{flex:0 0 32%;background:#fff;border:1px solid #D5DCE5;border-radius:16px;box-shadow:none}body.sala .card h2{color:#64748B;font-size:11px;letter-spacing:.12em;text-transform:uppercase;border-bottom:0;padding:14px 16px 4px}body.sala .card h2 small{color:#64748B;text-transform:none;letter-spacing:0}
+body.sala #mapa path{stroke:#fff;stroke-width:.9}body.sala #mapa path.sel{stroke:#E39B1E}body.sala .leg{color:#64748B}body.sala svg text{fill:#334155}
+body.sala #tcard{background:transparent;box-shadow:none}body.sala .ptabs{padding:0 0 6px}body.sala .ptabs button,body.sala .tabs button{background:transparent;border:0;border-bottom:2px solid transparent;border-radius:0;padding:6px 2px;margin-right:14px;color:#64748B;font-size:13px;font-weight:700}body.sala .ptabs button.on,body.sala .tabs button.on{background:transparent;color:#0F172A;border-bottom-color:#1E5AA8}
+body.sala .ptabs .btn{border:1px solid #D5DCE5;border-radius:8px;padding:5px 10px;margin:0;background:#fff}body.sala .tabs{padding:4px 0 0}body.sala .filt{padding:8px 0 6px}body.sala .filt input,body.sala .filt select{background:#fff;color:#0F172A;border-color:#D5DCE5}body.sala .filt input::placeholder{color:#94A3B8}
+body.sala #cadena{display:none}body.sala .wrap{padding:0;background:#fff;border:1px solid #D5DCE5;border-radius:14px}body.sala #tcard:not(.wide) #tabla th:nth-child(10),body.sala #tcard:not(.wide) #tabla td:nth-child(10){display:none}body.sala #tcard .ptabs{flex-wrap:wrap}
+body.sala table{font-size:13px}body.sala th{color:#64748B;font-size:10px;letter-spacing:.08em;border-bottom:1px solid #E3E8EE;padding:9px 8px;background:#F4F6F9}body.sala th:first-child{border-radius:14px 0 0 0}body.sala th:last-child{border-radius:0 14px 0 0}body.sala td{border-bottom:1px solid #EEF1F5;padding:9px 6px;color:#334155}body.sala td:first-child{color:#0F172A;font-weight:600;padding-left:12px}body.sala tr.l:hover{background:#F4F8FD}
+body.sala .bar{background:#1E5AA8;height:7px;max-width:26px}body.sala .pct.ok{color:#1B9E5A}body.sala .pct.warn{color:#E39B1E}body.sala .pct.bad{color:#D64545}body.sala .mutx{color:#64748B}
+body.sala footer{background:#EEF1F5;border-top:0;color:#8A94A6}
+body.sala .lens a{background:#fff;color:#0F172A;border-left-color:#1E5AA8}body.sala .lens small{color:#64748B}
+@media(max-width:980px){body.sala .board{padding:12px 16px}body.sala .hero,body.sala #rowmapa{flex:0 0 auto}body.sala .tiles{grid-template-columns:repeat(3,1fr)}body.sala .tile{border-bottom:1px solid #E3E8EE}}
+/* cabecera clara en todo el panel (paleta gris perla) */
+.nav{background:#fff;box-shadow:0 1px 0 #D5DCE5}.brand b{color:#0F172A}.brand small{color:#64748B}.mono{background:#1E5AA8;color:#fff}
+.secs a{color:#64748B}.secs a.on{color:#0F172A;border-color:#1E5AA8}.secs a:hover{color:#0F172A;background:#F4F6F9}
+.nav .mut{color:#64748B}.nav select{background:#fff;color:#0F172A;border-color:#D5DCE5}.nav select option{color:#0F172A}
+.qbox input{background:#F4F6F9;border-color:#D5DCE5;color:#0F172A}.qbox input::placeholder{color:#94A3B8}.qbox input:focus{background:#fff}.qbox svg{stroke:#64748B}
+.brand{flex:none;white-space:nowrap}.brand b{font-size:14.5px;line-height:1.1}.brand small{font-size:9px;line-height:1.2;margin-top:2px}.secs a{padding:0 10px}@media(max-width:1320px){.nav .mut{display:none}.qbox{min-width:120px}}.top{overflow-x:auto;scrollbar-width:none}.top::-webkit-scrollbar{display:none}
 </style>
 </head>
 <body>
@@ -143,8 +177,8 @@ body{background:#EAF0F6}
  <label class="mut">Año <select id="anio"></select></label><span class="mut" id="corte"></span></nav>
 <div class="top"><button class="btn" id="atras" title="Volver a la vista anterior" onclick="atras()" style="flex:none;font-weight:600">← Atrás</button><div class="crumbs" id="crumbs"></div><div class="geo" id="geo" title="Ir directo a un territorio"><select id="gd"><option value="">Departamento…</option></select><select id="gp" disabled><option value="">Provincia…</option></select><select id="gi" disabled><option value="">Distrito…</option></select></div><div class="sw" id="niv" title="Nivel de gobierno"><button class="on" data-n="">Todos los niveles</button><button data-n="E">Nacional</button><button data-n="R">Regional</button><button data-n="M">Local</button></div><div class="sw" id="sw"><button class="on" data-m="inv">Inversiones</button><button data-m="tot">Todo el gasto</button></div><button class="star" id="star" title="Guardar en Mi cartera">☆ Guardar</button><button class="btn" id="share" title="Copiar enlace a esta vista">🔗 Enlace</button><button class="btn p" id="ppt" title="Expediente en PowerPoint editable" hidden>📑 Expediente PPT</button><button class="btn" id="print" title="Imprimir o guardar en PDF esta vista">🖨 Reporte</button></div>
 <main>
-<div class="kpis" id="kpis"><section class="hero" id="hero"></section><div class="tiles" id="tiles"></div></div>
-<div class="board" id="board">
+<div class="kpis" id="kpis"><div class="tiles" id="tiles"></div></div>
+<div class="board" id="board"><section class="hero" id="hero"></section>
   <div class="card" id="rowmapa"><h2><span id="tit-mapa">Avance por departamento</span><small>devengado / PIM</small></h2><div class="cb"><svg id="mapa" viewBox="0 0 400 520" role="img" aria-label="Mapa del Perú"></svg>
    <div class="leg">menor <i style="background:var(--q1)"></i><i style="background:var(--q2)"></i><i style="background:var(--q3)"></i><i style="background:var(--q4)"></i><i style="background:var(--q5)"></i><i style="background:var(--q6)"></i> mayor avance</div></div></div>
   <div id="rowchart">
@@ -269,7 +303,7 @@ const GRAFICOS=false; // ponytail: David pidió no mostrar por ahora las series 
 const SECS={inicio:'Inicio',explorar:'Explorar',vigilancia:'Vigilancia',comparar:'Comparar',cartera:'Mi cartera',entidad:'Mi entidad'};
 const drill=e=>!!(e.nivel||e.dpto||e.prov||e.dist||e.ue||e.pliego);
 function seccion(){return estado.sec||(drill(estado)?'explorar':'inicio')}
-function vista(sec){const std={kpis:1,rowmapa:1,rowchart:1,tcard:1};const m={inicio:std,explorar:std,explorar0:{lens:1,tcard:1},funcion:{kpis:1,tcard:1},cui:{ficha:1},vigilancia:{vig:1},comparar:{cmp:1},cartera:{cart:1},entidad:{ent:1}}[sec];
+function vista(sec){document.body.classList.toggle('sala',['inicio','explorar','funcion'].includes(sec));const std={kpis:1,rowmapa:1,rowchart:1,tcard:1};const m={inicio:std,explorar:std,explorar0:{lens:1,tcard:1},funcion:{kpis:1,tcard:1},cui:{ficha:1},vigilancia:{vig:1},comparar:{cmp:1},cartera:{cart:1},entidad:{ent:1}}[sec];
  for(const id of ['kpis','rowmapa','rowchart','tcard','lens','ficha','vig','cmp','cart','ent'])$(id).hidden=!m[id]||(id==='rowchart'&&!GRAFICOS);$('tcard').style.flex=(sec==='explorar0'||sec==='funcion')?'1':'';$('board').style.flexDirection=sec==='explorar0'?'column':'';
  const s=sec==='explorar0'||sec==='funcion'?'explorar':sec==='cui'?'':sec;$('secs').querySelectorAll('a').forEach(a=>a.classList.toggle('on',a.dataset.s===s))}
 // ---- Mi cartera (localStorage; por navegador) ----
@@ -314,7 +348,7 @@ function hero(t,titulo,sub,chipsUE){const av=t.pim?100*t.dev/t.pim:0,r=62,c=2*Ma
  $('hero').querySelectorAll('[data-a]').forEach(a=>a.onclick=e=>{alerta=a.dataset.a;go({sec:'vigilancia',nivel:estado.nivel,dpto:estado.dpto,prov:estado.prov,dist:estado.dist,pliego:estado.pliego,sector:estado.sector})})}
 function tiles(t){const av=t.pim?100*t.dev/t.pim:0;const it=[['PIM',t.pim,'presupuesto del año',100],['Certificado',t.cert,`${(100*t.cert/t.pim||0).toFixed(1)}% del PIM`,100*t.cert/t.pim],['Comprometido',t.comp,`${(100*t.comp/t.pim||0).toFixed(1)}% del PIM`,100*t.comp/t.pim],['Devengado',t.dev,`avance ${av.toFixed(1)}%`,av],['Girado',t.gir,`${(100*t.gir/t.dev||0).toFixed(1)}% del devengado`,100*t.gir/t.pim],['Saldo',t.pim-t.dev,`${(100-av).toFixed(1)}% del PIM por ejecutar`,100-av]];
  const TC=['var(--p2)','var(--p)','var(--p)','var(--ok)','var(--teal)','var(--gold)'];
- $('tiles').innerHTML=it.map(([k,v,s,p],i)=>{const pc=Math.max(0,Math.min(100,p||0));return `<div class="tile"><div class="k">${k==='Saldo'?'Saldo por ejecutar':k}<span title="${DEF[k]}">?</span></div><div class="tb"><div><div class="v">S/ ${M(v)} <small>M</small></div><div class="s">${s}</div></div><div class="ring" style="background:conic-gradient(${TC[i]} ${pc}%,var(--grid) 0)"><b style="color:${TC[i]}">${k==='PIM'?'100':pc.toFixed(0)}%</b></div></div></div>`}).join('');
+ $('tiles').innerHTML=it.map(([k,v,s,p],i)=>{const pc=Math.max(0,Math.min(100,p||0));return `<div class="tile" style="--pc:${pc.toFixed(0)}%"><div class="k" title="${DEF[k]}">${k==='Saldo'?'Saldo por ejecutar':k}<span title="${DEF[k]}">?</span></div><div class="tb"><div><div class="v">S/ ${M(v)} <small>M</small></div><div class="s">${s}</div></div><div class="ring" style="background:conic-gradient(${TC[i]} ${pc}%,var(--grid) 0)"><b style="color:${TC[i]}">${k==='PIM'?'100':pc.toFixed(0)}%</b></div></div></div>`}).join('');
  cadena(t)}
 const IPN={1:['Porcentaje de ejecución financiera de inversiones','promedio de devengado / PIM de cada inversión con expediente técnico'],2:['Cambio porcentual del devengado acumulado','promedio de (devengado 2026) / costo actualizado de cada inversión con expediente técnico'],3:['Porcentaje ponderado de ejecución financiera','devengado / PIM de cada inversión, ponderado por su avance acumulado sobre el costo'],4:['Cambio ponderado y ejecución','promedio del indicador 2 y del indicador 3'],5:['Cumplimiento del IGEIP','6 subindicadores del Banco de Inversiones: alineación LPNIP, PMI, programación financiera (F12-B), culminación a tiempo, cierre (F9) y equilibrio físico-financiero']};
 let IPINV=null;async function ipinvUI(ux){const el=$('cadena');if(!el||!ux||ux.nivel!=='M'||ANIO!==ANIO_ACTUAL)return;if(!IPINV){IPINV=await j('data/ipinv.json').catch(()=>({}))}const d=IPINV[ux.cod];if(!d||!el.isConnected)return;const [nom,def]=IPN[d.i];const k=d.p?(d.ok?'ok':d.p<=Math.ceil(0.6*d.n)?'warn':'bad'):'p';
