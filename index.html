@@ -319,10 +319,6 @@ async function paginaUE(ue){uepAb=null;$('uep').innerHTML='<div class="fxb mutx"
  const estSea=c=>{const p=SEA[c.cui];if(!p.length)return null;const ct=p.find(x=>x.contrato),e=(p[0].estado||'').toUpperCase();
   if(ct){const fin=ct.contrato.fin_act||ct.contrato.fin;return fin&&fin<hoy&&(c.avance_fisico??0)<100?'vencido':'firmado'}
   if(/DESIERT/.test(e))return'desierto';if(/NULO|CANCEL/.test(e))return'nulo';if(/ADJUDIC|CONSENTID|OTORGAD/.test(e)||p[0].bp)return'bpro';return'proceso'};
- const clasInv=c=>{const p=(c.problema||'').toUpperCase();return c.avance_fisico>=100?'term':/PARALIZ|ABANDON|RESOLUCI|ARBITRAJ/.test(p)?'para':/SUSPEND|CONTROVERS/.test(p)?'susp':(c.avance_fisico>0||c.dev>0)?'ejec':c.pim>0?'conv':'otro'};
- const cuisInv=cuis.filter(c=>c.pim>0||c.dev>0||c.avance_fisico>0);
- const G={};cuisInv.forEach(c=>{const k=clasInv(c);(G[k]=G[k]||[]).push(c)});const nG=k=>(G[k]||[]).length;
- const NOM={ejec:'en ejecución',para:'paralizadas',susp:'suspendidas',conv:'por convocar',term:'terminadas',otro:'otras'};
  const K={};muestra.forEach(c=>{const s=estSea(c);if(s)(K[s]=K[s]||[]).push(c)});const nK=k=>(K[k]||[]).length;
  const sinProc=muestra.filter(c=>!SEA[c.cui].length&&!(c.dev>0)).length;
  const chips=Object.keys(CHIPF).map(k=>[k,cuis.filter(CHIPF[k])]).filter(([,l])=>l.length);const nAlert=chips.reduce((s,[,l])=>s+l.length,0);
@@ -332,14 +328,43 @@ async function paginaUE(ue){uepAb=null;$('uep').innerHTML='<div class="fxb mutx"
  const F=n=>n==null?'—':'S/ '+Number(n).toLocaleString('es-PE',{maximumFractionDigits:0});
  const seg=arr=>{const t=arr.reduce((s,x)=>s+x[1],0)||1;return `<div style="display:flex;height:15px;border-radius:5px;overflow:hidden;background:var(--grid)">${arr.filter(x=>x[1]).map(([l,v,c])=>`<div title="${l}: ${v}" style="width:${100*v/t}%;background:${c}"></div>`).join('')}</div>`};
  const legend=arr=>`<div style="display:flex;flex-wrap:wrap;gap:3px 10px;margin-top:5px;font-size:10.5px;color:#64748B">${arr.filter(x=>x[1]).map(([l,v,c])=>`<span><i style="display:inline-block;width:8px;height:8px;border-radius:2px;background:${c};margin-right:3px;vertical-align:middle"></i><b style="color:#0F172A">${v}</b> ${l}</span>`).join('')}</div>`;
- const apilada=segs=>{const t=segs.reduce((s,x)=>s+x[1],0)||1;return `<div style="display:flex;height:22px;border-radius:6px;overflow:hidden;background:var(--grid)">${segs.filter(s=>s[1]).map(([l,v,c])=>`<div title="${l}: ${v}" style="width:${100*v/t}%;background:${c};color:#fff;font-size:11px;font-weight:700;display:grid;place-items:center">${v}</div>`).join('')}</div><div style="display:flex;flex-wrap:wrap;gap:4px 12px;margin-top:6px;font-size:11px">${segs.map(([l,v,c])=>`<span><i style="display:inline-block;width:9px;height:9px;border-radius:2px;background:${c};margin-right:4px"></i><b>${v}</b> ${l}</span>`).join('')}</div>`};
- const tblC=ks=>`<table class="pd-tbl"><tr><th>Inversión</th><th>Estado</th><th>PIM</th><th>Gastado</th><th>Físico</th><th>Problema declarado</th></tr>${ks.flatMap(k=>(G[k]||[]).map(c=>`<tr class="l" data-k="cui:${c.cui}"><td style="white-space:normal"><b>${c.cui}</b> ${(c.nombre||'').slice(0,80)}</td><td>${NOM[k]}</td><td>${F(c.pim)}</td><td>${F(c.dev)}</td><td>${c.avance_fisico!=null?c.avance_fisico+' %':'—'}</td><td style="white-space:normal;font-size:10.5px">${c.problema||''}</td></tr>`)).join('')}</table>`;
- const sec1=t=>`<div class="pd-lbl" style="margin:14px 8px 6px">${t}</div>`;
  const tblCui=lst=>lst.length?`<table class="pd-tbl"><tr><th>Inversión</th><th>PIM</th><th>Devengado</th><th>Físico</th><th>Detalle</th></tr>${lst.slice(0,25).map(c=>`<tr class="l" data-k="cui:${c.cui}"><td style="white-space:normal"><b>${c.cui}</b> ${(c.nombre||'').slice(0,70)}</td><td>S/ ${M(c.pim)} M</td><td>S/ ${M(c.dev)} M</td><td>${c.avance_fisico!=null&&c.avance_fisico>=0?c.avance_fisico+' %':'—'}</td><td style="white-space:normal;font-size:10px">${(c.problema||'').slice(0,90)||'—'}</td></tr>`).join('')}</table>${lst.length>25?`<p class="mutx" style="font-size:10.5px;margin:4px 0 0">y ${lst.length-25} más</p>`:''}`:'<p class="mutx" style="font-size:11px">Ninguna en esta categoría.</p>';
  const tblSea=lst=>lst.length?`<table class="pd-tbl"><tr><th>Inversión</th><th>Contratista</th><th>Convocado</th><th>Firma</th><th>Fin de plazo</th><th>Monto</th></tr>${lst.slice(0,25).map(c=>{const rs=SEA[c.cui],s=rs.find(x=>x.contrato)||rs[0]||{},ct=s.contrato;return `<tr class="l" data-k="cui:${c.cui}"><td style="white-space:normal"><b>${c.cui}</b> ${(c.nombre||'').slice(0,60)}</td><td style="white-space:normal">${s.bp?.prov||'—'}</td><td>${s.conv||''}</td><td>${ct?.firma||''}</td><td style="color:${ct&&(ct.fin_act||ct.fin)<hoy&&(c.avance_fisico??0)<100?'var(--bad)':'inherit'}">${ct?.fin_act||ct?.fin||''}</td><td>${F(ct?.monto_final||ct?.monto||s.vr)}</td></tr>`}).join('')}</table>${lst.length>25?`<p class="mutx" style="font-size:10.5px;margin:4px 0 0">y ${lst.length-25} más</p>`:''}`:'<p class="mutx" style="font-size:11px">Ninguna en esta situación.</p>';
- const p1info=apilada([['en ejecución',nG('ejec'),COL.ok],['paralizadas',nG('para'),COL.bad],['suspendidas',nG('susp'),COL.warn],['por convocar',nG('conv'),COL.p],['terminadas',nG('term'),COL.teal],['otras',nG('otro'),COL.gris]]);
- const p1col=nG('para')?COL.bad:COL.p;
- const p1det=()=>sec1('Paralizadas y suspendidas: lo que declaró la propia entidad en el F12-B')+tblC(['para','susp'])+sec1('Por convocar: tienen presupuesto y todavía no hay proceso en SEACE')+tblC(['conv'])+sec1('En ejecución')+tblC(['ejec']);
+ const norm=s=>(s||'').toUpperCase().normalize('NFD').replace(/[̀-ͯ]/g,'');
+ const REGION={TUMBES:'COSTA',PIURA:'COSTA',LAMBAYEQUE:'COSTA','LA LIBERTAD':'COSTA',LIMA:'COSTA',CALLAO:'COSTA',ICA:'COSTA',AREQUIPA:'COSTA',MOQUEGUA:'COSTA',TACNA:'COSTA',
+  CAJAMARCA:'SIERRA',ANCASH:'SIERRA',HUANUCO:'SIERRA',PASCO:'SIERRA',JUNIN:'SIERRA',HUANCAVELICA:'SIERRA',AYACUCHO:'SIERRA',APURIMAC:'SIERRA',CUSCO:'SIERRA',PUNO:'SIERRA',
+  AMAZONAS:'SELVA','SAN MARTIN':'SELVA',LORETO:'SELVA',UCAYALI:'SELVA','MADRE DE DIOS':'SELVA'};
+ const REGCOL={NACIONAL:'#64748B',COSTA:'#1E5AA8',SIERRA:'#1E5AA8',SELVA:'#00897B'};
+ const cap=s=>s.replace(/\S+/g,w=>w[0]+w.slice(1).toLowerCase());
+ const porDpto={};cuis.forEach(c=>{const d=c.dpto?norm(c.dpto):'';porDpto[d]=(porDpto[d]||0)+1});
+ const nDpto=Object.keys(porDpto).filter(Boolean).length;
+ const miniMapaPeru=()=>{if(!GEO?.features)return '';const feats=GEO.features,mx=Math.max(1,...Object.values(porDpto));const W=170,H=210,pts=[];
+  feats.forEach(f=>{const g=f.geometry;(g.type==='Polygon'?[g.coordinates]:g.coordinates).forEach(p=>p[0].forEach(c=>pts.push(c)))});
+  const minx=Math.min(...pts.map(p=>p[0])),maxx=Math.max(...pts.map(p=>p[0])),miny=Math.min(...pts.map(p=>p[1])),maxy=Math.max(...pts.map(p=>p[1]));
+  const sc=Math.min(W/(maxx-minx||1),H/(maxy-miny||1)),ox=(W-(maxx-minx)*sc)/2,oy=(H-(maxy-miny)*sc)/2,X=x=>ox+(x-minx)*sc,Y=y=>oy+(maxy-y)*sc;
+  const VER=['#EAF3EC','#C7E4CE','#9ED2AC','#6ABF82','#2FA35B','#157A3E'];
+  return `<svg viewBox="0 0 ${W} ${H}" style="width:100%;height:170px">${feats.map(f=>{const g=f.geometry,c=porDpto[norm(f.properties.n)]||0,i=c?Math.min(5,1+Math.floor(5*Math.log(c+1)/Math.log(mx+1))):0;
+   const d=(g.type==='Polygon'?[g.coordinates]:g.coordinates).map(p=>p.map(r=>'M'+r.map(pt=>X(pt[0]).toFixed(1)+' '+Y(pt[1]).toFixed(1)).join('L')+'Z').join('')).join('');
+   return `<path d="${d}" fill="${VER[i]}" stroke="#fff" stroke-width="0.6"><title>${f.properties.n}: ${c} proyecto${c!==1?'s':''}</title></path>`}).join('')}</svg>`};
+ const grupos={NACIONAL:[],COSTA:[],SIERRA:[],SELVA:[]};
+ Object.entries(porDpto).forEach(([d,n])=>{if(!d){grupos.NACIONAL.push(['Multi-departamental / nacional',n]);return}(grupos[REGION[d]||'NACIONAL']=grupos[REGION[d]||'NACIONAL']||[]).push([cap(d),n])});
+ const coberturaHTML=Object.entries(grupos).filter(([,l])=>l.length).map(([r,l])=>`<div class="pd-lbl" style="margin:10px 0 6px">${r}</div><div style="display:flex;flex-wrap:wrap;gap:8px">${l.sort((a,b)=>b[1]-a[1]).map(([n,c])=>`<div class="card" style="padding:8px 12px;display:flex;align-items:center;gap:8px;flex:0 0 auto"><b style="font-size:12.5px">${n}</b><span style="background:${REGCOL[r]};color:#fff;border-radius:50%;min-width:22px;height:22px;display:grid;place-items:center;font-size:11px;font-weight:800;padding:0 5px">${c}</span></div>`).join('')}</div>`).join('');
+ const fuentesInv=[...(U.fuentes||[])].sort((a,b)=>b.pim-a.pim);
+ const FCOL=['#1E5AA8','#2f6fb5','#00897B','#159a80','#1B9E5A','#5E35B1','#B0BEC5'];
+ const carteraHTML=fuentesInv.length?fuentesInv.map((f,i)=>`<div style="background:${FCOL[i%FCOL.length]};color:#fff;border-radius:10px;padding:10px 14px;display:flex;justify-content:space-between;align-items:center;margin-bottom:8px"><b style="font-size:13px">${f.nombre}</b><span style="background:rgba(255,255,255,.25);border-radius:12px;padding:3px 10px;font-size:11.5px;font-weight:700">S/ ${M(f.pim)} M</span></div>`).join(''):'<p class="mutx" style="font-size:12px">Sin desglose por fuente de financiamiento para el año en curso.</p>';
+ const kpiTile=(ic,lbl,val,sub,col,pct)=>`<div class="card" style="padding:10px 12px;border-left:4px solid ${col}"><div style="display:flex;justify-content:space-between;align-items:flex-start;gap:6px"><div><div style="font-size:9.5px;font-weight:800;letter-spacing:.05em;color:#64748B">${lbl}</div><div style="font-size:17px;font-weight:900;color:${col};margin-top:2px">${val}</div><div style="font-size:10.5px;color:#64748B;margin-top:2px">${sub}</div></div><div style="font-size:18px;flex:none">${ic}</div></div>${pct!=null?`<div style="height:4px;background:var(--grid);border-radius:2px;margin-top:8px;overflow:hidden"><div style="height:100%;width:${Math.min(100,pct)}%;background:${col}"></div></div>`:''}</div>`;
+ const p1info=`<div style="font-size:11px;color:#64748B">${nDpto||1} departamento${nDpto!==1?'s':''} intervenido${nDpto!==1?'s':''}${fuentesInv[0]?' · principal fuente: '+fuentesInv[0].nombre:''}</div>`;
+ const p1det=()=>`<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:14px">
+   ${kpiTile('🏗','PROYECTOS EN CARTERA',N(cuis.length),'Cartera completa','var(--p)')}
+   ${kpiTile('💰','CERTIFICADO '+ANIO,'S/ '+M(U.cert)+' M','Presupuesto certificado del año','var(--p2)',U.pim?100*U.cert/U.pim:0)}
+   ${kpiTile('✅','DEVENGADO '+ANIO,'S/ '+M(U.dev)+' M',`Ejecutado · ${U.cert?(100*U.dev/U.cert).toFixed(1):'0'}% de lo certificado`,'var(--ok)',U.cert?100*U.dev/U.cert:0)}
+   ${kpiTile('💸','GIRADO '+ANIO,'S/ '+M(U.gir)+' M',`Pagado · ${U.dev?(100*U.gir/U.dev).toFixed(1):'0'}% del devengado`,'var(--teal)',U.dev?100*U.gir/U.dev:0)}
+  </div>
+  <div style="display:grid;grid-template-columns:1fr 1.3fr 1fr;gap:16px">
+   <div><div class="pd-lbl">Distribución geográfica</div>${miniMapaPeru()}<div style="display:flex;align-items:center;gap:6px;margin-top:6px;font-size:10px;color:#64748B"><span>1 proy.</span><div style="flex:1;height:8px;background:linear-gradient(90deg,#EAF3EC,#157A3E);border-radius:4px"></div><span>10+</span></div></div>
+   <div><div class="pd-lbl">Cobertura nacional <small>${nDpto} departamento${nDpto!==1?'s':''} intervenido${nDpto!==1?'s':''}</small></div>${coberturaHTML}</div>
+   <div><div class="pd-lbl">Cartera por fuente de financiamiento</div>${carteraHTML}</div>
+  </div>`;
  const NK={proceso:'en convocatoria',bpro:'con buena pro, sin contrato',firmado:'contratos vigentes',vencido:'con plazo vencido',desierto:'desiertos',nulo:'nulos / cancelados'};const colNK={proceso:COL.p,bpro:COL.teal,firmado:COL.ok,vencido:COL.bad,desierto:COL.warn,nulo:COL.gris};
  const p2info=seg(Object.keys(NK).map(k=>[NK[k],nK(k),colNK[k]]))+legend(Object.keys(NK).map(k=>[NK[k],nK(k),colNK[k]]));
  const colC=nK('vencido')?'var(--bad)':(sinProc||nK('desierto'))?'var(--warn)':'var(--ok)';const p2med=muestra.length?100*(nK('firmado')+nK('vencido'))/muestra.length:null;
@@ -364,7 +389,7 @@ async function paginaUE(ue){uepAb=null;$('uep').innerHTML='<div class="fxb mutx"
   return `<div class="card pnl ${on?'on':(any?'off':'')}" data-p="${n}" style="border-left-color:${col}"><div class="pnl-top"><div class="pnl-ic">${icono}</div><div class="pnl-tx"><div class="pnl-h">${n} · ${titulo}</div><div class="pnl-v" style="color:${col}">${valor}</div><div class="pnl-s">${sub}</div></div>${medidor!=null?`<div class="pnl-g" style="background:conic-gradient(${col} ${Math.max(0,Math.min(100,medidor))}%,var(--grid) 0)"><b style="color:${col}">${Math.round(medidor)}%</b></div>`:''}<div class="pnl-arrow">${on?'▲':'▼'}</div></div>${info?`<div class="pnl-info">${info}</div>`:''}${on?`<div class="pnl-det">${det()}</div>`:''}</div>`};
  function pintar(){
   $('uep-wrap').innerHTML=`<div class="uep-grid" style="${uepAb?'':'grid-template-rows:1fr 1fr'}">
-   ${pnl('🏗',1,'Inversiones',`${cuisInv.length} proyectos con presupuesto`,`${nG('ejec')} en ejecución · ${nG('para')+nG('susp')} con problemas · ${nG('conv')} por convocar`,p1col,null,p1info,p1det)}
+   ${pnl('🏗',1,'Inversiones',`${N(cuis.length)} proyectos en cartera`,`certificado S/ ${M(U.cert)} M · devengado S/ ${M(U.dev)} M`,`var(--${cls(av)})`,av,p1info,p1det)}
    ${pnl('📑',2,'Contrataciones',`${nK('firmado')+nK('vencido')} contratadas de ${muestra.length} en la muestra`,`${nK('proceso')} en convocatoria · ${nK('vencido')} con plazo vencido${sinProc?` · ${sinProc} sin proceso`:''}`,colC,p2med,p2info,p2det)}
    ${pnl('🎯',3,'Metas',nAlert?`${N(nAlert)} señales de seguimiento`:'Sin alertas de seguimiento',p3sub,p3col,null,p3info,p3det)}
    ${pnl('🏦',4,'Ingresos y transferencias',ing?`S/ ${M(ing.rec)} M recaudados`:(transf?`S/ ${M(transf.total)} M transferidos`:'Sin datos de ingresos'),ing?`de S/ ${M(ing.pim)} M PIM de ingresos${dsPend.length?` · ${dsPend.length} decreto${dsPend.length>1?'s':''} sin incorporar`:''}`:(transf?'transferencias del Tesoro Público':'—'),colI,avI,p4info,p4det)}
