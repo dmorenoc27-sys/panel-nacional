@@ -423,7 +423,7 @@ function tabla(){let filas=[],tabs=[];if(estado.dpto)fdpto='';const ok=u=>(!fdpt
  $('tabla').innerHTML=head()+filas.join('');
  $('tabla').querySelectorAll('th').forEach(th=>th.onclick=()=>{const k=th.dataset.o;orden=orden.k===k?{k,d:-orden.d}:{k,d:k==='nombre'?1:-1};tabla()});
  $('tabla').querySelectorAll('tr.l').forEach(tr=>tr.onclick=()=>{const [k,...v]=tr.dataset.k.split(':');
-  if(k==='nivel'){tab='sectores';fdpto='';ftxt='';go({nivel:v[0]})}else if(k==='sector'){tab='pliegos';go({nivel:estado.nivel,sector:v[0]})}else if(k==='pliego'){tab='ues';go({nivel:estado.nivel,sector:estado.sector,pliego:v[0]})}
+  if(k==='nivel'){tab='sectores';fdpto='';ftxt='';nivF=v[0];go({nivel:v[0]})}else if(k==='sector'){tab='pliegos';go({nivel:estado.nivel,sector:v[0]})}else if(k==='pliego'){tab='ues';go({nivel:estado.nivel,sector:estado.sector,pliego:v[0]})}
   else if(k==='npliego')go({nivel:v[0],sector:v[1],pliego:v[2]});else if(k==='dpto')go({dpto:v.join(':')});else if(k==='ue')go({ue:v[0]});else if(k==='cui')fichaCUI(v[0]);else if(k==='funcion')go({sec:'funcion',funcion:v.join(':')})})}
 function tabla2(){let src=[];const t2=[['fuente','Por fuente de financiamiento'],['funcion','Por función']];if(estado.ue&&(U.ing||U.transf||U.ds))t2.push(['ing','💰 Ingresos y transferencias']);
  if(estado.ue&&tab2==='ing'&&(U.ing||U.transf||U.ds)){$('tabs2').innerHTML=t2.map(([k,t])=>`<button class="${k===tab2?'on':''}" data-t="${k}">${t}</button>`).join('');$('tabs2').querySelectorAll('button').forEach(b=>b.onclick=()=>{tab2=b.dataset.t;tabla2()});$('tabla2').innerHTML=ingresosUI(U);return}
@@ -500,7 +500,7 @@ let ULT_U=null;async function go(e){estado={...e};fchip='';if(U)ULT_U=U;U=null;c
  else if(estado.nivel){const n=(modo==='tot'?R.total.niveles:R.niveles).find(x=>x.cod===estado.nivel);hero(n,`<em>${NIV[estado.nivel]}</em>`,modo==='tot'?`Todo el gasto de ${N(n.n_ue)} unidades ejecutoras.`:`${N(n.n_cui)} inversiones en ${N(n.n_ue)} unidades ejecutoras.`);tiles(n);serieUI(ms(S.niveles[y][estado.nivel]),S.niveles[y-1]?.[estado.nivel]?ms(S.niveles[y-1][estado.nivel]):null,`Devengado mensual de inversiones · ${NIV[estado.nivel]}`);histo(H.niveles.filter(x=>x.cod===estado.nivel),`Evolución anual · ${NIV[estado.nivel]}`)}
  else{const t=modo==='tot'?R.total.pais:R.pais;const av=t.pim?100*t.dev/t.pim:0;hero(t,modo==='tot'?`El Perú ha ejecutado el <em>${av.toFixed(1)} %</em> de su presupuesto ${y}`:`El Perú ha ejecutado el <em>${av.toFixed(1)} %</em> de su inversión pública ${y}`,modo==='tot'?`S/ ${M(t.dev)} millones devengados de S/ ${M(t.pim)} millones en ${N(t.n_ue)} unidades ejecutoras.`:`S/ ${M(t.dev)} millones devengados de S/ ${M(t.pim)} millones en ${N(t.n_cui)} inversiones y ${N(t.n_ue)} unidades ejecutoras de los tres niveles de gobierno.`);tiles(t);serieUI(ms(S.pais[y]),S.pais[y-1]?ms(S.pais[y-1]):null,'Devengado mensual de inversiones · Perú');histo(H.pais,'Evolución anual · Perú')}
  $('sw').style.visibility=(!estado.nivel&&!estado.dpto)||(estado.nivel&&!estado.sector&&!estado.pliego)?'visible':'hidden';
- const sinMapa=!!(estado.nivel&&!estado.dpto&&!estado.prov&&!estado.dist);$('rowmapa').hidden=sinMapa;if(!sinMapa)mapa();
+ const sinMapa=!!nivF;$('rowmapa').hidden=sinMapa;if(!sinMapa)mapa();
  $('tcard').classList.toggle('sinmapa',sinMapa);
  if(sinMapa){$('ptabs').querySelectorAll('button').forEach(b=>b.classList.toggle('on',b.dataset.p==='rank'));$('pRank').hidden=false;$('pDist').hidden=true}
  crumbs();tabla();tabla2();hash();starUI();nivUI();$('tcard').querySelector('.wrap').scrollTop=0}
