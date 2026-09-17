@@ -69,14 +69,18 @@ td:first-child{white-space:normal;min-width:150px}tr.l{cursor:pointer}tr.l:hover
 .tip{position:fixed;pointer-events:none;background:var(--p2);color:#fff;padding:6px 9px;border-radius:8px;font-size:11.5px;z-index:9;display:none;max-width:280px;line-height:1.4;white-space:pre-line}
 /* secciones que ocupan el tablero */
 .page{flex:1;min-height:0;overflow:auto;display:flex;flex-direction:column;gap:10px}
-.uep-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;padding:14px 16px}
-.pnl{padding:0;border-left:5px solid var(--p);transition:box-shadow .15s}.pnl:hover{box-shadow:0 6px 20px rgba(15,42,67,.14)}
-.pnl-top{display:flex;align-items:flex-start;gap:12px;padding:16px 18px}.pnl-ic{font-size:24px;line-height:1.1;flex:none}
+.uep-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;height:100%;box-sizing:border-box;padding:14px 16px}
+.pnl{padding:0;border-left:5px solid var(--p);transition:box-shadow .15s;display:flex;flex-direction:column;min-height:0;overflow:hidden;background:#fff;cursor:pointer}.pnl:hover{box-shadow:0 6px 20px rgba(15,42,67,.14)}
+.pnl.on{grid-column:1/-1;grid-row:1/-1;overflow:auto;box-shadow:0 6px 22px rgba(15,42,67,.18)}.pnl.off{display:none}
+.pnl-top{display:flex;align-items:flex-start;gap:12px;padding:16px 18px;flex:none}.pnl-ic{font-size:24px;line-height:1.1;flex:none}
 .pnl-tx{flex:1;min-width:0}.pnl-h{font-size:10.5px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#64748B;margin-bottom:4px}
 .pnl-v{font-size:18px;font-weight:800;line-height:1.3;color:#0F172A}.pnl-s{font-size:12px;color:#64748B;margin-top:4px;line-height:1.4}
 .pnl-g{width:54px;height:54px;border-radius:50%;display:grid;place-items:center;flex:none}.pnl-g b{width:42px;height:42px;border-radius:50%;background:#fff;display:grid;place-items:center;font-size:12px}
-.pnl-det{border-top:1px solid var(--line);padding:4px 18px 12px}.pnl-det .r{display:flex;justify-content:space-between;gap:10px;padding:5px 0;border-bottom:1px dashed var(--line);font-size:12.5px}.pnl-det .r:last-child{border-bottom:0}.pnl-det .r span{color:#64748B}.pnl-det .r b{color:#0F172A;font-weight:700}
-@media(max-width:980px){.uep-grid{grid-template-columns:1fr}}
+.pnl-arrow{flex:none;font-size:13px;color:#94A3B8;align-self:center}
+.pnl-info{padding:0 18px 14px;flex:none}
+.pnl-det{border-top:1px solid var(--line);padding:10px 18px 16px;flex:1;min-height:0;overflow:auto}
+.pnl-det .r{display:flex;justify-content:space-between;gap:10px;padding:5px 0;border-bottom:1px dashed var(--line);font-size:12.5px}.pnl-det .r:last-child{border-bottom:0}.pnl-det .r span{color:#64748B}.pnl-det .r b{color:#0F172A;font-weight:700}
+@media(max-width:980px){.uep-grid{grid-template-columns:1fr!important;grid-template-rows:none!important;height:auto}.pnl.off{display:flex}.pnl{overflow:visible}.pnl.on{grid-column:auto;grid-row:auto}}
 .lens{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;flex:0 0 auto}.lens a{display:block;padding:14px 16px;border-radius:var(--rad);background:var(--sup);box-shadow:var(--sh);text-decoration:none;color:var(--ink);border-left:4px solid var(--p);transition:transform .15s}.lens a:hover{transform:translateY(-2px)}.lens b{font-size:15px;font-weight:800;display:block;margin-bottom:3px;color:var(--p2)}.lens small{color:var(--ink2);font-size:11.5px}
 .alert-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;flex:0 0 auto}
 .al{border-radius:var(--rad);padding:10px 12px;border:1.5px solid transparent;cursor:pointer;background:var(--sup);box-shadow:var(--sh);border-left:4px solid var(--line)}.al:hover{transform:translateY(-1px)}.al .n{font-size:24px;font-weight:900;letter-spacing:-.02em;line-height:1}.al .t{font-size:11px;color:var(--ink2);margin-top:3px}.al.on{border-color:var(--p2)}
@@ -308,26 +312,64 @@ function fichaHTML(cui,f,c,pagina,sp){const F=n=>n==null?'—':'S/ '+Number(n).t
  </div>`}
 async function fichaCUI(cui){const [f,sp]=await Promise.all([ssi(cui),seace(cui)]);const c=U?.cuis.find(x=>x.cui===cui)||{};$('fx').innerHTML=fichaHTML(cui,f,c,false,sp);$('fx').showModal()}
 async function paginaCUI(cui){$('ficha').innerHTML='<div class="fxb mutx">Cargando ficha…</div>';const [f,sp]=await Promise.all([ssi(cui),seace(cui)]);let c=(U||ULT_U)?.cuis?.find(x=>x.cui===cui)||{};const uex=f?.uep&&UES.find(u=>f.uep[u.cod]);if(uex){const uf=await ficha(uex.cod).catch(()=>null);c=uf?.cuis.find(x=>x.cui===cui)||c}$('ficha').innerHTML=fichaHTML(cui,f,c,true,sp);starUI()}
-async function paginaUE(ue){$('uep').innerHTML='<div class="fxb mutx">Cargando…</div>';const ux=UES.find(x=>x.cod===ue)||{};const av=U.pim?100*U.dev/U.pim:0;const cuis=U.cuis||[];
- const top=[...cuis].sort((a,b)=>(b.pim||0)-(a.pim||0)).slice(0,40);const sp=await Promise.all(top.map(c=>seace(c.cui).catch(()=>[])));
- const hoy=new Date().toISOString().slice(0,10);let nProc=0,nContr=0,nVenc=0,nSinProc=0;
- top.forEach((c,i)=>{const p=sp[i]||[];if(p.length)nProc++;else if(c.pim>0)nSinProc++;const ct=p.find(x=>x.contrato);if(ct){nContr++;const fin=ct.contrato.fin_act||ct.contrato.fin;if(fin&&fin<hoy&&(c.avance_fisico??0)<100)nVenc++}});
- if(!DIRE)DIRE=await j('data/directorio.json').catch(()=>({}));const dire=(DIRE[ue]||[]).slice(0,6);
- const chips=Object.keys(CHIPF).map(k=>[k,cuis.filter(CHIPF[k]).length]).filter(([,n])=>n);
- const colC=nVenc?'var(--bad)':nSinProc?'var(--warn)':'var(--ok)';
- const pnl=(icono,n,titulo,valor,sub,col,medidor,det)=>`<div class="card pnl" style="border-left-color:${col}"><div class="pnl-top"><div class="pnl-ic">${icono}</div><div class="pnl-tx"><div class="pnl-h">${n} · ${titulo}</div><div class="pnl-v" style="color:${col}">${valor}</div><div class="pnl-s">${sub}</div></div>${medidor!=null?`<div class="pnl-g" style="background:conic-gradient(${col} ${Math.max(0,Math.min(100,medidor))}%,var(--grid) 0)"><b style="color:${col}">${Math.round(medidor)}%</b></div>`:''}</div>${det?`<div class="pnl-det">${det}</div>`:''}</div>`;
- const row=(k,v)=>`<div class="r"><span>${k}</span><b>${v}</b></div>`;
- $('uep').innerHTML=`<div class="pd-hdr" style="border-radius:0"><div class="pd-cui">${NIV[U.nivel]}${U.dpto?' · '+U.dpto:''}</div><div class="pd-title">${U.nombre}</div><div class="pd-badges"><span class="pd-badge ${cls(av)}">avance ${av.toFixed(1)} %</span><span class="pd-badge">${N(cuis.length)} inversiones ${ANIO}</span></div></div>
-  <div class="uep-grid">
-   ${pnl('💰',1,'Inversión',`S/ ${M(U.dev)} M devengados`,`de S/ ${M(U.pim)} M PIM · girado S/ ${M(U.gir)} M`,`var(--${cls(av)})`,av,
-     row('PIM',`S/ ${M(U.pim)} M`)+row('Certificado',`S/ ${M(U.cert)} M`)+row('Comprometido',`S/ ${M(U.comp)} M`)+row('Devengado',`S/ ${M(U.dev)} M`)+row('Girado',`S/ ${M(U.gir)} M`)+row('Saldo por ejecutar',`S/ ${M(U.pim-U.dev)} M`))}
-   ${pnl('📑',2,'Contrataciones',`${nContr} contratadas de ${nProc} con proceso`,`SEACE · muestra de las ${top.length} inversiones de mayor PIM`,colC,top.length?100*nContr/top.length:null,
-     row('Con proceso en SEACE',nProc)+row('Contratadas',nContr)+row('Con plazo vencido',`<span style="color:var(--bad)">${nVenc}</span>`)+row('Con PIM y sin proceso',`<span style="color:var(--warn)">${nSinProc}</span>`))}
-   ${pnl('🎯',3,'Metas',chips.length?`${chips.reduce((s,[,n])=>s+n,0)} señales de seguimiento`:'Sin alertas de seguimiento',chips.length?chips.map(([k,n])=>`${n} ${CHIPL[k][1]}`).join(' · '):'Avance físico y F12-B al día',chips.length?'var(--warn)':'var(--ok)',null,
-     chips.length?chips.map(([k,n])=>row(CHIPL[k][1],n)).join(''):'')}
-   ${pnl('👤',4,'Directorio',dire.length?`${dire.length} responsable${dire.length>1?'s':''} registrado${dire.length>1?'s':''}`:'Sin responsables registrados','Invierte.pe · referencial, confirmar antes de llamar','var(--p)',null,
-     dire.map(x=>row(x.org,`${x.nombre||'—'}${x.cargo?' · '+x.cargo:''}`)).join(''))}
-  </div>`;starUI()}
+let uepAb=null;
+async function paginaUE(ue){uepAb=null;$('uep').innerHTML='<div class="fxb mutx">Cargando…</div>';const av=U.pim?100*U.dev/U.pim:0;const cuis=U.cuis||[];
+ const muestra=cuis.filter(c=>c.pim>0).sort((a,b)=>b.pim-a.pim).slice(0,40);const sp=await Promise.all(muestra.map(c=>seace(c.cui).catch(()=>[])));
+ const hoy=new Date().toISOString().slice(0,10);const SEA={};muestra.forEach((c,i)=>SEA[c.cui]=sp[i]||[]);
+ const estSea=c=>{const p=SEA[c.cui];if(!p.length)return null;const ct=p.find(x=>x.contrato),e=(p[0].estado||'').toUpperCase();
+  if(ct){const fin=ct.contrato.fin_act||ct.contrato.fin;return fin&&fin<hoy&&(c.avance_fisico??0)<100?'vencido':'firmado'}
+  if(/DESIERT/.test(e))return'desierto';if(/NULO|CANCEL/.test(e))return'nulo';if(/ADJUDIC|CONSENTID|OTORGAD/.test(e)||p[0].bp)return'bpro';return'proceso'};
+ const clasInv=c=>{const p=(c.problema||'').toUpperCase();return c.avance_fisico>=100?'term':/PARALIZ|ABANDON|RESOLUCI|ARBITRAJ/.test(p)?'para':/SUSPEND|CONTROVERS/.test(p)?'susp':(c.avance_fisico>0||c.dev>0)?'ejec':c.pim>0?'conv':'otro'};
+ const G={};cuis.forEach(c=>{const k=clasInv(c);(G[k]=G[k]||[]).push(c)});const nG=k=>(G[k]||[]).length;
+ const K={};muestra.forEach(c=>{const s=estSea(c);if(s)(K[s]=K[s]||[]).push(c)});const nK=k=>(K[k]||[]).length;
+ const sinProc=muestra.filter(c=>!SEA[c.cui].length&&!(c.dev>0)).length;
+ const chips=Object.keys(CHIPF).map(k=>[k,cuis.filter(CHIPF[k])]).filter(([,l])=>l.length);const nAlert=chips.reduce((s,[,l])=>s+l.length,0);
+ const conFis=cuis.filter(c=>c.avance_fisico!=null&&c.avance_fisico>=0);
+ const BK=[['0-25%',0,25],['25-50%',25,50],['50-75%',50,75],['75-100%',75,101]].map(([l,a,b])=>[l,conFis.filter(c=>c.avance_fisico>=a&&c.avance_fisico<b).length]);
+ const COL={ok:'#1B9E5A',warn:'#E39B1E',bad:'#D64545',p:'#1E5AA8',teal:'#00897B',gris:'#B0BEC5'};
+ const F=n=>n==null?'—':'S/ '+Number(n).toLocaleString('es-PE',{maximumFractionDigits:0});
+ const seg=arr=>{const t=arr.reduce((s,x)=>s+x[1],0)||1;return `<div style="display:flex;height:15px;border-radius:5px;overflow:hidden;background:var(--grid)">${arr.filter(x=>x[1]).map(([l,v,c])=>`<div title="${l}: ${v}" style="width:${100*v/t}%;background:${c}"></div>`).join('')}</div>`};
+ const legend=arr=>`<div style="display:flex;flex-wrap:wrap;gap:3px 10px;margin-top:5px;font-size:10.5px;color:#64748B">${arr.filter(x=>x[1]).map(([l,v,c])=>`<span><i style="display:inline-block;width:8px;height:8px;border-radius:2px;background:${c};margin-right:3px;vertical-align:middle"></i><b style="color:#0F172A">${v}</b> ${l}</span>`).join('')}</div>`;
+ const barF=(l,v,max,c)=>`<div class="pd-row"><b>${l}</b><span><span class="bar" style="width:${Math.round(90*Math.min(1,(v||0)/(max||1)))}px;background:${c}"></span>S/ ${M(v)} M</span></div>`;
+ const tblCui=lst=>lst.length?`<table class="pd-tbl"><tr><th>Inversión</th><th>PIM</th><th>Devengado</th><th>Físico</th><th>Detalle</th></tr>${lst.slice(0,25).map(c=>`<tr class="l" data-k="cui:${c.cui}"><td style="white-space:normal"><b>${c.cui}</b> ${(c.nombre||'').slice(0,70)}</td><td>S/ ${M(c.pim)} M</td><td>S/ ${M(c.dev)} M</td><td>${c.avance_fisico!=null&&c.avance_fisico>=0?c.avance_fisico+' %':'—'}</td><td style="white-space:normal;font-size:10px">${(c.problema||'').slice(0,90)||'—'}</td></tr>`).join('')}</table>${lst.length>25?`<p class="mutx" style="font-size:10.5px;margin:4px 0 0">y ${lst.length-25} más</p>`:''}`:'<p class="mutx" style="font-size:11px">Ninguna en esta categoría.</p>';
+ const tblSea=lst=>lst.length?`<table class="pd-tbl"><tr><th>Inversión</th><th>Contratista</th><th>Convocado</th><th>Firma</th><th>Fin de plazo</th><th>Monto</th></tr>${lst.slice(0,25).map(c=>{const rs=SEA[c.cui],s=rs.find(x=>x.contrato)||rs[0]||{},ct=s.contrato;return `<tr class="l" data-k="cui:${c.cui}"><td style="white-space:normal"><b>${c.cui}</b> ${(c.nombre||'').slice(0,60)}</td><td style="white-space:normal">${s.bp?.prov||'—'}</td><td>${s.conv||''}</td><td>${ct?.firma||''}</td><td style="color:${ct&&(ct.fin_act||ct.fin)<hoy&&(c.avance_fisico??0)<100?'var(--bad)':'inherit'}">${ct?.fin_act||ct?.fin||''}</td><td>${F(ct?.monto_final||ct?.monto||s.vr)}</td></tr>`}).join('')}</table>${lst.length>25?`<p class="mutx" style="font-size:10.5px;margin:4px 0 0">y ${lst.length-25} más</p>`:''}`:'<p class="mutx" style="font-size:11px">Ninguna en esta situación.</p>';
+ const p1info=seg([['en ejecución',nG('ejec'),COL.ok],['con problemas',nG('para')+nG('susp'),COL.bad],['por convocar',nG('conv'),COL.p],['terminadas',nG('term'),COL.teal]])+legend([['en ejecución',nG('ejec'),COL.ok],['con problemas',nG('para')+nG('susp'),COL.bad],['por convocar',nG('conv'),COL.p],['terminadas',nG('term'),COL.teal],['otras',nG('otro'),COL.gris]]);
+ const p1det=()=>barF('PIM',U.pim,U.pim,'var(--gold)')+barF('Certificado',U.cert,U.pim,'var(--p2)')+barF('Comprometido',U.comp,U.pim,'var(--p)')+barF('Devengado',U.dev,U.pim,'var(--ok)')+barF('Girado',U.gir,U.pim,'var(--teal)')+barF('Saldo por ejecutar',U.pim-U.dev,U.pim,'var(--bad)')
+  +(nG('para')+nG('susp')?`<div class="pd-lbl" style="margin-top:12px">Paralizadas o suspendidas</div>${tblCui([...(G.para||[]),...(G.susp||[])])}`:'')
+  +(nG('conv')?`<div class="pd-lbl" style="margin-top:12px">Por convocar <small>con presupuesto y sin gasto</small></div>${tblCui(G.conv||[])}`:'');
+ const NK={proceso:'en convocatoria',bpro:'con buena pro, sin contrato',firmado:'contratos vigentes',vencido:'con plazo vencido',desierto:'desiertos',nulo:'nulos / cancelados'};const colNK={proceso:COL.p,bpro:COL.teal,firmado:COL.ok,vencido:COL.bad,desierto:COL.warn,nulo:COL.gris};
+ const p2info=seg(Object.keys(NK).map(k=>[NK[k],nK(k),colNK[k]]))+legend(Object.keys(NK).map(k=>[NK[k],nK(k),colNK[k]]));
+ const colC=nK('vencido')?'var(--bad)':(sinProc||nK('desierto'))?'var(--warn)':'var(--ok)';const p2med=muestra.length?100*(nK('firmado')+nK('vencido'))/muestra.length:null;
+ const p2det=()=>Object.keys(NK).filter(k=>nK(k)).map(k=>`<div class="pd-lbl" style="margin-top:12px">${NK[k]} <small>${nK(k)}</small></div>${tblSea(K[k]||[])}`).join('')
+  +(sinProc?`<div class="pd-lbl" style="margin-top:12px">Con presupuesto y sin proceso registrado en SEACE</div>${tblCui(muestra.filter(c=>!SEA[c.cui].length&&!(c.dev>0)))}`:'')
+  +`<p class="mutx" style="font-size:10.5px;margin-top:10px">Muestra de las ${muestra.length} inversiones con mayor PIM de ${muestra.length<cuis.filter(c=>c.pim>0).length?cuis.filter(c=>c.pim>0).length+' con presupuesto':'todas'}. El SEACE (OECE) solo registra obras.</p>`;
+ const p3sub=chips.length?chips.map(([k,l])=>`${l.length} ${CHIPL[k][1]}`).join(' · '):'Avance físico y F12-B al día';const p3col=chips.some(([k])=>CHIPL[k][0]==='bad')?'var(--bad)':chips.length?'var(--warn)':'var(--ok)';
+ const mxB=Math.max(1,...BK.map(x=>x[1]));
+ const p3info=conFis.length?`<div class="mini">${BK.map(([l,n])=>`<i title="${l}: ${n}" style="height:${Math.max(3,Math.round(100*n/mxB))}%;background:var(--p)"></i>`).join('')}</div><div style="font-size:10px;color:#64748B;margin-top:2px">${conFis.length} de ${cuis.length} con avance físico declarado</div>`:'';
+ const p3det=()=>{let h=chips.map(([k,l])=>`<div class="pd-lbl" style="margin-top:12px">${CHIPL[k][1]} <small>${l.length}</small></div>${tblCui(l)}`).join('');
+  if(!chips.length)h+='<p class="mutx" style="font-size:12px">Sin señales de alerta activas: ejecución, expedientes técnicos, programación F12-B y pagos al día.</p>';
+  return h};
+ const ing=U.ing,transf=U.transf,dsPend=(U.ds||[]).filter(d=>d.asignado-d.incorporado>1000);
+ const avI=ing&&ing.pim?100*ing.rec/ing.pim:null;const espI=100*Math.max(1,new Date().getMonth()+1)/12;
+ const colI=avI==null?'var(--p)':avI>=espI*.9?'var(--ok)':avI>=espI*.6?'var(--warn)':'var(--bad)';
+ const p4info=(ing?.mensual?`<div class="mini">${ing.mensual.map((v,i)=>`<i title="${MES[i]}: S/ ${M(v)} M" style="height:${Math.max(3,Math.round(100*v/Math.max(1,...ing.mensual)))}%;background:var(--teal)"></i>`).join('')}</div>`:'')
+  +(dsPend.length?`<div style="font-size:10.5px;color:var(--bad);margin-top:4px"><b>${dsPend.length}</b> decreto${dsPend.length>1?'s':''} con S/ ${M(dsPend.reduce((s,d)=>s+d.asignado-d.incorporado,0))} M sin incorporar</div>`:'');
+ const p4det=()=>(ing||transf||(U.ds&&U.ds.length))?`<table class="pd-tbl">${ingresosUI(U)}</table>`:'<p class="mutx" style="font-size:12px">Sin datos de ingresos, transferencias o dispositivos legales para esta unidad ejecutora.</p>';
+ $('uep').innerHTML=`<div class="card" style="flex:0 0 auto;padding:0"><div class="pd-hdr" style="border-radius:var(--rad)"><div class="pd-cui">${NIV[U.nivel]}${U.dpto?' · '+U.dpto:''}</div><div class="pd-title">${U.nombre}</div><div class="pd-badges"><span class="pd-badge ${cls(av)}">avance ${av.toFixed(1)} %</span><span class="pd-badge">${N(cuis.length)} inversiones ${ANIO}</span>${nAlert?`<span class="pd-badge bad">${N(nAlert)} requieren decisión</span>`:''}</div></div></div>
+ <div class="card" style="flex:1;min-height:0;padding:0"><div class="wrap" id="uep-wrap" style="padding:0"></div></div>`;
+ const pnl=(icono,n,titulo,valor,sub,col,medidor,info,det)=>{const on=uepAb===n,any=uepAb!=null;
+  return `<div class="card pnl ${on?'on':(any?'off':'')}" data-p="${n}" style="border-left-color:${col}"><div class="pnl-top"><div class="pnl-ic">${icono}</div><div class="pnl-tx"><div class="pnl-h">${n} · ${titulo}</div><div class="pnl-v" style="color:${col}">${valor}</div><div class="pnl-s">${sub}</div></div>${medidor!=null?`<div class="pnl-g" style="background:conic-gradient(${col} ${Math.max(0,Math.min(100,medidor))}%,var(--grid) 0)"><b style="color:${col}">${Math.round(medidor)}%</b></div>`:''}<div class="pnl-arrow">${on?'▲':'▼'}</div></div>${info?`<div class="pnl-info">${info}</div>`:''}${on?`<div class="pnl-det">${det()}</div>`:''}</div>`};
+ function pintar(){
+  $('uep-wrap').innerHTML=`<div class="uep-grid" style="${uepAb?'':'grid-template-rows:1fr 1fr'}">
+   ${pnl('💰',1,'Inversión',`S/ ${M(U.dev)} M devengados`,`de S/ ${M(U.pim)} M PIM · girado S/ ${M(U.gir)} M`,`var(--${cls(av)})`,av,p1info,p1det)}
+   ${pnl('📑',2,'Contrataciones',`${nK('firmado')+nK('vencido')} contratadas de ${muestra.length} en la muestra`,`${nK('proceso')} en convocatoria · ${nK('vencido')} con plazo vencido${sinProc?` · ${sinProc} sin proceso`:''}`,colC,p2med,p2info,p2det)}
+   ${pnl('🎯',3,'Metas',nAlert?`${N(nAlert)} señales de seguimiento`:'Sin alertas de seguimiento',p3sub,p3col,null,p3info,p3det)}
+   ${pnl('🏦',4,'Ingresos y transferencias',ing?`S/ ${M(ing.rec)} M recaudados`:(transf?`S/ ${M(transf.total)} M transferidos`:'Sin datos de ingresos'),ing?`de S/ ${M(ing.pim)} M PIM de ingresos${dsPend.length?` · ${dsPend.length} decreto${dsPend.length>1?'s':''} sin incorporar`:''}`:(transf?'transferencias del Tesoro Público':'—'),colI,avI,p4info,p4det)}
+  </div>`;
+  $('uep-wrap').querySelectorAll('.pnl').forEach(c=>c.onclick=e=>{if(e.target.closest('.pnl-det'))return;const n=+c.dataset.p;uepAb=uepAb===n?null:n;pintar()});
+  $('uep-wrap').querySelectorAll('tr.l[data-k]').forEach(tr=>tr.onclick=()=>{const [k,v]=tr.dataset.k.split(':');if(k==='cui')go({sec:'cui',cui:v})});
+ }
+ pintar();starUI()}
 $('fx').onclick=e=>{if(e.target===$('fx'))$('fx').close()};
 const SH={};async function ficha(cod){const k=(parseInt(cod,10)%64).toString().padStart(2,'0');SH[k]=SH[k]||await j(`data/ue/${k}.json`);return SH[k][cod]}
 const GRAFICOS=false; // ponytail: David pidió no mostrar por ahora las series mensual/anual; poner true para volver a verlas
