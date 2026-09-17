@@ -504,7 +504,7 @@ let ULT_U=null;async function go(e){estado={...e};fchip='';if(U)ULT_U=U;U=null;c
  $('tcard').classList.toggle('sinmapa',sinMapa);
  if(sinMapa){$('ptabs').querySelectorAll('button').forEach(b=>b.classList.toggle('on',b.dataset.p==='rank'));$('pRank').hidden=false;$('pDist').hidden=true}
  crumbs();tabla();tabla2();hash();starUI();nivUI();$('tcard').querySelector('.wrap').scrollTop=0}
-$('niv').querySelectorAll('button').forEach(b=>b.onclick=()=>{nivF=b.dataset.n;if(!terr(estado)&&nivF){tab='sectores';fdpto='';ftxt='';go({nivel:nivF});return}if(!terr(estado)&&!nivF&&estado.nivel){go({});return}go(estado)});
+$('niv').querySelectorAll('button').forEach(b=>b.onclick=()=>{nivF=b.dataset.n;tab='sectores';fdpto='';ftxt='';go(nivF?{nivel:nivF}:{})});
 $('sw').querySelectorAll('button').forEach(b=>b.onclick=()=>{modo=b.dataset.m;$('sw').querySelectorAll('button').forEach(x=>x.classList.toggle('on',x===b));go(estado)});
 $('exp').onclick=()=>{const w=$('board').classList.toggle('wide');$('tcard').classList.toggle('wide',w);$('exp').textContent=w?'⤡ Tablero':'⤢ Ampliar'};
 $('ptabs').querySelectorAll('button:not(#exp)').forEach(b=>b.onclick=()=>{$('ptabs').querySelectorAll('button').forEach(x=>x.classList.toggle('on',x===b));$('pRank').hidden=b.dataset.p!=='rank';$('pDist').hidden=b.dataset.p!=='dist'});
