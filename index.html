@@ -415,6 +415,22 @@ async function paginaUE(ue){uepAb=null;$('uep').innerHTML='<div class="fxb mutx"
  const p4info=(ing?.mensual?`<div class="mini">${ing.mensual.map((v,i)=>`<i title="${MES[i]}: S/ ${M(v)} M" style="height:${Math.max(3,Math.round(100*v/Math.max(1,...ing.mensual)))}%;background:var(--teal)"></i>`).join('')}</div>`:'')
   +(dsPend.length?`<div style="font-size:10.5px;color:var(--bad);margin-top:4px"><b>${dsPend.length}</b> decreto${dsPend.length>1?'s':''} con S/ ${M(dsPend.reduce((s,d)=>s+d.asignado-d.incorporado,0))} M sin incorporar</div>`:'');
  const p4det=()=>(ing||transf||(U.ds&&U.ds.length))?`<table class="pd-tbl">${ingresosUI(U)}</table>`:'<p class="mutx" style="font-size:12px">Sin datos de ingresos, transferencias o dispositivos legales para esta unidad ejecutora.</p>';
+ let P4={ic:'🏦',n4:'Ingresos y transferencias',val:ing?`S/ ${M(ing.rec)} M recaudados`:(transf?`S/ ${M(transf.total)} M transferidos`:'Sin datos de ingresos'),sub:ing?`de S/ ${M(ing.pim)} M PIM de ingresos${dsPend.length?` · ${dsPend.length} decreto${dsPend.length>1?'s':''} sin incorporar`:''}`:(transf?'transferencias del Tesoro Público':'—'),col:colI,med:avI,info:p4info,det:p4det};
+ if(U.nivel==='M'&&typeof Incentivos!=='undefined'){
+  const uxPI=UES.find(x=>x.cod===ue);const tpPI=uxPI&&uxPI.pi;const tdPI=tpPI&&typeof PI_TIPOS!=='undefined'?PI_TIPOS[tpPI]:'';const comps=Incentivos.PI.compromisos;
+  P4={ic:'🏅',n4:'Plan de Incentivos',val:`${comps.length} compromisos de gestión ${Incentivos.PI.anio}`,sub:tpPI?`Municipalidad tipo ${tpPI}${tdPI?' · '+tdPI:''}`:'Programa de Incentivos a la Mejora de la Gestión Municipal',col:'var(--p)',med:null,
+   info:`<div style="font-size:11px;color:#64748B">${Incentivos.PI.norma}</div>`,
+   det:()=>`<div class="pd-lbl">Compromisos ${Incentivos.PI.anio}</div>${comps.map(c=>`<details class="pd-col" style="margin-bottom:6px"><summary><b>${c.n}. ${c.corto}</b> <small class="mutx">${c.ente}</small></summary>
+     <div class="pd-row"><b>Aplica a</b><span style="font-weight:500">${c.aplica}</span></div>
+     <div class="pd-lbl" style="margin-top:6px">Indicadores</div>${c.indicadores.map(([k,t])=>`<div class="pd-row"><b>${k}</b><span style="font-weight:500">${t}</span></div>`).join('')}
+     <div class="pd-lbl" style="margin-top:6px">Hitos y plazos</div>${c.hitos.map(([f,t])=>`<div class="pd-row"><b style="min-width:86px">${f}</b><span style="font-weight:500">${t}</span></div>`).join('')}
+     <div class="pd-lbl" style="margin-top:6px">Medios de verificación</div><div style="font-size:11px;color:var(--ink2)">${c.verif}</div>
+     ${c.siaf&&c.siaf.nota?`<div class="pd-lbl" style="margin-top:6px">Cómo lo cruza el SIAF</div><div style="font-size:11px;color:var(--ink2)">${c.siaf.nota}</div>`:''}</details>`).join('')}
+    <div class="pd-lbl" style="margin-top:12px">Calendario del MEF</div><table class="pd-tbl">${Incentivos.PI.calendario.map(([f,t])=>`<tr><td>${f}</td><td style="text-align:left">${t}</td></tr>`).join('')}</table>
+    <p style="margin-top:10px"><a href="#/entidad" class="pd-badge p" style="text-decoration:none;display:inline-block">🔒 Ver el diagnóstico en vivo por meta, cruzado con el SIAF, en Mi entidad</a></p>`};
+ } else if(U.nivel==='R'&&typeof FED!=='undefined'){
+  P4={ic:'🏅',n4:'FED',val:'Fondo de Estímulo al Desempeño',sub:FED.FED.norma,col:'var(--p)',med:null,info:'',det:()=>'<div id="fed-slot"></div>'};
+ }
  $('uep').innerHTML=`<div class="card" style="flex:0 0 auto;padding:0"><div class="pd-hdr" style="border-radius:var(--rad)"><div class="pd-cui">${NIV[U.nivel]}${U.dpto?' · '+U.dpto:''}</div><div class="pd-title">${U.nombre}</div><div class="pd-badges"><span class="pd-badge ${cls(av)}">avance ${av.toFixed(1)} %</span><span class="pd-badge">${N(cuis.length)} inversiones ${ANIO}</span>${nAlert?`<span class="pd-badge bad">${N(nAlert)} requieren decisión</span>`:''}</div></div></div>
  <div class="card" style="flex:1;min-height:0;padding:0"><div class="wrap" id="uep-wrap" style="padding:0"></div></div>`;
  function pintar(){
@@ -422,10 +438,11 @@ async function paginaUE(ue){uepAb=null;$('uep').innerHTML='<div class="fxb mutx"
    ${pnl('🏗',1,'Inversiones',`${N(cuis.length)} proyectos en cartera`,`certificado S/ ${M(U.cert)} M · devengado S/ ${M(U.dev)} M`,`var(--${cls(av)})`,av,p1info,p1det)}
    ${pnl('📑',2,'Contrataciones',`${nK('firmado')+nK('vencido')} contratadas de ${muestra.length} en la muestra`,`${nK('proceso')} en convocatoria · ${nK('vencido')} con plazo vencido${sinProc?` · ${sinProc} sin proceso`:''}`,colC,p2med,p2info,p2det)}
    ${pnl('🎯',3,'Metas',nAlert?`${N(nAlert)} señales de seguimiento`:'Sin alertas de seguimiento',p3sub,p3col,null,p3info,p3det)}
-   ${pnl('🏦',4,'Ingresos y transferencias',ing?`S/ ${M(ing.rec)} M recaudados`:(transf?`S/ ${M(transf.total)} M transferidos`:'Sin datos de ingresos'),ing?`de S/ ${M(ing.pim)} M PIM de ingresos${dsPend.length?` · ${dsPend.length} decreto${dsPend.length>1?'s':''} sin incorporar`:''}`:(transf?'transferencias del Tesoro Público':'—'),colI,avI,p4info,p4det)}
+   ${pnl(P4.ic,4,P4.n4,P4.val,P4.sub,P4.col,P4.med,P4.info,P4.det)}
   </div>`;
   $('uep-wrap').querySelectorAll('.pnl').forEach(c=>c.onclick=e=>{if(e.target.closest('.pnl-det'))return;const n=+c.dataset.p;uepAb=uepAb===n?null:n;pintar()});
   $('uep-wrap').querySelectorAll('tr.l[data-k]').forEach(tr=>tr.onclick=()=>{const [k,v]=tr.dataset.k.split(':');if(k==='cui')go({sec:'cui',cui:v})});
+  if(uepAb===4&&U.nivel==='R'&&typeof FED!=='undefined'){const slot=$('fed-slot');if(slot)FED.ui(slot,U)}
  }
  pintar();starUI()}
 $('fx').onclick=e=>{if(e.target===$('fx'))$('fx').close()};
