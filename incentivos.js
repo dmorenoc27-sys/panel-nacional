@@ -171,12 +171,12 @@
       <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap"><div style="flex:1;min-width:240px"><b style="font-size:13px">${c.nombre}</b><br><small class="mutx">${c.ente} · aplica a ${c.aplica}</small></div>
        <label style="font-size:11.5px;display:flex;gap:4px;align-items:center"><input type="checkbox" data-aplica="${c.n}" ${aplica ? 'checked' : ''}> Aplica a mi municipalidad</label>
        <select data-estado="${c.n}" ${aplica ? '' : 'disabled'} style="font-size:12px">${ESTADOS.map(([k, t]) => `<option value="${k}" ${k === estado ? 'selected' : ''}>${t}</option>`).join('')}</select></div>
-      ${aplica ? `<div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:10px"><div>
+      ${aplica ? `<div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:10px"><div style="min-width:0">
         <div class="pd-lbl">Indicadores</div>${c.indicadores.map(([k, t]) => { const v = MCUR && MCUR['c' + c.n] && MCUR['c' + c.n][k]; return `<div class="pd-row"><b>${k}</b><span style="font-weight:500">${t}${MCUR && MCUR['c' + c.n] ? (v ? ` <span class="pd-badge ok" title="Anexo C · metas por municipalidad (MEF)">umbral mínimo ${v[0]}${c.n === 6 ? '' : ' %'} · meta máxima ${v[1]}${c.n === 6 ? '' : ' %'}</span>` : ' <span class="pd-badge">no aplica a esta municipalidad</span>') : ''}</span></div>`; }).join('')}
         <div class="pd-lbl" style="margin-top:8px">Hitos y plazos</div>${c.hitos.map(([f, t], i) => { const auto = ev?.reglas?.find(r => r.fecha === f && t.includes(r.campo === 'cert' ? 'Certificado' : 'Devengado') && r.cumple); const done = auto || S['hito' + c.n + '_' + i]; const venc = f < hoy() && !done; return `<div class="pd-row" style="align-items:center"><b style="min-width:86px;color:${venc ? 'var(--bad)' : done ? 'var(--ok)' : 'var(--ink2)'}">${f}</b><span style="font-weight:500;display:flex;gap:6px;align-items:center"><input type="checkbox" data-hito="${c.n}_${i}" ${done ? 'checked' : ''} ${auto ? 'disabled title="verificado automáticamente en el SIAF"' : ''}> ${t}${auto ? ' <span class="tag ok">SIAF ✓</span>' : venc ? ' <span class="tag bad">vencido</span>' : ''}</span></div>`; }).join('')}
         <div class="pd-lbl" style="margin-top:8px">Medios de verificación</div><div style="font-size:11px;color:var(--ink2)">${c.verif}</div>
         <div class="pd-lbl" style="margin-top:8px">Notas de seguimiento</div><textarea data-nota="${c.n}" rows="2" style="width:100%;font:inherit;font-size:11.5px;border:1.5px solid var(--line);border-radius:6px;padding:5px" placeholder="Responsable, avances, pendientes…">${S['nota' + c.n] || ''}</textarea></div>
-        <div>${siaf}</div></div>` : ''}</div>`;
+        <div style="min-width:0;overflow-x:auto">${siaf}</div></div>` : ''}</div>`;
   }
   // ponytail: 'atras' solo contrae la tarjeta abierta; devuelve true si hizo algo
   // resumen para la vista alcalde: un semáforo por compromiso aplicable
