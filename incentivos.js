@@ -115,10 +115,10 @@
   }
   function resumenCard(c, S, E, META, corte, abierto) {
     const aplica = aplicaA(c, S, MCUR);
-    if (!aplica) return `<div class="card" data-abrir="${c.n}" style="flex:0 0 auto;cursor:pointer;opacity:.55;padding:12px 14px;border-left:4px solid var(--line)"><b style="color:var(--ink2)">${c.n}. ${c.corto}</b> <span class="mutx" style="font-size:11px">· no aplica a esta municipalidad · clic para activar</span>${abierto ? tarjeta(c, S, E, META, corte, true) : ''}</div>`;
+    if (!aplica) return `<div class="card" data-abrir="${c.n}" style="flex:0 0 auto;min-width:0;cursor:pointer;opacity:.55;padding:12px 14px;border-left:4px solid var(--line)"><b style="color:var(--ink2)">${c.n}. ${c.corto}</b> <span class="mutx" style="font-size:11px">· no aplica a esta municipalidad · clic para activar</span>${abierto ? tarjeta(c, S, E, META, corte, true) : ''}</div>`;
     const estado = S['estado' + c.n] || 'pend', ev = evaluarSIAF(c, E, META), d = diagnostico(c, ev, S, E), col = estado === 'ok' ? 'ok' : estado === 'no' ? 'bad' : d.color, m = medidor(c, ev, S, E);
     const bg = { ok: 'linear-gradient(135deg,#F1F8F2,#fff 55%)', warn: 'linear-gradient(135deg,#FFF6E8,#fff 55%)', bad: 'linear-gradient(135deg,#FDEDEC,#fff 55%)', p: 'linear-gradient(135deg,#EAF3FC,#fff 55%)' }[col];
-    return `<div class="card" style="flex:0 0 auto;border-left:5px solid ${COL[col]};background:${bg};${abierto ? 'grid-column:1 / -1' : ''}">
+    return `<div class="card" style="flex:0 0 auto;min-width:0;border-left:5px solid ${COL[col]};background:${bg};${abierto ? 'grid-column:1 / -1' : ''}">
       <div data-abrir="${c.n}" style="cursor:pointer;padding:12px 14px;display:grid;grid-template-columns:auto 1fr;gap:12px;align-items:start">
         <div style="display:flex;flex-direction:column;align-items:center;gap:2px">${dona(m.pct, COL[col], m.meta, m.label, m.sub)}<span style="font-size:22px;font-weight:900;color:${COL[col]};line-height:1">${c.n}</span></div>
         <div style="min-width:0"><div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap"><b style="font-size:14px;color:var(--p2)">${c.corto}</b><span class="tag ${col}">${estado === 'ok' ? 'Cumplido' : estado === 'no' ? 'No cumplido' : d.titulo}</span><span class="mutx" style="font-size:10.5px;margin-left:auto">${c.ente}</span></div>
