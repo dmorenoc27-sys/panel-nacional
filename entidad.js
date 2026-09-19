@@ -109,6 +109,54 @@
   const cap = t => { t = (t || '').replace(/^[\d.\s-]+/, '').toLowerCase(); t = t.charAt(0).toUpperCase() + t.slice(1); return t.length > 34 ? t.slice(0, 32) + '…' : t; };
   const FM = n => 'S/ ' + M(n) + ' M';
   const mlabel = s => META[s] ? (META[s].es_inv ? META[s].act_proy : 'meta ' + META[s].meta) : s;
+  // ponytail: ficha de inversión en overlay a pantalla completa — paneles resumen que se abren uno a la vez, mismo patrón que paneles()
+  let invPanel = null;
+  function pnlFicha(items) {
+    return `<div style="display:grid;gap:10px;grid-template-columns:repeat(auto-fit,minmax(250px,1fr))">${items.map(it => {
+      const on = invPanel === it.id;
+      return `<div class="card pnl fi-pnl" data-fp="${it.id}" style="cursor:pointer;padding:0;border-left:5px solid ${it.color};${on ? 'grid-column:1 / -1;box-shadow:0 6px 22px rgba(15,42,67,.14)' : ''};background:${on ? '#fff' : `linear-gradient(135deg,#fff 55%,${it.bg || '#F4F8FC'})`}">
+        <div style="display:flex;align-items:flex-start;gap:10px;padding:11px 13px">
+          <div style="font-size:19px;line-height:1.2">${it.icono || ''}</div>
+          <div style="flex:1;min-width:0"><div class="pd-lbl" style="margin:0;font-size:9.5px">${it.titulo}</div><div style="font-size:14.5px;font-weight:700;color:${it.color};margin:1px 0;line-height:1.25">${it.valor}</div><div class="mutx" style="font-size:10.5px;white-space:normal">${it.sub || ''}</div></div>
+          ${it.medidor != null ? `<div style="width:40px;height:40px;border-radius:50%;background:conic-gradient(${it.color} ${Math.min(100, Math.max(0, it.medidor))}%,var(--grid) 0);display:grid;place-items:center;flex:none"><div style="width:30px;height:30px;border-radius:50%;background:#fff;display:grid;place-items:center;font-size:9px;font-weight:700;color:${it.color}">${Math.round(it.medidor)}%</div></div>` : ''}
+          <div class="mutx" style="font-size:12px">${on ? '▲' : '▼'}</div>
+        </div>
+        ${on ? `<div style="border-top:1px solid var(--grid);padding:9px 13px 12px;cursor:default;font-size:11.5px">${it.detalle()}</div>` : ''}
+      </div>`;
+    }).join('')}</div>`;
+  }
+  function cerrarFicha() { const ov = $('inv-overlay'); if (ov) ov.remove(); abiertos.inv = null; invPanel = null; cuerpo(); }
+  function mostrarCargando(cui) {
+    let ov = $('inv-overlay'); if (!ov) { ov = document.createElement('div'); ov.id = 'inv-overlay'; document.body.appendChild(ov); }
+    ov.style.cssText = 'position:fixed;inset:0;z-index:9999;background:var(--bg);display:flex;align-items:center;justify-content:center';
+    ov.innerHTML = `<p class="mutx">Cargando ficha de la inversión ${cui}…</p>`;
+  }
+  function pintarFicha(cui, f, c, sp) {
+    let ov = $('inv-overlay'); if (!ov) { ov = document.createElement('div'); ov.id = 'inv-overlay'; document.body.appendChild(ov); }
+    ov.style.cssText = 'position:fixed;inset:0;z-index:9999;background:var(--bg);display:flex;flex-direction:column;animation:fiIn .16s ease';
+    const nombre = f?.nombre || c.nombre || 'Inversión ' + cui;
+    const items = !f ? [] : [
+      { id: 'ppto', icono: '💰', titulo: 'PRESUPUESTO', valor: F(c.pim ?? f.pim), sub: `certificado ${F(c.cert)} · devengado ${F(c.dev)}${f.costo ? ` · costo actualizado ${F(f.costo)}` : ''}`, color: 'var(--p2)', bg: '#EAF3FC', medidor: c.pim ? 100 * (c.dev || 0) / c.pim : null,
+        detalle: () => `<table class="pd-tbl"><tr><th>PIM</th><th>Certificado</th><th>Comprometido</th><th>Devengado</th><th>Girado</th></tr><tr><td>${F(c.pim)}</td><td>${F(c.cert)}</td><td>${F(c.comp)}</td><td>${F(c.dev)}</td><td>${F(c.gir)}</td></tr></table>${bancoExtra(c, f) || ''}` },
+      { id: 'obra', icono: '🏗', titulo: 'AVANCE DE LA OBRA', valor: f.av_fis != null ? f.av_fis.toFixed(0) + '% físico' : 'sin avance físico', sub: `financiero ${f.av_ejec != null ? f.av_ejec.toFixed(0) + '%' : '—'} · ${f.inicio || '—'} → ${f.fin || '—'}`, color: f.av_fis != null ? `var(--${cls(f.av_fis)})` : 'var(--p)', bg: '#F1F8F2', medidor: f.av_fis,
+        detalle: () => `<div style="display:flex;gap:18px;margin-bottom:8px">${donut(f.av_ejec, `var(--${cls(f.av_ejec || 0)})`, 'Av. financiero')}${donut(f.av_fis, `var(--${cls(f.av_fis || 0)})`, 'Av. físico')}</div><div class="pd-row"><b>Ubicación</b><span>${[c.dist, c.prov, c.dpto].filter(Boolean).join(' / ') || '—'}</span></div><div class="pd-row"><b>Modalidad</b><span>${f.modalidad || '—'}</span></div>` },
+      { id: 'sit', icono: '📋', titulo: 'SITUACIÓN ACTUAL', valor: (f.situacion || c.situacion || 'sin estado'), sub: f.f12b ? `Formato 12-B · ${f.f12b}` : '', color: /CULMIN|CERRAD/.test((f.situacion || '').toUpperCase()) ? 'var(--ok)' : /SUSPEND|PARALIZ/.test((f.situacion || '').toUpperCase()) ? 'var(--bad)' : 'var(--p)', bg: '#FFF6E8',
+        detalle: () => `${f.situ_act ? `<div class="pd-txt">${f.situ_act}</div>` : '<p class="vacio">Sin situación declarada.</p>'}${f.problema ? `<div class="pd-lbl">Problemática</div><div class="pd-txt bad">${f.problema}</div>` : ''}` },
+      { id: 'sea', icono: '✍️', titulo: 'CONTRATACIÓN · SEACE', valor: sp && sp.length ? (sp[0].bp?.prov || sp[0].estado || 'con proceso') : 'sin procesos', sub: sp && sp.length ? `${sp.length} proceso(s) de obra` : '', color: 'var(--teal)', bg: '#E8F1FB',
+        detalle: () => contratacion(sp, c, f, true) },
+      { id: 'comp', icono: '🧩', titulo: 'COMPONENTES Y METAS', valor: f.comp ? `${f.comp.length} componente(s)` : 'sin datos', sub: f.formato || '', color: '#5E35B1', bg: '#F1EEFC',
+        detalle: () => f.comp ? `<table class="pd-tbl"><tr><th>Componente / acción</th><th>Meta</th><th>Costo</th></tr>${f.comp.map(cp => `<tr class="c"><td colspan="2">${cp.n}</td><td>${F(cp.a.reduce((t, a) => t + (+a.c || 0), 0) || null)}</td></tr>` + cp.a.map(a => `<tr><td style="padding-left:14px;font-weight:500">${a.n}${a.f ? ` <small class="mutx">· ${a.f}</small>` : ''}</td><td>${a.u || ''}</td><td>${F(+a.c || null)}</td></tr>`).join('')).join('')}</table>` : '<p class="vacio">Sin componentes registrados.</p>' }
+    ];
+    ov.innerHTML = `<style>@keyframes fiIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}.fi-pnl{transition:transform .15s,box-shadow .15s}.fi-pnl:hover{transform:translateY(-2px)}</style>
+     <div class="pd-hdr" style="border-radius:0;flex:0 0 auto">
+      <div class="pd-cui"><span>${E._ue.nombre}</span><span>· CUI ${cui}</span>${f?.tipo ? `<span>· ${f.tipo}</span>` : ''}${f?.actualizado ? `<span>· capturado ${f.actualizado}</span>` : ''}<span class="x" id="fi-cerrar" title="Cerrar">×</span></div>
+      <div class="pd-title" style="font-size:15px">${nombre}</div>
+      <div class="pd-badges"><button class="btn" id="fi-volver" style="background:#fff;color:var(--p2)">‹ Volver a inversiones</button></div>
+     </div>
+     <div style="flex:1;min-height:0;overflow:auto;padding:12px 16px">${f ? pnlFicha(items) : `<p class="mutx">Sin ficha del Banco de Inversiones capturada aún para este CUI.${c.pim ? ` PIM ${F(c.pim)} · devengado ${F(c.dev)}.` : ''}</p>`}</div>`;
+    ov.querySelector('#fi-cerrar').onclick = ov.querySelector('#fi-volver').onclick = cerrarFicha;
+    ov.querySelectorAll('[data-fp]').forEach(x => x.onclick = () => { invPanel = invPanel === x.dataset.fp ? null : x.dataset.fp; pintarFicha(cui, f, c, sp); });
+  }
   function cuerpo() {
     const b = $('ent-body'), P_ = E.presupuesto, I = E.ingresos, T = modoInv ? P_.inversiones : P_.total, A = E.alertas;
     const pct = (a, c) => 100 * (a || 0) / (c || 1);
@@ -173,13 +221,11 @@
     } else if (tabE === 'inv') {
       if (abiertos.inv) {
         const cui = abiertos.inv;
-        b.innerHTML = `<div style="padding:8px 8px 0"><button class="btn" data-atras-inv>‹ Volver a inversiones</button></div><div id="ficha-inv" class="mutx" style="padding:14px">Cargando ficha…</div>`;
-        b.querySelector('[data-atras-inv]').onclick = () => { abiertos.inv = null; cuerpo(); };
+        mostrarCargando(cui);
         (async () => {
           const [f, sp] = await Promise.all([ssi(cui), seace(cui)]);
-          const target = b.querySelector('#ficha-inv'); if (!target || !target.isConnected) return; // se cerró mientras cargaba
-          const c = LAKE[cui] || {};
-          target.className = ''; target.style.padding = '0 8px 8px'; target.innerHTML = fichaHTML(cui, f, c, true, sp);
+          if (abiertos.inv !== cui) return; // el usuario cerró o cambió de inversión mientras cargaba
+          invPanel = null; pintarFicha(cui, f, LAKE[cui] || {}, sp);
         })();
       } else {
         const rows = metasSel().filter(m => hit(nombreMeta(m) + ' ' + m.act_proy + ' ' + m.sec_func)).sort((a, c) => (c.pim || c.comp) - (a.pim || a.comp));
