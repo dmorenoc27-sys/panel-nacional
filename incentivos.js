@@ -113,35 +113,36 @@
     if (ev && c.siaf.tipo === 'ingreso') { const base = S['base' + c.n] || 0, n = Object.keys(ev.mensual).length || 1, proy = ev.total / n * 12; const pct = base ? 100 * proy / base : (ev.pim ? 100 * ev.total / ev.pim : 0); return { pct: Math.min(100, pct), meta: base ? 100 : Math.round(100 * n / 12), label: (base ? (100 * (proy - base) / base >= 0 ? '+' : '') + (100 * (proy - base) / base).toFixed(0) : pct.toFixed(0)) + '%', sub: base ? 'VS 2025' : 'DEL PIM' }; }
     const done = c.hitos.filter((h, i) => S['hito' + c.n + '_' + i]).length; return { pct: 100 * done / c.hitos.length, meta: null, label: done + '/' + c.hitos.length, sub: 'HITOS' };
   }
-  function resumenCard(c, S, E, META, corte, abierto) {
+  // ponytail: tarjeta compacta para la vista gerencial — solo número, nombre y una línea de estado; el detalle vive en tarjeta()
+  function compactCard(c, S, E, META) {
     const aplica = aplicaA(c, S, MCUR);
-    if (!aplica) return `<div class="card" data-abrir="${c.n}" style="flex:0 0 auto;min-width:0;cursor:pointer;opacity:.55;padding:12px 14px;border-left:4px solid var(--line)"><b style="color:var(--ink2)">${c.n}. ${c.corto}</b> <span class="mutx" style="font-size:11px">· no aplica a esta municipalidad · clic para activar</span>${abierto ? tarjeta(c, S, E, META, corte, true) : ''}</div>`;
-    const estado = S['estado' + c.n] || 'pend', ev = evaluarSIAF(c, E, META), d = diagnostico(c, ev, S, E), col = estado === 'ok' ? 'ok' : estado === 'no' ? 'bad' : d.color, m = medidor(c, ev, S, E);
-    const bg = { ok: 'linear-gradient(135deg,#F1F8F2,#fff 55%)', warn: 'linear-gradient(135deg,#FFF6E8,#fff 55%)', bad: 'linear-gradient(135deg,#FDEDEC,#fff 55%)', p: 'linear-gradient(135deg,#EAF3FC,#fff 55%)' }[col];
-    return `<div class="card" style="flex:0 0 auto;min-width:0;border-left:5px solid ${COL[col]};background:${bg};${abierto ? 'grid-column:1 / -1' : ''}">
-      <div data-abrir="${c.n}" style="cursor:pointer;padding:12px 14px;display:grid;grid-template-columns:auto 1fr;gap:12px;align-items:start">
-        <div style="display:flex;flex-direction:column;align-items:center;gap:2px">${dona(m.pct, COL[col], m.meta, m.label, m.sub)}<span style="font-size:22px;font-weight:900;color:${COL[col]};line-height:1">${c.n}</span></div>
-        <div style="min-width:0"><div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap"><b style="font-size:14px;color:var(--p2)">${c.corto}</b><span class="tag ${col}">${estado === 'ok' ? 'Cumplido' : estado === 'no' ? 'No cumplido' : d.titulo}</span><span class="mutx" style="font-size:10.5px;margin-left:auto">${c.ente}</span></div>
-          <div style="font-size:11.5px;color:var(--ink);margin-top:6px;line-height:1.45">${d.frases.slice(0, abierto ? 9 : 2).map(f => `<div>${f}</div>`).join('')}${d.accion ? `<div style="color:var(--p2);font-weight:600;margin-top:3px">${d.accion}</div>` : ''}</div>
-          <div style="margin-top:8px">${linea(c.hitos, S, c.n, corte, ev?.reglas?.filter(r => r.cumple))}</div>
-          <div class="mutx" style="font-size:10.5px;margin-top:2px">${abierto ? '▲ clic para contraer' : '▼ clic para ver indicadores, plazos, verificación y detalle SIAF'}</div></div></div>
-      ${abierto ? `<div style="padding:0 14px 12px;border-top:1px solid var(--grid)">${tarjeta(c, S, E, META, corte, true)}</div>` : ''}</div>`;
+    if (!aplica) return `<div class="card pnl" data-abrir="${c.n}" style="cursor:pointer;opacity:.5;padding:14px 16px;border-left:4px solid var(--line);flex-direction:row;align-items:center;gap:14px">
+      <div style="width:34px;height:34px;border-radius:50%;background:var(--line);display:grid;place-items:center;font-weight:800;color:var(--ink2);flex:0 0 auto">${c.n}</div>
+      <div style="min-width:0;flex:1"><b style="color:var(--ink2)">${c.corto}</b><div class="mutx" style="font-size:11px">No aplica a esta municipalidad · clic para activar</div></div></div>`;
+    const estado = S['estado' + c.n] || 'pend', ev = evaluarSIAF(c, E, META), d = diagnostico(c, ev, S, E), col = estado === 'ok' ? 'ok' : estado === 'no' ? 'bad' : d.color;
+    const titulo = estado === 'ok' ? 'Cumplido' : estado === 'no' ? 'No cumplido' : d.titulo;
+    return `<div class="card pnl" data-abrir="${c.n}" style="cursor:pointer;border-left:5px solid ${COL[col]};padding:14px 16px;flex-direction:row;align-items:center;gap:14px">
+      <div style="width:34px;height:34px;border-radius:50%;background:${COL[col]}1F;display:grid;place-items:center;font-weight:800;color:${COL[col]};flex:0 0 auto;font-size:15px">${c.n}</div>
+      <div style="min-width:0;flex:1"><b style="font-size:13.5px;color:var(--p2)">${c.corto}</b><div style="font-size:11.5px;color:var(--ink);margin-top:2px">${titulo}</div></div>
+      <div style="font-size:20px;color:var(--mut);flex:0 0 auto">›</div></div>`;
   }
   let abiertoN = null, ultimo = null;
   function render(el, E, META, ue, onExp) {
     ultimo = [el, E, META, ue, onExp];
-    const S = st.get(ue), corte = E.corte; MCUR = metasDe(ue); if (!METAS) cargarMetas(() => render(el, E, META, ue, onExp)); const aplicables = PI.compromisos.filter(c => aplicaA(c, S, MCUR));
-    const resumen = PI.compromisos.map(c => { const e = S['estado' + c.n] || 'pend'; return { c, e, aplica: aplicaA(c, S, MCUR) }; });
-    const cnt = k => resumen.filter(r => r.aplica && r.e === k).length;
-    el.innerHTML = `<div style="padding:8px">
-     <div class="pd-lbl">Programa de Incentivos a la Mejora de la Gestión Municipal ${PI.anio}<small>${PI.norma}</small></div>
-     ${(() => { const ux = (typeof UES !== 'undefined' ? UES : []).find(u => u.cod === ue); const tp = ux && ux.pi; if (!tp) return ''; const D = typeof PI_TIPOS !== 'undefined' ? PI_TIPOS : {}; const m = MCUR; const nA = m ? PI.compromisos.filter(c => m['c' + c.n]).length : null; return `<div class="pd-txt p" style="margin-bottom:10px"><b>Clasificación municipal PI: tipo ${tp}</b> · ${D[tp] || ''}.${nA != null ? ` Según el Anexo C de metas del MEF, a esta municipalidad le aplican <b>${nA} de 7 compromisos</b>; abajo cada tarjeta muestra su umbral mínimo y su meta máxima. Puedes corregir la casilla "Aplica" si el MEF la incluyó o excluyó después.` : ' Cargando metas por municipalidad…'}</div>`; })()}
-     ${(() => { const dg = aplicables.map(c => { const e = S['estado' + c.n] || 'pend'; const d = diagnostico(c, evaluarSIAF(c, E, META), S, E); return e === 'ok' ? 'ok' : e === 'no' ? 'bad' : d.color; }); const k = x => dg.filter(v => v === x).length; return `<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:10px">${[['ok', 'En verde', 'cumplido o en camino'], ['warn', 'En ámbar', 'requieren atención'], ['bad', 'En rojo', 'plazo vencido o sin presupuesto'], ['p', 'Sin medición SIAF', 'seguimiento por hitos']].map(([c, t, s]) => `<div class="al ${c}" style="padding:8px 12px;cursor:default;display:flex;gap:10px;align-items:center"><div class="n" style="font-size:26px">${k(c)}</div><div class="t"><b>${t}</b><br>${s}</div></div>`).join('')}</div>`; })()}
-     <p class="mutx" style="font-size:11.5px;margin:0 0 10px">Cada tarjeta resume automáticamente cómo va el compromiso con los datos del SIAF al ${corte}: qué falta, cuánto y dónde. Los compromisos 2 y 4 los mide el propio SIAF; los demás se siguen por sus hitos y por el gasto asociado. Clic en una tarjeta para abrir indicadores, plazos, verificación y el detalle.</p>
-     <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">${PI.compromisos.map(c => resumenCard(c, S, E, META, corte, abiertoN === c.n)).join('')}</div>
-     <div class="pd-lbl" style="margin-top:14px">Calendario del MEF</div><table class="pd-tbl">${PI.calendario.map(([f, t]) => `<tr><td>${f}</td><td style="text-align:left">${t}</td></tr>`).join('')}</table>
-     <p class="mutx" style="font-size:10.5px;margin-top:10px">Fuente: DS 003-2026-EF, RD 0003-2026-EF/50.01 y guías de cumplimiento del MEF (Programa de Incentivos 2026). Las fechas y porcentajes provienen de las fichas técnicas; verificar siempre la versión vigente en gob.pe/mef.</p></div>`;
-    el.querySelectorAll('[data-abrir]').forEach(x => x.onclick = () => { abiertoN = abiertoN === +x.dataset.abrir ? null : +x.dataset.abrir; render(el, E, META, ue, onExp); });
+    const S = st.get(ue), corte = E.corte; MCUR = metasDe(ue); if (!METAS) cargarMetas(() => render(el, E, META, ue, onExp));
+    if (abiertoN !== null) {
+      const c = PI.compromisos.find(x => x.n === abiertoN);
+      el.innerHTML = `<div style="padding:8px">
+       <div style="display:flex;align-items:center;gap:12px;margin-bottom:8px"><button class="btn" data-atras-pi>‹ Volver a las metas</button><div class="pd-lbl" style="margin:0">${c.n}. ${c.corto}</div></div>
+       <div class="card" style="padding:0 14px 14px">${tarjeta(c, S, E, META, corte, true)}</div></div>`;
+      el.querySelector('[data-atras-pi]').onclick = () => { abiertoN = null; render(el, E, META, ue, onExp); };
+    } else {
+      el.innerHTML = `<div style="padding:8px">
+       <div class="pd-lbl">Plan de Incentivos ${PI.anio}<small>${PI.norma}</small></div>
+       <p class="mutx" style="font-size:11.5px;margin:0 0 10px">Clic en una meta para ver su detalle.</p>
+       <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">${PI.compromisos.map(c => compactCard(c, S, E, META)).join('')}</div></div>`;
+    }
+    el.querySelectorAll('[data-abrir]').forEach(x => x.onclick = () => { abiertoN = +x.dataset.abrir; render(el, E, META, ue, onExp); });
     el.querySelectorAll('[data-aplica]').forEach(x => x.onchange = () => { S['aplica' + x.dataset.aplica] = x.checked; st.set(ue, S); render(el, E, META, ue, onExp); });
     el.querySelectorAll('[data-estado]').forEach(x => x.onchange = () => { S['estado' + x.dataset.estado] = x.value; st.set(ue, S); render(el, E, META, ue, onExp); });
     el.querySelectorAll('[data-hito]').forEach(x => x.onchange = () => { S['hito' + x.dataset.hito] = x.checked; st.set(ue, S); render(el, E, META, ue, onExp); });
