@@ -52,6 +52,11 @@
     // ponytail: Plan de Incentivos también entra sin la cabecera técnica (KPIs, barra HOY, pestañas) — solo cabecera + volver
     if (tabE === 'pi') { el.innerHTML = `<div class="card" style="flex:0 0 auto;padding:0"><div class="pd-hdr" style="border-radius:var(--rad)">${cab}<div class="pd-badges"><span class="pd-badge">🏅 Plan de Incentivos ${ANIO}</span><button class="btn" id="ent-volver-pi" style="margin-left:auto;background:#fff;color:var(--p2)">‹ Volver</button></div></div></div><div class="card" style="flex:1;min-height:0;padding:0"><div class="wrap" id="ent-body" style="padding:0"></div></div>`;
       $('ent-volver-pi').onclick = () => { tabE = 'hoy'; render(); }; $('ent-salir').onclick = () => { E = null; login(); }; cuerpo(); return; }
+    // ponytail: Inversión pública también entra sin cabecera técnica — lista simple de obras; la ficha de cada una se abre debajo
+    if (tabE === 'inv') { el.innerHTML = `<div class="card" style="flex:0 0 auto;padding:0"><div class="pd-hdr" style="border-radius:var(--rad)">${cab}<div class="pd-badges"><span class="pd-badge">🏗 Inversión pública</span><input type="search" id="ent-invq" placeholder="Buscar por CUI o nombre…" value="${q}" style="margin-left:auto;padding:6px 10px;border:1.5px solid var(--line);border-radius:8px;font:inherit;font-size:12px;width:240px"><button class="btn" id="ent-volver-inv" style="background:#fff;color:var(--p2)">‹ Volver</button></div></div></div><div class="card" style="flex:1;min-height:0;padding:0"><div class="wrap" id="ent-body" style="padding:0"></div></div>`;
+      $('ent-volver-inv').onclick = () => { tabE = 'hoy'; render(); }; $('ent-salir').onclick = () => { E = null; login(); };
+      if ($('ent-invq')) $('ent-invq').oninput = e => { q = e.target.value.trim().toLowerCase(); cuerpo(); };
+      cuerpo(); return; }
     el.innerHTML = `<div class="card" style="flex:0 0 auto;padding:0"><div class="pd-hdr" style="border-radius:var(--rad)">${cab}
       <div class="pd-badges"><span class="pd-badge">${N(E.expedientes.length)} expedientes</span><span class="pd-badge">${N(inv().length)} inversiones · ${N(E.metas.length)} metas</span><span class="pd-badge">${N(E.modificaciones.length)} modificaciones presupuestales</span><span class="pd-badge ${nAl ? 'bad' : 'ok'}">${N(nAl)} alertas</span>
       <span class="sw" style="margin-left:auto"><button class="${modoInv ? 'on' : ''}" data-m="1">Solo inversiones</button><button class="${modoInv ? '' : 'on'}" data-m="0">Todo el gasto</button></span></div></div>
@@ -86,7 +91,7 @@
   // ponytail: vista alcalde = 4 botones grandes de acceso directo, sin datos; cada uno abre su pestana completa
   function hoyAlcalde(b) {
     const BTN = [
-      { id: 'res', icono: '\ud83c\udfd7', t: 'Inversi\u00f3n p\u00fablica', c: '#1E5AA8' },
+      { id: 'inv', icono: '\ud83c\udfd7', t: 'Inversi\u00f3n p\u00fablica', c: '#1E5AA8' },
       { id: 'pi', icono: '\ud83c\udfc5', t: 'Plan de Incentivos', c: '#C9A227' },
       { id: 'sea', icono: '\ud83d\udcd1', t: 'Contrataciones', c: '#00897B' },
       { id: 'al', icono: '\ud83d\udea8', t: 'Alertas', c: '#D64545' }
@@ -166,9 +171,27 @@
       b.innerHTML = `<p class="mutx" style="font-size:11.5px;padding:8px 8px 0">${procs.length} obras con proceso en SEACE · ${k('firmado') + k('vencido')} contratadas · ${k('proceso')} en convocatoria · ${k('bpro')} con buena pro sin firmar · ${k('vencido')} con plazo vencido · ${k('desierto')} desiertos${sinProc ? ` · ${sinProc} con presupuesto ≥ S/ 500 mil sin proceso registrado` : ''}</p><table><tr><th>Inversión</th><th>Situación</th><th>Contratista</th><th>Convocado</th><th>Firma</th><th>Fin de plazo</th><th>Monto</th></tr>${Object.keys(NK).flatMap(s => (K[s] || []).map(x => `<tr class="l" data-sf="${x.c.cui}" style="cursor:pointer"><td style="white-space:normal"><b>${x.c.cui}</b> ${x.c.nombre.slice(0, 70)}</td><td>${NK[s]}</td><td style="white-space:normal">${x.s.prov || '—'}</td><td>${x.s.conv || ''}</td><td>${x.s.firma || ''}</td><td style="color:${s === 'vencido' ? 'var(--bad)' : 'inherit'}">${x.s.fin || ''}</td><td>${F(x.s.monto)}</td></tr>`)).join('')}</table>`;
       b.querySelectorAll('tr.l').forEach(tr => tr.onclick = () => { filtroMeta = tr.dataset.sf; tabE = 'exp'; render(); });
     } else if (tabE === 'inv') {
-      const rows = metasSel().filter(m => hit(nombreMeta(m) + ' ' + m.act_proy + ' ' + m.sec_func)).sort((a, c) => (c.pim || c.comp) - (a.pim || a.comp));
-      b.innerHTML = `<table><tr><th>${modoInv ? 'CUI · inversión' : 'Meta'}</th><th>PIM SIAF</th><th>Hoy PIM · Dev · Av. <small>(TE)</small></th><th>Certificado</th><th>Comprometido</th><th>Devengado</th><th>Girado</th><th>Pagado</th><th>Avance</th><th>Exp.</th></tr>${rows.map(m => { const c = LAKE[m.act_proy] || {}; const av = m.pim ? 100 * m.dev / m.pim : null; return `<tr class="l" data-sf="${m.sec_func}"><td><b>${m.act_proy}</b> ${nombreMeta(m)}<br><small class="mutx">sec. func. ${m.sec_func} · meta ${m.meta}${c.cui ? ` · <a class="fc" href="#/cui/${c.cui}">ficha ↗</a>` : ''}</small></td><td>${M(m.pim)}</td><td class="mutx" style="white-space:nowrap">${c.pim ? `${M(c.pim)} · ${M(c.dev)} · <b style="color:var(--${cls(100 * (c.dev || 0) / c.pim)})">${P(100 * (c.dev || 0) / c.pim)}</b>${(c.dev || 0) - (m.dev || 0) > 50000 ? ` <span style="color:var(--ok)">▲${M((c.dev || 0) - (m.dev || 0))}</span>` : ''}` : '—'}</td><td>${M(m.cert)}</td><td>${M(m.comp)}</td><td>${M(m.dev)}</td><td>${M(m.gir)}</td><td>${M(m.pag)}</td><td>${av != null ? P(av) : '—'}</td><td>${m.n_exp}</td></tr>`; }).join('')}</table><p class="mutx" style="font-size:11px;padding:6px 8px">S/ millones · PIM SIAF al ${E.corte}; Hoy = Transparencia Económica al ${R.corte} (PIM · devengado · avance; ▲ = devengado nuevo desde el backup SIAF). Clic en una fila para ver sus expedientes.</p>`;
-      b.querySelectorAll('tr.l').forEach(tr => tr.onclick = e => { if (e.target.closest('a')) return; filtroMeta = tr.dataset.sf; tabE = 'exp'; render(); });
+      if (abiertos.inv) {
+        const cui = abiertos.inv;
+        b.innerHTML = `<div style="padding:8px 8px 0"><button class="btn" data-atras-inv>‹ Volver a inversiones</button></div><div id="ficha-inv" class="mutx" style="padding:14px">Cargando ficha…</div>`;
+        b.querySelector('[data-atras-inv]').onclick = () => { abiertos.inv = null; cuerpo(); };
+        (async () => {
+          const [f, sp] = await Promise.all([ssi(cui), seace(cui)]);
+          const target = b.querySelector('#ficha-inv'); if (!target || !target.isConnected) return; // se cerró mientras cargaba
+          const c = LAKE[cui] || {};
+          target.className = ''; target.style.padding = '0 8px 8px'; target.innerHTML = fichaHTML(cui, f, c, true, sp);
+        })();
+      } else {
+        const rows = metasSel().filter(m => hit(nombreMeta(m) + ' ' + m.act_proy + ' ' + m.sec_func)).sort((a, c) => (c.pim || c.comp) - (a.pim || a.comp));
+        b.innerHTML = `<div style="display:flex;flex-direction:column;gap:8px;padding:8px">${rows.map(m => {
+          const c = LAKE[m.act_proy] || {}, av = c.avance_fisico, col = av == null ? 'p' : cls(av);
+          return `<div class="card pnl" data-inv="${m.act_proy}" style="cursor:pointer;flex-direction:row;align-items:center;gap:14px;padding:12px 16px;border-left:5px solid var(--${col})">
+            <div style="min-width:0;flex:1"><b style="font-size:13px;color:var(--p2)">${m.act_proy}</b> <span style="font-size:12.5px">${(c.nombre || nombreMeta(m)).slice(0, 90)}</span><div class="mutx" style="font-size:11px;margin-top:2px">${c.dist ? c.dist + ' · ' : ''}PIM ${M(m.pim)} M · devengado ${M(m.dev)} M</div></div>
+            ${av != null ? `<span class="tag ${col}" style="flex:0 0 auto">avance físico ${av.toFixed(0)}%</span>` : ''}
+            <div style="font-size:20px;color:var(--mut);flex:0 0 auto">›</div></div>`;
+        }).join('')}</div>${!rows.length ? '<p class="mutx" style="padding:12px">Sin inversiones que coincidan con la búsqueda.</p>' : ''}`;
+        b.querySelectorAll('[data-inv]').forEach(x => x.onclick = () => { abiertos.inv = x.dataset.inv; cuerpo(); });
+      }
     } else if (tabE === 'exp') {
       const rows = E.expedientes.filter(e => (!filtroMeta || e.metas.includes(filtroMeta)) && (modoInv ? e.metas.some(s => META[s]?.es_inv) : true) && hit(e.glosa + ' ' + e.proveedor + ' ' + e.exp + ' ' + e.fases.map(f => f.num).join(' ')));
       b.innerHTML = `${filtroMeta && META[filtroMeta] ? `<div class="pd-lbl" style="margin:8px">${META[filtroMeta].es_inv ? 'CUI ' + META[filtroMeta].act_proy : 'Meta ' + META[filtroMeta].meta} · ${nombreMeta(META[filtroMeta])}</div>` : ''}<table><tr><th>Expediente</th><th>Proveedor</th><th>Glosa</th><th>Comprom.</th><th>Deveng.</th><th>Girado</th><th>Pagado</th><th>Última fase</th></tr>${rows.slice(0, 400).map(e => `<tr class="l" data-e="${e.exp}"><td><b>${+e.exp}</b><br><small class="mutx">${e.fecha_ing || ''}</small></td><td style="white-space:normal;min-width:120px;font-size:11px">${e.proveedor || (e.ruc ? 'RUC ' + e.ruc : '—')}</td><td style="white-space:normal;min-width:260px;font-size:11px">${(e.glosa || '').slice(0, 160)}</td><td>${F(e.tot.C)}</td><td>${F(e.tot.D)}</td><td>${F(e.tot.G)}</td><td>${F(e.tot.P)}</td><td>${e.ult_fase ? `<span class="tag ${e.ult_fase === 'P' ? 'ok' : e.ult_fase === 'C' ? 'warn' : 'p'}" style="${e.ult_fase === 'D' || e.ult_fase === 'G' ? 'background:#E3F0FB;color:var(--p2)' : ''}">${FASE[e.ult_fase]}</span><br><small class="mutx">${e.ult_fecha || ''}</small>` : '—'}</td></tr><tr class="det" data-d="${e.exp}" hidden><td colspan="8" style="white-space:normal;background:var(--sup2)"></td></tr>`).join('')}</table><p class="mutx" style="font-size:11px;padding:6px 8px">${rows.length} expedientes${rows.length > 400 ? ' (se muestran 400; afina la búsqueda)' : ''}. Clic para ver la cadena de fases con documentos.</p>`;
