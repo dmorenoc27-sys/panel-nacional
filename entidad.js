@@ -140,10 +140,51 @@
       if (pts.length) mp.fitBounds(pts, { padding: [24, 24], maxZoom: 13 }); else mp.setView([-9.19, -75.02], 5);
     });
   }
+  // ---- embudo de ejecución (PIM → Certificado → Compromiso anual → Compromiso mensual → Devengado → Girado → Pagado) ----
+  // cada etapa es un subconjunto de la anterior: se dibuja como un embudo real (trapecios que se angostan), no una lista de barras.
+  // rampa ordinal validada (dataviz skill, --ordinal, un solo matiz azul, 5 pasos con ΔL≥0.06): Compromiso anual/mensual comparten matiz
+  // (son la misma idea — "lo comprometido" — vista anual vs. acumulada al mes) y Girado/Pagado comparten el matiz final ("ya salió de la cuenta").
+  function funnelGasto(T) {
+    const raw = [
+      ['PIM', T.pim, '#86b6ef'], ['Certificado', T.cert, '#5598e7'],
+      ['Compromiso anual', T.comp_anual, '#2a78d6'], ['Compromiso mensual', T.comp, '#2a78d6'],
+      ['Devengado', T.dev, '#184f95'], ['Girado', T.gir, '#0d366b'], ['Pagado', T.pag, '#0d366b']
+    ];
+    const base = T.pim || 1;
+    let prevPct = 1;
+    // ponytail: el embudo nunca se ensancha — si una etapa posterior supera a la anterior (desfase de corte de datos), se recorta al ancho previo
+    const rows = raw.map(([nombre, valor, color]) => { const pct = Math.max(0, Math.min(prevPct, (valor || 0) / base)); prevPct = pct; return { nombre, valor, color, pct }; });
+    const W = 640, CX = W / 2, H_ST = 56, GAP = 7, PAD = 4;
+    const H = PAD * 2 + rows.length * H_ST + (rows.length - 1) * GAP;
+    // primera pasada: geometría + texto de cada etapa y si cabe adentro, sin dibujar nada aún
+    let prevHw = CX;
+    const calc = rows.map((r, i) => {
+      const hw = Math.max(8, CX * r.pct), topHw = i === 0 ? CX : prevHw;
+      const txt = `${r.nombre} · ${FM(r.valor)} · ${Math.round(r.pct * 100)}%`;
+      // ponytail: sin medición real del DOM (esto es una plantilla de texto, no un canvas vivo) — ancho estimado a ~7.2px/carácter a 13px, suficiente para decidir adentro/afuera
+      const cabeAdentro = txt.length * 7.2 < Math.min(topHw, hw) * 2 - 24;
+      prevHw = hw;
+      return { ...r, hw, topHw, txt, cabeAdentro };
+    });
+    // el margen derecho tiene que caber la etiqueta más larga que quedó afuera, si no se corta contra el viewBox
+    const margen = Math.max(160, ...calc.filter(c => !c.cabeAdentro).map(c => c.txt.length * 6.6 + 60), 0);
+    let y = PAD;
+    const partes = calc.map(r => {
+      const yTop = y, yBot = y + H_ST, cy = yTop + H_ST / 2;
+      const etiqueta = r.cabeAdentro
+        // ponytail: style="" en vez de atributos fill/font-size — style.css trae una regla global "svg text{fill:var(--mut);font-size:11px}" que gana sobre atributos de presentación
+        ? `<text x="${CX}" y="${cy + 4.5}" text-anchor="middle" style="font-size:13px;font-weight:700;fill:#fff">${r.txt}</text>`
+        : `<line x1="${CX + r.hw}" y1="${cy}" x2="${CX + CX + 24}" y2="${cy}" stroke="var(--mut)" stroke-width="1"/><circle cx="${CX + r.hw}" cy="${cy}" r="2.5" fill="var(--mut)"/><text x="${CX + CX + 30}" y="${cy + 4.5}" style="font-size:12.5px;font-weight:700;fill:var(--ink2)">${r.txt}</text>`;
+      y += H_ST + GAP;
+      return `<polygon points="${CX - r.topHw},${yTop} ${CX + r.topHw},${yTop} ${CX + r.hw},${yBot} ${CX - r.hw},${yBot}" fill="${r.color}"/>${etiqueta}`;
+    }).join('');
+    const sinDev = Math.max(0, (T.pim || 0) - (T.dev || 0));
+    const maxW = Math.round((W + margen) * (760 / 870)); // mantiene la misma escala px↔unidad-svg (13px de texto siempre se ve como 13px) sea cual sea el margen
+    return `<svg viewBox="0 0 ${W + margen} ${H}" style="width:100%;max-width:${maxW}px;height:auto;display:block;margin:8px auto 2px">${partes}</svg>${sinDev > 0 ? `<p class="mutx" style="text-align:center;font-size:11px;margin:2px 0 0">${FM(sinDev)} (${Math.round(100 * sinDev / base)}%) del PIM aún no se devenga</p>` : ''}`;
+  }
   // ponytail: resumen de "Inversión pública" al entrar — KPIs y gráficos primero; la lista completa queda un clic más abajo
   function resumenInversion(b, T, P_) {
     const items = inv().map(m => ({ ...m, c: LAKE[m.act_proy] || {} }));
-    const cad = [['PIM', T.pim, 'var(--gold)'], ['Certificado', T.cert, 'var(--p2)'], ['Compromiso anual', T.comp_anual, 'var(--p)'], ['Compromiso mensual', T.comp, 'var(--p)'], ['Devengado', T.dev, 'var(--ok)'], ['Girado', T.gir, 'var(--teal)'], ['Pagado', T.pag, '#5E35B1']];
     const ftsInv = P_.fuentes_inv && Object.keys(P_.fuentes_inv).length ? Object.values(P_.fuentes_inv).filter(f => f.pim > 0).sort((a, c) => c.pim - a.pim) : null;
     const fts = ftsInv || Object.values(P_.fuentes).filter(f => f.pim > 0).sort((a, c) => c.pim - a.pim);
     const est = { culminada: [], ejecucion: [], expediente: [], viable: [], paralizada: [] };
@@ -151,7 +192,7 @@
     const mapItems = items.map(it => ({ cui: it.act_proy, nombre: (it.c.nombre || nombreMeta(it)).slice(0, 70), lat: it.c.lat, lon: it.c.lon, est: estadoInv(it.c) }));
     paneles(b, [
       { id: 'kpi', icono: '💰', titulo: 'RESUMEN GENERAL', valor: FM(T.pim), sub: `PIM de inversiones · devengado ${P((T.dev || 0) * 100 / (T.pim || 1))} · ${items.length} inversiones`, color: 'var(--gold)', medidor: 100 * (T.dev || 0) / (T.pim || 1),
-        detalle: () => `<div style="display:flex;gap:22px;flex-wrap:wrap;align-items:center;padding:4px 0 10px">${donut(100 * (T.cert || 0) / (T.pim || 1), 'var(--p2)', 'Certificado')}${donut(100 * (T.comp_anual || 0) / (T.pim || 1), 'var(--p)', 'Compromiso anual')}${donut(100 * (T.dev || 0) / (T.pim || 1), 'var(--ok)', 'Devengado')}${donut(100 * (T.gir || 0) / (T.pim || 1), 'var(--teal)', 'Girado')}${donut(100 * (T.pag || 0) / (T.pim || 1), '#5E35B1', 'Pagado')}</div>${barras(cad.map(([l, v, c]) => [l, v, T.pim, c, FM(v)]))}` },
+        detalle: () => funnelGasto(T) },
       { id: 'fuentes', icono: '🏦', titulo: 'POR FUENTE DE FINANCIAMIENTO', valor: fts[0] ? cap(fts[0].nombre) : 'sin datos', sub: ftsInv ? `${fts.length} fuentes · solo inversiones` : `${fts.length} fuentes · cifra de todo el gasto (el desglose exclusivo de inversiones se activa en la próxima actualización de datos)`, color: 'var(--teal)',
         detalle: () => fts.map(f => `<div style="margin-bottom:14px"><div style="font-weight:800;color:var(--p2);font-size:12.5px;margin-bottom:4px">${cap(f.nombre)}</div>${barras([['PIM', f.pim, fts[0].pim, 'var(--gold)', FM(f.pim)], ['Devengado', f.dev, fts[0].pim, 'var(--ok)', FM(f.dev)]])}</div>`).join('') },
       { id: 'mapa', icono: '🗺', titulo: 'MAPA DE INVERSIONES', valor: `${items.length} inversiones`, sub: Object.entries(est).filter(([, v]) => v.length).map(([k, v]) => `${v.length} ${ESTINV[k][0].toLowerCase()}`).join(' · '), color: 'var(--p)',
