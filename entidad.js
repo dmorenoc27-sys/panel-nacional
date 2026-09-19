@@ -53,7 +53,7 @@
     if (tabE === 'pi') { el.innerHTML = `<div class="card" style="flex:0 0 auto;padding:0"><div class="pd-hdr" style="border-radius:var(--rad)">${cab}<div class="pd-badges"><span class="pd-badge">🏅 Plan de Incentivos ${ANIO}</span><button class="btn" id="ent-volver-pi" style="margin-left:auto;background:#fff;color:var(--p2)">‹ Volver</button></div></div></div><div class="card" style="flex:1;min-height:0;padding:0"><div class="wrap" id="ent-body" style="padding:0"></div></div>`;
       $('ent-volver-pi').onclick = () => { tabE = 'hoy'; render(); }; $('ent-salir').onclick = () => { E = null; login(); }; cuerpo(); return; }
     // ponytail: Inversión pública también entra sin cabecera técnica — lista simple de obras; la ficha de cada una se abre debajo
-    if (tabE === 'inv') { el.innerHTML = `<div class="card" style="flex:0 0 auto;padding:0"><div class="pd-hdr" style="border-radius:var(--rad)">${cab}<div class="pd-badges"><span class="pd-badge">🏗 Inversión pública</span><input type="search" id="ent-invq" placeholder="Buscar por CUI o nombre…" value="${q}" style="margin-left:auto;padding:6px 10px;border:1.5px solid var(--line);border-radius:8px;font:inherit;font-size:12px;width:240px"><button class="btn" id="ent-volver-inv" style="background:#fff;color:var(--p2)">‹ Volver</button></div></div></div><div class="card" style="flex:1;min-height:0;padding:0"><div class="wrap" id="ent-body" style="padding:0"></div></div>`;
+    if (tabE === 'inv') { el.innerHTML = `<div class="card" style="flex:0 0 auto;padding:0"><div class="pd-hdr" style="border-radius:var(--rad)">${cab}<div class="pd-badges"><span class="pd-badge">🏗 Inversión pública</span>${abiertos.invLista ? `<input type="search" id="ent-invq" placeholder="Buscar por CUI o nombre…" value="${q}" style="margin-left:auto;padding:6px 10px;border:1.5px solid var(--line);border-radius:8px;font:inherit;font-size:12px;width:240px">` : ''}<button class="btn" id="ent-volver-inv" style="background:#fff;color:var(--p2)${abiertos.invLista ? '' : ';margin-left:auto'}">‹ Volver</button></div></div></div><div class="card" style="flex:1;min-height:0;padding:0"><div class="wrap" id="ent-body" style="padding:0"></div></div>`;
       $('ent-volver-inv').onclick = () => { tabE = 'hoy'; render(); }; $('ent-salir').onclick = () => { E = null; login(); };
       if ($('ent-invq')) $('ent-invq').oninput = e => { q = e.target.value.trim().toLowerCase(); cuerpo(); };
       cuerpo(); return; }
@@ -74,13 +74,13 @@
   const barra = (v, max, col) => `<span class="bar" style="width:${Math.round(120 * Math.min(1, (v || 0) / (max || 1)))}px;background:${col || 'var(--p)'}"></span>`;
   // ponytail: un solo patrón para todas las pestañas — paneles resumen, clic = detalle en el mismo panel, clic otra vez = resumen
   const abiertos = {};
-  function paneles(b, items, nota, min) {
-    const ab = abiertos[tabE];
+  function paneles(b, items, nota, min, key) {
+    const K = key || tabE, ab = abiertos[K];
     const fit = min === 'fit';
     b.innerHTML = `<div style="display:grid;gap:${fit ? 8 : 10}px;padding:8px;${fit ? `grid-template-columns:repeat(3,1fr);${ab ? '' : 'grid-template-rows:1fr 1fr;'}height:100%;box-sizing:border-box` : `grid-template-columns:repeat(auto-fit,minmax(${min || 270}px,1fr))`}">${items.map(it => { const on = ab === it.id, col = it.color || 'var(--p)'; return `<div class="card pnl" data-p="${it.id}" style="flex:none;cursor:pointer;padding:0;border-left:5px solid ${col};${fit ? 'min-height:0;overflow:auto;display:flex;flex-direction:column;' + (ab && !on ? 'display:none;' : '') : ''}${on ? 'grid-column:1 / -1;' + (fit ? 'grid-row:1 / -1;' : '') + 'box-shadow:0 4px 18px rgba(15,42,67,.14)' : ''};background:${on ? '#fff' : `linear-gradient(135deg,#fff 55%,${it.bg || '#F4F8FC'})`}">
         <div style="display:flex;align-items:flex-start;gap:12px;padding:12px 14px"><div style="font-size:24px;line-height:1.2">${it.icono || ''}</div><div style="flex:1;min-width:0"><div class="pd-lbl" style="margin:0">${it.titulo}</div><div style="font-size:18px;font-weight:700;color:${col};margin:2px 0;line-height:1.25">${it.valor}</div><div class="mutx" style="font-size:11px;white-space:normal">${it.sub || ''}</div></div>${it.medidor != null ? `<div style="width:56px;height:56px;border-radius:50%;background:conic-gradient(${col} ${Math.min(100, it.medidor)}%,var(--grid) 0);display:grid;place-items:center;flex:none"><div style="width:42px;height:42px;border-radius:50%;background:#fff;display:grid;place-items:center;font-size:11px;font-weight:700;color:${col}">${Math.round(it.medidor)}%</div></div>` : ''}<div class="mutx" style="font-size:16px">${on ? '▲' : '▼'}</div></div>${it.info ? `<div style="padding:0 14px 12px">${it.info}</div>` : ''}
         ${on ? `<div class="pnl-det" style="border-top:1px solid var(--grid);padding:6px 10px 10px;cursor:default">${it.detalle()}</div>` : ''}</div>`; }).join('')}</div>${nota ? `<p class="mutx" style="font-size:11px;padding:0 16px 8px">${nota}</p>` : ''}`;
-    b.querySelectorAll('.pnl').forEach(c => c.onclick = e => { if (e.target.closest('.pnl-det')) return; const id = c.dataset.p; abiertos[tabE] = abiertos[tabE] === id ? null : id; cuerpo(); if (abiertos[tabE]) b.querySelector(`.pnl[data-p="${id}"]`)?.scrollIntoView({ block: 'start', behavior: 'smooth' }); });
+    b.querySelectorAll('.pnl').forEach(c => c.onclick = e => { if (e.target.closest('.pnl-det')) return; const id = c.dataset.p; abiertos[K] = abiertos[K] === id ? null : id; cuerpo(); if (abiertos[K]) b.querySelector(`.pnl[data-p="${id}"]`)?.scrollIntoView({ block: 'start', behavior: 'smooth' }); });
   }
   // ---- vista alcalde: 6 paneles grandes, lenguaje llano, infograma en cada uno; clic = desarrollo + salto a la pestaña técnica ----
   const COLH = { ok: '#1B9E5A', warn: '#E39B1E', bad: '#D64545', p: '#1E5AA8', gris: '#B0BEC5', gold: '#C9A227', teal: '#00897B' };
@@ -109,6 +109,58 @@
   const cap = t => { t = (t || '').replace(/^[\d.\s-]+/, '').toLowerCase(); t = t.charAt(0).toUpperCase() + t.slice(1); return t.length > 34 ? t.slice(0, 32) + '…' : t; };
   const FM = n => 'S/ ' + M(n) + ' M';
   const mlabel = s => META[s] ? (META[s].es_inv ? META[s].act_proy : 'meta ' + META[s].meta) : s;
+  // ponytail: estado de ejecución de una inversión a partir de los campos ya cargados en LAKE (sin fetch adicional por CUI)
+  const ESTINV = { culminada: ['Culminada', '#2E7D32'], ejecucion: ['En ejecución de obra', '#1565C0'], expediente: ['En expediente técnico', '#8E24AA'], viable: ['Viable · por iniciar', '#F9A825'], paralizada: ['Paralizada / suspendida', '#C62828'] };
+  function estadoInv(c) {
+    const s = ((c.situacion || '') + ' ' + (c.estado || '')).toUpperCase();
+    if (/CULMIN|CERRAD/.test(s) || (c.avance_fisico != null && c.avance_fisico >= 99.5)) return 'culminada';
+    if (/SUSPEND|PARALIZ|DESACTIV|ABANDON/.test(s)) return 'paralizada';
+    if (/EJECUCI/.test(s) || (c.avance_fisico != null && c.avance_fisico > 0)) return 'ejecucion';
+    if (/EXPEDIENTE|PERFIL|FORMULA|ESTUDIO/.test(s) || c.f12b) return 'expediente';
+    return 'viable';
+  }
+  // ponytail: Leaflet se carga una sola vez, bajo demanda (igual que el dashboard MINAM); si no hay red, el mapa simplemente no aparece
+  let _leafletP = null;
+  function cargarLeaflet() {
+    if (window.L) return Promise.resolve();
+    if (_leafletP) return _leafletP;
+    _leafletP = new Promise(res => {
+      if (!document.getElementById('leaflet-css')) { const lc = document.createElement('link'); lc.id = 'leaflet-css'; lc.rel = 'stylesheet'; lc.href = 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css'; document.head.appendChild(lc); }
+      const ls = document.createElement('script'); ls.src = 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js'; ls.onload = res; ls.onerror = res; document.head.appendChild(ls);
+    });
+    return _leafletP;
+  }
+  function pintarMapaInv(items) {
+    cargarLeaflet().then(() => {
+      const el = $('inv-mapa'); if (!el || !window.L) return;
+      const mp = L.map(el, { scrollWheelZoom: false });
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '© OpenStreetMap', maxZoom: 18 }).addTo(mp);
+      const pts = [];
+      items.forEach(it => { if (it.lat == null || it.lon == null) return; const [lbl, col] = ESTINV[it.est]; L.circleMarker([it.lat, it.lon], { radius: 7, color: '#fff', weight: 1.5, fillColor: col, fillOpacity: .9 }).addTo(mp).bindTooltip(`<b>${it.cui}</b> ${it.nombre}<br>${lbl}`); pts.push([it.lat, it.lon]); });
+      if (pts.length) mp.fitBounds(pts, { padding: [24, 24], maxZoom: 13 }); else mp.setView([-9.19, -75.02], 5);
+    });
+  }
+  // ponytail: resumen de "Inversión pública" al entrar — KPIs y gráficos primero; la lista completa queda un clic más abajo
+  function resumenInversion(b, T, P_) {
+    const items = inv().map(m => ({ ...m, c: LAKE[m.act_proy] || {} }));
+    const cad = [['PIM', T.pim, 'var(--gold)'], ['Certificado', T.cert, 'var(--p2)'], ['Compromiso anual', T.comp_anual, 'var(--p)'], ['Compromiso mensual', T.comp, 'var(--p)'], ['Devengado', T.dev, 'var(--ok)'], ['Girado', T.gir, 'var(--teal)'], ['Pagado', T.pag, '#5E35B1']];
+    const ftsInv = P_.fuentes_inv && Object.keys(P_.fuentes_inv).length ? Object.values(P_.fuentes_inv).filter(f => f.pim > 0).sort((a, c) => c.pim - a.pim) : null;
+    const fts = ftsInv || Object.values(P_.fuentes).filter(f => f.pim > 0).sort((a, c) => c.pim - a.pim);
+    const est = { culminada: [], ejecucion: [], expediente: [], viable: [], paralizada: [] };
+    items.forEach(it => est[estadoInv(it.c)].push(it));
+    const mapItems = items.map(it => ({ cui: it.act_proy, nombre: (it.c.nombre || nombreMeta(it)).slice(0, 70), lat: it.c.lat, lon: it.c.lon, est: estadoInv(it.c) }));
+    paneles(b, [
+      { id: 'kpi', icono: '💰', titulo: 'RESUMEN GENERAL', valor: FM(T.pim), sub: `PIM de inversiones · devengado ${P((T.dev || 0) * 100 / (T.pim || 1))} · ${items.length} inversiones`, color: 'var(--gold)', medidor: 100 * (T.dev || 0) / (T.pim || 1),
+        detalle: () => `<div style="display:flex;gap:22px;flex-wrap:wrap;align-items:center;padding:4px 0 10px">${donut(100 * (T.cert || 0) / (T.pim || 1), 'var(--p2)', 'Certificado')}${donut(100 * (T.comp_anual || 0) / (T.pim || 1), 'var(--p)', 'Compromiso anual')}${donut(100 * (T.dev || 0) / (T.pim || 1), 'var(--ok)', 'Devengado')}${donut(100 * (T.gir || 0) / (T.pim || 1), 'var(--teal)', 'Girado')}${donut(100 * (T.pag || 0) / (T.pim || 1), '#5E35B1', 'Pagado')}</div>${barras(cad.map(([l, v, c]) => [l, v, T.pim, c, FM(v)]))}` },
+      { id: 'fuentes', icono: '🏦', titulo: 'POR FUENTE DE FINANCIAMIENTO', valor: fts[0] ? cap(fts[0].nombre) : 'sin datos', sub: ftsInv ? `${fts.length} fuentes · solo inversiones` : `${fts.length} fuentes · cifra de todo el gasto (el desglose exclusivo de inversiones se activa en la próxima actualización de datos)`, color: 'var(--teal)',
+        detalle: () => fts.map(f => `<div style="margin-bottom:14px"><div style="font-weight:800;color:var(--p2);font-size:12.5px;margin-bottom:4px">${cap(f.nombre)}</div>${barras([['PIM', f.pim, fts[0].pim, 'var(--gold)', FM(f.pim)], ['Devengado', f.dev, fts[0].pim, 'var(--ok)', FM(f.dev)]])}</div>`).join('') },
+      { id: 'mapa', icono: '🗺', titulo: 'MAPA DE INVERSIONES', valor: `${items.length} inversiones`, sub: Object.entries(est).filter(([, v]) => v.length).map(([k, v]) => `${v.length} ${ESTINV[k][0].toLowerCase()}`).join(' · '), color: 'var(--p)',
+        detalle: () => `${apilada(Object.entries(est).filter(([, v]) => v.length).map(([k, v]) => [ESTINV[k][0], v.length, ESTINV[k][1]]))}<div id="inv-mapa" style="height:320px;border-radius:10px;margin-top:10px;background:var(--grid)"></div>` }
+    ], null, null, 'invR');
+    if (abiertos.invR === 'mapa') pintarMapaInv(mapItems);
+    b.insertAdjacentHTML('beforeend', `<div class="card pnl" data-ir-lista style="cursor:pointer;flex-direction:row;align-items:center;gap:14px;padding:14px 16px;margin:0 8px 8px;border-left:5px solid var(--p2)"><div style="font-size:22px">🏗</div><div style="flex:1"><b style="color:var(--p2)">Inversiones públicas</b><div class="mutx" style="font-size:11.5px">Ver la lista completa (${items.length}) y entrar a la ficha de cada una</div></div><div style="font-size:20px;color:var(--mut)">›</div></div>`);
+    b.querySelector('[data-ir-lista]').onclick = () => { abiertos.invLista = true; render(); };
+  }
   // ponytail: ficha de inversión en overlay a pantalla completa — paneles resumen que se abren uno a la vez, mismo patrón que paneles()
   let invPanel = null;
   function pnlFicha(items) {
@@ -227,16 +279,19 @@
           if (abiertos.inv !== cui) return; // el usuario cerró o cambió de inversión mientras cargaba
           invPanel = null; pintarFicha(cui, f, LAKE[cui] || {}, sp);
         })();
-      } else {
+      } else if (abiertos.invLista) {
         const rows = metasSel().filter(m => hit(nombreMeta(m) + ' ' + m.act_proy + ' ' + m.sec_func)).sort((a, c) => (c.pim || c.comp) - (a.pim || a.comp));
-        b.innerHTML = `<div style="display:flex;flex-direction:column;gap:8px;padding:8px">${rows.map(m => {
+        b.innerHTML = `<div style="padding:8px 8px 0"><button class="btn" data-atras-resumen style="background:#fff;color:var(--p2)">‹ Volver al resumen</button></div><div style="display:flex;flex-direction:column;gap:8px;padding:8px">${rows.map(m => {
           const c = LAKE[m.act_proy] || {}, av = c.avance_fisico, col = av == null ? 'p' : cls(av);
           return `<div class="card pnl" data-inv="${m.act_proy}" style="cursor:pointer;flex-direction:row;align-items:center;gap:14px;padding:12px 16px;border-left:5px solid var(--${col})">
             <div style="min-width:0;flex:1"><b style="font-size:13px;color:var(--p2)">${m.act_proy}</b> <span style="font-size:12.5px">${(c.nombre || nombreMeta(m)).slice(0, 90)}</span><div class="mutx" style="font-size:11px;margin-top:2px">${c.dist ? c.dist + ' · ' : ''}PIM ${M(m.pim)} M · devengado ${M(m.dev)} M</div></div>
             ${av != null ? `<span class="tag ${col}" style="flex:0 0 auto">avance físico ${av.toFixed(0)}%</span>` : ''}
             <div style="font-size:20px;color:var(--mut);flex:0 0 auto">›</div></div>`;
         }).join('')}</div>${!rows.length ? '<p class="mutx" style="padding:12px">Sin inversiones que coincidan con la búsqueda.</p>' : ''}`;
+        b.querySelector('[data-atras-resumen]').onclick = () => { abiertos.invLista = false; render(); };
         b.querySelectorAll('[data-inv]').forEach(x => x.onclick = () => { abiertos.inv = x.dataset.inv; cuerpo(); });
+      } else {
+        resumenInversion(b, T, P_);
       }
     } else if (tabE === 'exp') {
       const rows = E.expedientes.filter(e => (!filtroMeta || e.metas.includes(filtroMeta)) && (modoInv ? e.metas.some(s => META[s]?.es_inv) : true) && hit(e.glosa + ' ' + e.proveedor + ' ' + e.exp + ' ' + e.fases.map(f => f.num).join(' ')));
