@@ -94,7 +94,7 @@
   const COLH = { ok: '#1B9E5A', warn: '#E39B1E', bad: '#D64545', p: '#1E5AA8', gris: '#B0BEC5', gold: '#C9A227', teal: '#00897B' };
   const apilada = segs => { const tot = segs.reduce((s, x) => s + x[1], 0) || 1; return `<div style="display:flex;height:22px;border-radius:6px;overflow:hidden;background:var(--grid)">${segs.filter(s => s[1]).map(([l, v, c]) => `<div title="${l}: ${v}" style="width:${100 * v / tot}%;background:${c};color:#fff;font-size:11px;font-weight:700;display:grid;place-items:center">${v}</div>`).join('')}</div><div style="display:flex;flex-wrap:wrap;gap:4px 12px;margin-top:6px;font-size:11px">${segs.map(([l, v, c]) => `<span><i style="display:inline-block;width:9px;height:9px;border-radius:2px;background:${c};margin-right:4px"></i><b>${v}</b> ${l}</span>`).join('')}</div>`; };
   // ponytail: "estado de la cartera" como bloques grandes de color (idea del dashboard MINAM) — mismo dato que apilada(), presentación con más impacto
-  const cartera = (segs, total) => `<div class="pd-lbl" style="margin:0 0 8px">ESTADO DE LA CARTERA — ${total} INVERSIONES</div><div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:8px">${segs.filter(s => s[1]).map(([l, v, c]) => `<div style="background:${c};color:#fff;border-radius:10px;padding:14px 8px;text-align:center;box-shadow:0 2px 8px rgba(0,0,0,.12)"><div style="font-size:26px;font-weight:800;line-height:1.1">${v}</div><div style="font-size:10px;font-weight:700;letter-spacing:.03em;text-transform:uppercase;opacity:.92;margin-top:2px">${l}</div></div>`).join('')}</div>`;
+  const cartera = (segs, total) => `<div class="pd-lbl" style="margin:0 0 6px">ESTADO DE LA CARTERA — ${total} INVERSIONES</div><div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(80px,1fr));gap:6px">${segs.filter(s => s[1]).map(([l, v, c]) => `<div style="background:${c};color:#fff;border-radius:8px;padding:8px 6px;text-align:center;box-shadow:0 2px 8px rgba(0,0,0,.12)"><div style="font-size:19px;font-weight:800;line-height:1.1">${v}</div><div style="font-size:9px;font-weight:700;letter-spacing:.02em;text-transform:uppercase;opacity:.92;margin-top:2px;line-height:1.2">${l}</div></div>`).join('')}</div>`;
   const barras = filas => `<div style="display:grid;grid-template-columns:auto 1fr auto;gap:5px 10px;align-items:center;font-size:12px">${filas.map(([l, v, max, c, txt]) => `<span style="font-weight:600">${l}</span><div style="height:14px;background:var(--grid);border-radius:4px;overflow:hidden"><div style="width:${Math.min(100, 100 * v / (max || 1))}%;height:100%;background:${c}"></div></div><b style="min-width:70px;text-align:right">${txt}</b>`).join('')}</div>`;
   const ir = (k, txt) => `<div style="margin-top:8px"><button class="btn ir" data-ir="${k}" style="background:var(--p2);color:#fff">${txt || 'Abrir el detalle completo ▸'}</button></div>`;
   const hoyS = () => new Date().toISOString().slice(0, 10);
@@ -215,15 +215,17 @@
       <div style="flex:1;min-width:0"><div class="pd-lbl" style="margin:0;font-size:9px">${titulo}</div><div style="font-size:15px;font-weight:800;color:${color};margin:1px 0;line-height:1.25;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${valor}">${valor}</div><div class="mutx" style="font-size:10px;white-space:normal">${sub}</div></div>
     </div>`;
     b.innerHTML = `<div style="display:flex;gap:10px;height:100%;box-sizing:border-box;padding:8px">
-      <div style="width:300px;flex:none;display:flex;flex-direction:column;gap:8px;min-height:0">
-        ${stat('kpi', '💰', 'RESUMEN GENERAL', FM(T.pim), `PIM · devengado ${P((T.dev || 0) * 100 / (T.pim || 1))} · ${items.length} inversiones`, 'var(--gold)')}
-        ${stat('benef', '👥', 'BENEFICIARIOS DIRECTOS', bc ? N(bc.total) : '…', bc ? `${bc.conDato} de ${items.length} con dato SSI` : 'calculando desde el SSI…', 'var(--p)')}
+      <div style="width:280px;flex:none;display:flex;flex-direction:column;gap:8px;min-height:0">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+          ${stat('kpi', '💰', 'RESUMEN GENERAL', FM(T.pim), `PIM · devengado ${P((T.dev || 0) * 100 / (T.pim || 1))}`, 'var(--gold)')}
+          ${stat('benef', '👥', 'BENEFICIARIOS', bc ? N(bc.total) : '…', bc ? `${bc.conDato}/${items.length} con dato` : 'calculando…', 'var(--p)')}
+        </div>
         ${stat('fuentes', '🏦', 'POR FUENTE DE FINANCIAMIENTO', fts[0] ? cap(fts[0].nombre) : 'sin datos', ftsInv ? `${fts.length} fuentes · solo inversiones` : `${fts.length} fuentes · todo el gasto`, 'var(--teal)')}
-        <div class="card" style="flex:1;min-height:0;padding:12px 14px;overflow:auto">${cartera(estList, items.length)}</div>
+        <div class="card" style="flex:1;min-height:0;padding:10px 12px;overflow:auto">${cartera(estList, items.length)}</div>
       </div>
-      <div class="card" style="flex:1;min-width:0;display:flex;flex-direction:column;padding:12px">
-        <div class="pd-lbl" style="margin:0 0 8px">🗺 MAPA DE INVERSIONES</div>
-        <div id="inv-mapa" style="flex:1;min-height:0;border-radius:10px;background:var(--grid)"></div>
+      <div class="card" style="flex:1;min-width:0;position:relative;padding:0">
+        <div class="pd-lbl" style="position:absolute;top:10px;left:12px;z-index:400;background:rgba(255,255,255,.92);padding:3px 8px;border-radius:6px">🗺 MAPA DE INVERSIONES</div>
+        <div id="inv-mapa" style="width:100%;height:100%;border-radius:var(--rad);background:var(--grid)"></div>
       </div>
     </div>`;
     pintarMapaInv(mapItems);
