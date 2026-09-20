@@ -74,6 +74,13 @@
   const barra = (v, max, col) => `<span class="bar" style="width:${Math.round(120 * Math.min(1, (v || 0) / (max || 1)))}px;background:${col || 'var(--p)'}"></span>`;
   // ponytail: un solo patrón para todas las pestañas — paneles resumen, clic = detalle en el mismo panel, clic otra vez = resumen
   const abiertos = {};
+  // ponytail: total de beneficiarios = suma del campo "BENEFICIARIO" que trae el SSI por cada CUI (mismo shard cacheado que usa la ficha individual); se calcula una vez por entidad y se guarda aquí
+  const benefCache = {};
+  async function totalBeneficiarios(items, key) {
+    const res = await Promise.all(items.map(it => ssi(it.act_proy).catch(() => null)));
+    const total = res.reduce((s, f) => s + (f?.beneficiarios || 0), 0), conDato = res.filter(f => f?.beneficiarios).length;
+    return benefCache[key] = { total, conDato };
+  }
   function paneles(b, items, nota, min, key) {
     const K = key || tabE, ab = abiertos[K];
     const fit = min === 'fit';
@@ -85,6 +92,8 @@
   // ---- vista alcalde: 6 paneles grandes, lenguaje llano, infograma en cada uno; clic = desarrollo + salto a la pestaña técnica ----
   const COLH = { ok: '#1B9E5A', warn: '#E39B1E', bad: '#D64545', p: '#1E5AA8', gris: '#B0BEC5', gold: '#C9A227', teal: '#00897B' };
   const apilada = segs => { const tot = segs.reduce((s, x) => s + x[1], 0) || 1; return `<div style="display:flex;height:22px;border-radius:6px;overflow:hidden;background:var(--grid)">${segs.filter(s => s[1]).map(([l, v, c]) => `<div title="${l}: ${v}" style="width:${100 * v / tot}%;background:${c};color:#fff;font-size:11px;font-weight:700;display:grid;place-items:center">${v}</div>`).join('')}</div><div style="display:flex;flex-wrap:wrap;gap:4px 12px;margin-top:6px;font-size:11px">${segs.map(([l, v, c]) => `<span><i style="display:inline-block;width:9px;height:9px;border-radius:2px;background:${c};margin-right:4px"></i><b>${v}</b> ${l}</span>`).join('')}</div>`; };
+  // ponytail: "estado de la cartera" como bloques grandes de color (idea del dashboard MINAM) — mismo dato que apilada(), presentación con más impacto
+  const cartera = (segs, total) => `<div class="pd-lbl" style="margin:0 0 8px">ESTADO DE LA CARTERA — ${total} INVERSIONES</div><div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:8px">${segs.filter(s => s[1]).map(([l, v, c]) => `<div style="background:${c};color:#fff;border-radius:10px;padding:14px 8px;text-align:center;box-shadow:0 2px 8px rgba(0,0,0,.12)"><div style="font-size:26px;font-weight:800;line-height:1.1">${v}</div><div style="font-size:10px;font-weight:700;letter-spacing:.03em;text-transform:uppercase;opacity:.92;margin-top:2px">${l}</div></div>`).join('')}</div>`;
   const barras = filas => `<div style="display:grid;grid-template-columns:auto 1fr auto;gap:5px 10px;align-items:center;font-size:12px">${filas.map(([l, v, max, c, txt]) => `<span style="font-weight:600">${l}</span><div style="height:14px;background:var(--grid);border-radius:4px;overflow:hidden"><div style="width:${Math.min(100, 100 * v / (max || 1))}%;height:100%;background:${c}"></div></div><b style="min-width:70px;text-align:right">${txt}</b>`).join('')}</div>`;
   const ir = (k, txt) => `<div style="margin-top:8px"><button class="btn ir" data-ir="${k}" style="background:var(--p2);color:#fff">${txt || 'Abrir el detalle completo ▸'}</button></div>`;
   const hoyS = () => new Date().toISOString().slice(0, 10);
@@ -190,15 +199,20 @@
     const est = { culminada: [], ejecucion: [], expediente: [], viable: [], paralizada: [] };
     items.forEach(it => est[estadoInv(it.c)].push(it));
     const mapItems = items.map(it => ({ cui: it.act_proy, nombre: (it.c.nombre || nombreMeta(it)).slice(0, 70), lat: it.c.lat, lon: it.c.lon, est: estadoInv(it.c) }));
+    const ueKey = E._ue.cod, bc = benefCache[ueKey];
     paneles(b, [
       { id: 'kpi', icono: '💰', titulo: 'RESUMEN GENERAL', valor: FM(T.pim), sub: `PIM de inversiones · devengado ${P((T.dev || 0) * 100 / (T.pim || 1))} · ${items.length} inversiones`, color: 'var(--gold)', medidor: 100 * (T.dev || 0) / (T.pim || 1),
         detalle: () => funnelGasto(T) },
+      { id: 'benef', icono: '👥', titulo: 'BENEFICIARIOS DIRECTOS', valor: bc ? N(bc.total) : '…', sub: bc ? `según ficha SSI de cada inversión · ${bc.conDato} de ${items.length} con ese dato registrado` : 'calculando desde el Banco de Inversiones (SSI)…', color: 'var(--p)',
+        detalle: () => bc ? `<p class="mutx">Suma del campo "beneficiarios (habitantes)" que cada inversión declara en su ficha del SSI (Banco de Inversiones).${items.length - bc.conDato ? ` ${items.length - bc.conDato} inversión(es) aún no tienen ese dato registrado en el MEF.` : ''}</p>` : '<p class="mutx">Cargando…</p>' },
       { id: 'fuentes', icono: '🏦', titulo: 'POR FUENTE DE FINANCIAMIENTO', valor: fts[0] ? cap(fts[0].nombre) : 'sin datos', sub: ftsInv ? `${fts.length} fuentes · solo inversiones` : `${fts.length} fuentes · cifra de todo el gasto (el desglose exclusivo de inversiones se activa en la próxima actualización de datos)`, color: 'var(--teal)',
         detalle: () => fts.map(f => `<div style="margin-bottom:14px"><div style="font-weight:800;color:var(--p2);font-size:12.5px;margin-bottom:4px">${cap(f.nombre)}</div>${barras([['PIM', f.pim, fts[0].pim, 'var(--gold)', FM(f.pim)], ['Devengado', f.dev, fts[0].pim, 'var(--ok)', FM(f.dev)]])}</div>`).join('') },
       { id: 'mapa', icono: '🗺', titulo: 'MAPA DE INVERSIONES', valor: `${items.length} inversiones`, sub: Object.entries(est).filter(([, v]) => v.length).map(([k, v]) => `${v.length} ${ESTINV[k][0].toLowerCase()}`).join(' · '), color: 'var(--p)',
-        detalle: () => `${apilada(Object.entries(est).filter(([, v]) => v.length).map(([k, v]) => [ESTINV[k][0], v.length, ESTINV[k][1]]))}<div id="inv-mapa" style="height:320px;border-radius:10px;margin-top:10px;background:var(--grid)"></div>` }
+        detalle: () => `${cartera(Object.entries(est).filter(([, v]) => v.length).map(([k, v]) => [ESTINV[k][0], v.length, ESTINV[k][1]]), items.length)}<div id="inv-mapa" style="height:320px;border-radius:10px;margin-top:14px;background:var(--grid)"></div>` }
     ], null, null, 'invR');
+    if (abiertos.invR === undefined) { abiertos.invR = 'mapa'; cuerpo(); return; } // ponytail: primera visita = mapa + cartera ya abiertos, como en el dashboard MINAM
     if (abiertos.invR === 'mapa') pintarMapaInv(mapItems);
+    if (!bc) totalBeneficiarios(items, ueKey).then(() => { if (tabE === 'inv' && !abiertos.invLista && !abiertos.inv) cuerpo(); });
     b.insertAdjacentHTML('beforeend', `<div class="card pnl" data-ir-lista style="cursor:pointer;flex-direction:row;align-items:center;gap:14px;padding:14px 16px;margin:0 8px 8px;border-left:5px solid var(--p2)"><div style="font-size:22px">🏗</div><div style="flex:1"><b style="color:var(--p2)">Inversiones públicas</b><div class="mutx" style="font-size:11.5px">Ver la lista completa (${items.length}) y entrar a la ficha de cada una</div></div><div style="font-size:20px;color:var(--mut)">›</div></div>`);
     b.querySelector('[data-ir-lista]').onclick = () => { abiertos.invLista = true; render(); };
   }
@@ -242,7 +256,7 @@
     ];
     ov.innerHTML = `<style>@keyframes fiIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}.fi-pnl{transition:transform .15s,box-shadow .15s}.fi-pnl:hover{transform:translateY(-2px)}</style>
      <div class="pd-hdr" style="border-radius:0;flex:0 0 auto">
-      <div class="pd-cui"><span>${E._ue.nombre}</span><span>· CUI ${cui}</span>${f?.tipo ? `<span>· ${f.tipo}</span>` : ''}${f?.actualizado ? `<span>· capturado ${f.actualizado}</span>` : ''}<span class="x" id="fi-cerrar" title="Cerrar">×</span></div>
+      <div class="pd-cui"><span>${E._ue.nombre}</span><span>· CUI ${cui}</span>${f?.tipo ? `<span>· ${f.tipo}</span>` : ''}${f?.beneficiarios ? `<span>· 👥 ${N(f.beneficiarios)} beneficiarios</span>` : ''}${f?.actualizado ? `<span>· capturado ${f.actualizado}</span>` : ''}<span class="x" id="fi-cerrar" title="Cerrar">×</span></div>
       <div class="pd-title" style="font-size:15px">${nombre}</div>
       <div class="pd-badges"><button class="btn" id="fi-volver" style="background:#fff;color:var(--p2)">‹ Volver a inversiones</button></div>
      </div>
