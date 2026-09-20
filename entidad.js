@@ -168,13 +168,29 @@
     });
     return _leafletP;
   }
-  function pintarMapaInv(items) {
+  function pintarMapaInv(items, estSel) {
     cargarLeaflet().then(() => {
       const el = $('inv-mapa'); if (!el || !window.L) return;
       const mp = L.map(el, { scrollWheelZoom: false });
       L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '© OpenStreetMap', maxZoom: 18 }).addTo(mp);
+      // ponytail: halo pulsante — mismo @keyframes nacPulse del dashboard MINAM (Dashboard_UE003_MINAM/index.html), inyectado una sola vez
+      if (!document.getElementById('nac-pulse-css')) {
+        const pc = document.createElement('style'); pc.id = 'nac-pulse-css';
+        pc.textContent = '@keyframes nacPulse{0%{transform:scale(.55);opacity:.85}70%{transform:scale(2.2);opacity:0}100%{opacity:0}}'
+          + '.nac-pin{position:relative}'
+          + '.nac-pin .nu{width:12px;height:12px;border-radius:50%;border:2px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,.45);position:absolute;top:4px;left:4px}'
+          + '.nac-pin .on{width:20px;height:20px;border-radius:50%;position:absolute;top:0;left:0;animation:nacPulse 2s ease-out infinite}';
+        document.head.appendChild(pc);
+      }
       const pts = [];
-      items.forEach(it => { if (it.lat == null || it.lon == null) return; const [lbl, col] = ESTINV[it.est]; L.circleMarker([it.lat, it.lon], { radius: 7, color: '#fff', weight: 1.5, fillColor: col, fillOpacity: .9 }).addTo(mp).bindTooltip(`<b>${it.cui}</b> ${it.nombre}<br>${lbl}`); pts.push([it.lat, it.lon]); });
+      items.forEach(it => {
+        if (it.lat == null || it.lon == null) return;
+        if (estSel && it.est !== estSel) return; // ponytail: al seleccionar un estado, el mapa muestra solo esos puntos (igual que _mapaFiltroToggle del dashboard MINAM)
+        const [lbl, col] = ESTINV[it.est];
+        const ic = L.divIcon({ className: '', html: `<div class="nac-pin"><div class="on" style="background:${col}88"></div><div class="nu" style="background:${col}"></div></div>`, iconSize: [20, 20], iconAnchor: [10, 10] });
+        L.marker([it.lat, it.lon], { icon: ic }).addTo(mp).bindTooltip(`<b>${it.cui}</b> ${it.nombre}<br>${lbl}`);
+        pts.push([it.lat, it.lon]);
+      });
       if (pts.length) mp.fitBounds(pts, { padding: [24, 24], maxZoom: 13 }); else mp.setView([-9.19, -75.02], 5);
     });
   }
@@ -245,15 +261,16 @@
       <div style="min-width:0"><div style="font-size:14px;font-weight:900;color:${col};letter-spacing:-.3px;line-height:1.15;white-space:nowrap;overflow:hidden;text-overflow:ellipsis" title="${num}">${num}</div>
       <div style="font-size:8.5px;font-weight:800;color:#546E7A;margin-top:2px;line-height:1.2;text-transform:uppercase;letter-spacing:.2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis" title="${lbl}">${lbl}</div></div>
     </div>`;
-    const chipPill = (n, lbl, col, key) => `<div class="pnl" data-est="${key}" style="cursor:pointer;flex:1;min-width:0;background:${col};border-radius:12px;padding:6px 4px;text-align:center;color:#fff;box-shadow:0 2px 8px ${col}55">
+    // ponytail: clic en un chip de estado reemplaza "Ejecución presupuestal" por la lista de CUIs de ese estado (mismo patrón que _estadoListaHTML del dashboard MINAM, con CUI en vez de nombre corto — acá no hay catálogo de nombres cortos)
+    const estSel = abiertos.invEstado && est[abiertos.invEstado] ? abiertos.invEstado : null;
+    // ponytail: chips no seleccionados se atenúan y el seleccionado crece un poco — igual que window._mapaFiltroToggle del dashboard MINAM
+    const chipPill = (n, lbl, col, key) => { const on = !estSel || key === estSel; return `<div class="pnl" data-est="${key}" style="cursor:pointer;flex:1;min-width:0;background:${col};border-radius:12px;padding:6px 4px;text-align:center;color:#fff;box-shadow:0 2px 8px ${col}55;opacity:${on ? 1 : .35};transform:${estSel && key === estSel ? 'scale(1.04)' : 'scale(1)'};transition:opacity .15s,transform .15s">
       <div style="font-size:15px;font-weight:900;line-height:1">${n}</div>
       <div style="font-size:8px;font-weight:800;margin-top:2px;text-transform:uppercase;letter-spacing:.1px;opacity:.95;line-height:1.15;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${lbl}">${lbl}</div>
-    </div>`;
+    </div>`; };
     const barra = (lbl, val, pctv, col) => `<div style="margin-bottom:6px"><div style="display:flex;justify-content:space-between;font-size:10px;font-weight:800;color:#37474F;margin-bottom:2px"><span>${lbl}</span><span style="color:${col}">${FM(val)}${pctv != null ? ` · ${Math.round(pctv)}%` : ''}</span></div>
       <div style="height:6px;background:#ECEFF3;border-radius:6px;overflow:hidden"><div style="height:100%;width:${pctv != null ? Math.min(pctv, 100) : 100}%;background:linear-gradient(90deg,${col}CC,${col});border-radius:6px"></div></div>
     </div>`;
-    // ponytail: clic en un chip de estado reemplaza "Ejecución presupuestal" por la lista de CUIs de ese estado (mismo patrón que _estadoListaHTML del dashboard MINAM, con CUI en vez de nombre corto — acá no hay catálogo de nombres cortos)
-    const estSel = abiertos.invEstado && est[abiertos.invEstado] ? abiertos.invEstado : null;
     const panelInferior = estSel ? (() => {
       const [lbl, col] = ESTINV[estSel], arr = est[estSel];
       return `<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
@@ -301,7 +318,7 @@
         <div style="flex:1;min-height:0;overflow:auto">${novHTML()}</div>
       </div>
     </div>`;
-    pintarMapaInv(mapItems);
+    pintarMapaInv(mapItems, estSel);
     if (!bc) totalBeneficiarios(items, ueKey).then(() => { if (tabE === 'inv' && !abiertos.invLista && !abiertos.inv) cuerpo(); });
     b.querySelector('[data-p="kpi"]').onclick = () => verDetalleResumen('💰', 'RESUMEN GENERAL', funnelGasto(T));
     b.querySelector('[data-p="cert"]').onclick = () => verDetalleResumen('📋', 'CERTIFICACIÓN', funnelGasto(T));
