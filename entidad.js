@@ -182,14 +182,29 @@
           + '.nac-pin .on{width:20px;height:20px;border-radius:50%;position:absolute;top:0;left:0;animation:nacPulse 2s ease-out infinite}';
         document.head.appendChild(pc);
       }
-      const pts = [];
+      // ponytail: el MEF suele georreferenciar varias inversiones al mismo punto (capital de distrito, no la obra exacta) — se agrupan en un solo marcador con contador para que no se tapen entre sí
+      const grupos = {};
       items.forEach(it => {
         if (it.lat == null || it.lon == null) return;
-        if (estSel && it.est !== estSel) return; // ponytail: al seleccionar un estado, el mapa muestra solo esos puntos (igual que _mapaFiltroToggle del dashboard MINAM)
-        const [lbl, col] = ESTINV[it.est];
-        const ic = L.divIcon({ className: '', html: `<div class="nac-pin"><div class="on" style="background:${col}88"></div><div class="nu" style="background:${col}"></div></div>`, iconSize: [20, 20], iconAnchor: [10, 10] });
-        L.marker([it.lat, it.lon], { icon: ic }).addTo(mp).bindTooltip(`<b>${it.cui}</b> ${it.nombre}<br>${lbl}`);
-        pts.push([it.lat, it.lon]);
+        if (estSel && it.est !== estSel) return; // al seleccionar un estado, el mapa muestra solo esos puntos (igual que _mapaFiltroToggle del dashboard MINAM)
+        const key = it.lat.toFixed(4) + ',' + it.lon.toFixed(4);
+        (grupos[key] || (grupos[key] = [])).push(it);
+      });
+      const pts = [];
+      Object.values(grupos).forEach(arr => {
+        const { lat, lon } = arr[0];
+        const estUnico = arr.every(x => x.est === arr[0].est) ? arr[0].est : null;
+        const col = estUnico ? ESTINV[estUnico][1] : '#37474F';
+        const n = arr.length;
+        const html = n === 1
+          ? `<div class="nac-pin"><div class="on" style="background:${col}88"></div><div class="nu" style="background:${col}"></div></div>`
+          : `<div class="nac-pin"><div class="on" style="background:${col}88"></div><div style="width:22px;height:22px;border-radius:50%;background:${col};border:2px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,.45);position:absolute;top:-1px;left:-1px;color:#fff;font-size:10px;font-weight:900;display:flex;align-items:center;justify-content:center">${n}</div></div>`;
+        const ic = L.divIcon({ className: '', html, iconSize: [20, 20], iconAnchor: [10, 10] });
+        const tip = n === 1
+          ? `<b>${arr[0].cui}</b> ${arr[0].nombre}<br>${ESTINV[arr[0].est][0]}`
+          : `<b>${n} inversiones en este punto</b><br>${arr.slice(0, 8).map(x => `${x.cui} · ${ESTINV[x.est][0]}`).join('<br>')}${n > 8 ? `<br>y ${n - 8} más…` : ''}`;
+        L.marker([lat, lon], { icon: ic }).addTo(mp).bindTooltip(tip);
+        pts.push([lat, lon]);
       });
       if (pts.length) mp.fitBounds(pts, { padding: [24, 24], maxZoom: 13 }); else mp.setView([-9.19, -75.02], 5);
     });
