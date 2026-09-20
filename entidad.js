@@ -237,24 +237,42 @@
     items.forEach(it => est[estadoInv(it.c)].push(it));
     const mapItems = items.map(it => ({ cui: it.act_proy, nombre: (it.c.nombre || nombreMeta(it)).slice(0, 70), lat: it.c.lat, lon: it.c.lon, est: estadoInv(it.c) }));
     const ueKey = E._ue.cod, bc = benefCache[ueKey];
-    const estList = Object.entries(est).filter(([, v]) => v.length).map(([k, v]) => [ESTCHIP[k], v.length, ESTINV[k][1]]);
+    const estList = Object.entries(est).filter(([, v]) => v.length).map(([k, v]) => [ESTCHIP[k], v.length, ESTINV[k][1], k]);
     const pim1 = T.pim || 1;
     // ponytail: mismas medidas/colores que kpi()/chip()/barra() del dashboard MINAM (Dashboard_UE003_MINAM/index.html) — mismo look, tres columnas iguales
-    const kpiT = (id, icono, num, lbl, col, bg, br) => `<div class="pnl" data-p="${id}" style="cursor:pointer;background:${bg};border:1.5px solid ${br};border-left:5px solid ${col};border-radius:14px;padding:8px 12px;display:flex;align-items:center;gap:9px;box-shadow:0 1px 5px rgba(16,24,40,.08)">
-      <span style="font-size:22px;flex:none;line-height:1">${icono}</span>
-      <div style="min-width:0"><div style="font-size:16px;font-weight:900;color:${col};letter-spacing:-.4px;line-height:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis" title="${num}">${num}</div>
-      <div style="font-size:9px;font-weight:800;color:#546E7A;margin-top:3px;line-height:1.25;text-transform:uppercase;letter-spacing:.3px">${lbl}</div></div>
+    const kpiT = (id, icono, num, lbl, col, bg, br) => `<div class="pnl" data-p="${id}" style="cursor:pointer;min-width:0;background:${bg};border:1.5px solid ${br};border-left:5px solid ${col};border-radius:12px;padding:6px 9px;display:flex;align-items:center;gap:7px;box-shadow:0 1px 5px rgba(16,24,40,.08)">
+      <span style="font-size:19px;flex:none;line-height:1">${icono}</span>
+      <div style="min-width:0"><div style="font-size:14px;font-weight:900;color:${col};letter-spacing:-.3px;line-height:1.15;white-space:nowrap;overflow:hidden;text-overflow:ellipsis" title="${num}">${num}</div>
+      <div style="font-size:8.5px;font-weight:800;color:#546E7A;margin-top:2px;line-height:1.2;text-transform:uppercase;letter-spacing:.2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis" title="${lbl}">${lbl}</div></div>
     </div>`;
-    const chipPill = (n, lbl, col) => `<div style="flex:1;background:${col};border-radius:13px;padding:7px 4px;text-align:center;color:#fff;box-shadow:0 2px 8px ${col}55">
-      <div style="font-size:17px;font-weight:900;line-height:1">${n}</div>
-      <div style="font-size:8.5px;font-weight:800;margin-top:2px;text-transform:uppercase;letter-spacing:.2px;opacity:.95;line-height:1.2">${lbl}</div>
+    const chipPill = (n, lbl, col, key) => `<div class="pnl" data-est="${key}" style="cursor:pointer;flex:1;min-width:0;background:${col};border-radius:12px;padding:6px 4px;text-align:center;color:#fff;box-shadow:0 2px 8px ${col}55">
+      <div style="font-size:15px;font-weight:900;line-height:1">${n}</div>
+      <div style="font-size:8px;font-weight:800;margin-top:2px;text-transform:uppercase;letter-spacing:.1px;opacity:.95;line-height:1.15;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${lbl}">${lbl}</div>
     </div>`;
-    const barra = (lbl, val, pctv, col) => `<div style="margin-bottom:8px"><div style="display:flex;justify-content:space-between;font-size:10px;font-weight:800;color:#37474F;margin-bottom:3px"><span>${lbl}</span><span style="color:${col}">${FM(val)}${pctv != null ? ` · ${Math.round(pctv)}%` : ''}</span></div>
-      <div style="height:7px;background:#ECEFF3;border-radius:6px;overflow:hidden"><div style="height:100%;width:${pctv != null ? Math.min(pctv, 100) : 100}%;background:linear-gradient(90deg,${col}CC,${col});border-radius:6px"></div></div>
+    const barra = (lbl, val, pctv, col) => `<div style="margin-bottom:6px"><div style="display:flex;justify-content:space-between;font-size:10px;font-weight:800;color:#37474F;margin-bottom:2px"><span>${lbl}</span><span style="color:${col}">${FM(val)}${pctv != null ? ` · ${Math.round(pctv)}%` : ''}</span></div>
+      <div style="height:6px;background:#ECEFF3;border-radius:6px;overflow:hidden"><div style="height:100%;width:${pctv != null ? Math.min(pctv, 100) : 100}%;background:linear-gradient(90deg,${col}CC,${col});border-radius:6px"></div></div>
     </div>`;
-    b.innerHTML = `<div style="display:flex;gap:10px;height:100%;box-sizing:border-box;padding:8px">
-      <div style="flex:1.15;min-width:0;display:flex;flex-direction:column;gap:8px;min-height:0">
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+    // ponytail: clic en un chip de estado reemplaza "Ejecución presupuestal" por la lista de CUIs de ese estado (mismo patrón que _estadoListaHTML del dashboard MINAM, con CUI en vez de nombre corto — acá no hay catálogo de nombres cortos)
+    const estSel = abiertos.invEstado && est[abiertos.invEstado] ? abiertos.invEstado : null;
+    const panelInferior = estSel ? (() => {
+      const [lbl, col] = ESTINV[estSel], arr = est[estSel];
+      return `<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+        <div style="font-size:10px;font-weight:900;color:${col};text-transform:uppercase;letter-spacing:.4px"><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${col};margin-right:5px"></span>${lbl.toUpperCase()} — ${arr.length} INVERSI${arr.length === 1 ? 'ÓN' : 'ONES'}</div>
+        <div data-est-clear title="Volver a ejecución presupuestal" style="cursor:pointer;width:18px;height:18px;border-radius:50%;background:#ECEFF3;color:#546E7A;font-size:11px;font-weight:900;line-height:18px;text-align:center;flex:none">✕</div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:1px 8px">${arr.map(it => `<div data-inv-goto="${it.act_proy}" style="display:flex;align-items:center;gap:5px;padding:2px 4px;border-radius:6px;cursor:pointer">
+        <span style="flex:1;font-size:11px;font-weight:700;color:#37474F;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${it.act_proy}</span>
+        <span style="color:${col};font-weight:900;font-size:10px;flex:none">→</span>
+      </div>`).join('')}</div>
+      <div style="font-size:8.5px;color:#90A4AE;margin-top:5px">Clic en un CUI para abrir su ficha · ✕ o el mismo estado para volver</div>`;
+    })() : `<div class="pd-lbl" style="margin:0 0 6px">EJECUCIÓN PRESUPUESTAL</div>
+      ${barra('PIM', T.pim, null, '#37474F')}
+      ${barra('Certificación', T.cert, (T.cert || 0) * 100 / pim1, '#6A1B9A')}
+      ${barra('Compromiso', T.comp_anual, (T.comp_anual || 0) * 100 / pim1, '#00838F')}
+      ${barra('Devengado', T.dev, (T.dev || 0) * 100 / pim1, '#E65100')}`;
+    b.innerHTML = `<div style="display:flex;gap:8px;height:100%;box-sizing:border-box;padding:8px">
+      <div style="flex:1.15;min-width:0;display:flex;flex-direction:column;gap:6px;min-height:0">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">
           ${kpiT('kpi', '💰', FM(T.pim), `Resumen general · devengado ${Math.round((T.dev || 0) * 100 / pim1)}%`, '#0F2A43', '#F4FBF4', '#C8E6C9')}
           ${kpiT('benef', '👥', bc ? N(bc.total) : '…', bc ? `Beneficiarios · ${bc.conDato}/${items.length} con dato` : 'Beneficiarios · calculando…', '#1B5E20', '#F4FBF4', '#C8E6C9')}
           ${kpiT('fuentes', '🏦', fts[0] ? cap(fts[0].nombre) : 'sin datos', `Por fuente · ${fts.length} fuentes`, '#1565C0', '#F5F9FF', '#BBDEFB')}
@@ -262,17 +280,11 @@
           ${kpiT('comp', '🤝', FM(T.comp_anual), `Compromiso · ${Math.round((T.comp_anual || 0) * 100 / pim1)}% del PIM`, '#00838F', '#F0FBFC', '#B2E0E4')}
           ${kpiT('dev', '💵', FM(T.dev), `Devengado · ${Math.round((T.dev || 0) * 100 / pim1)}% del PIM`, '#E65100', '#FDEEE3', '#F5CBA0')}
         </div>
-        <div class="card" style="flex:none;padding:9px 11px">
-          <div class="pd-lbl" style="margin:0 0 7px">ESTADO DE LA CARTERA — ${items.length} INVERSIONES</div>
-          <div style="display:flex;gap:7px">${estList.map(([l, v, c]) => chipPill(v, l, c)).join('')}</div>
+        <div class="card" style="flex:none;padding:7px 9px">
+          <div class="pd-lbl" style="margin:0 0 5px">ESTADO DE LA CARTERA — ${items.length} INVERSIONES</div>
+          <div style="display:flex;gap:6px">${estList.map(([l, v, c, k]) => chipPill(v, l, c, k)).join('')}</div>
         </div>
-        <div class="card" style="flex:1;min-height:0;padding:9px 11px;overflow:auto">
-          <div class="pd-lbl" style="margin:0 0 8px">EJECUCIÓN PRESUPUESTAL</div>
-          ${barra('PIM', T.pim, null, '#37474F')}
-          ${barra('Certificación', T.cert, (T.cert || 0) * 100 / pim1, '#6A1B9A')}
-          ${barra('Compromiso', T.comp_anual, (T.comp_anual || 0) * 100 / pim1, '#00838F')}
-          ${barra('Devengado', T.dev, (T.dev || 0) * 100 / pim1, '#E65100')}
-        </div>
+        <div class="card" style="flex:1;min-height:0;padding:7px 9px;overflow:auto">${panelInferior}</div>
       </div>
       <div class="card" style="flex:1;min-width:0;display:flex;flex-direction:column;padding:10px 12px">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
@@ -297,6 +309,9 @@
     b.querySelector('[data-p="dev"]').onclick = () => verDetalleResumen('💵', 'DEVENGADO', funnelGasto(T));
     b.querySelector('[data-p="benef"]').onclick = () => verDetalleResumen('👥', 'BENEFICIARIOS DIRECTOS', bc ? `<p class="mutx">Suma del campo "beneficiarios (habitantes)" que cada inversión declara en su ficha del SSI (Banco de Inversiones).${items.length - bc.conDato ? ` ${items.length - bc.conDato} inversión(es) aún no tienen ese dato registrado en el MEF.` : ''}</p>` : '<p class="mutx">Cargando…</p>');
     b.querySelector('[data-p="fuentes"]').onclick = () => verDetalleResumen('🏦', 'POR FUENTE DE FINANCIAMIENTO', fts.map(f => `<div style="margin-bottom:14px"><div style="font-weight:800;color:var(--p2);font-size:12.5px;margin-bottom:4px">${cap(f.nombre)}</div>${barras([['PIM', f.pim, fts[0].pim, 'var(--gold)', FM(f.pim)], ['Devengado', f.dev, fts[0].pim, 'var(--ok)', FM(f.dev)]])}</div>`).join(''));
+    b.querySelectorAll('[data-est]').forEach(x => x.onclick = () => { const k = x.dataset.est; abiertos.invEstado = abiertos.invEstado === k ? null : k; cuerpo(); });
+    if (b.querySelector('[data-est-clear]')) b.querySelector('[data-est-clear]').onclick = () => { abiertos.invEstado = null; cuerpo(); };
+    b.querySelectorAll('[data-inv-goto]').forEach(x => x.onclick = () => { abiertos.inv = x.dataset.invGoto; cuerpo(); });
   }
   // ponytail: ficha de inversión en overlay a pantalla completa — paneles resumen que se abren uno a la vez, mismo patrón que paneles()
   let invPanel = null;
