@@ -53,9 +53,10 @@
     if (tabE === 'pi') { el.innerHTML = `<div class="card" style="flex:0 0 auto;padding:0"><div class="pd-hdr" style="border-radius:var(--rad)">${cab}<div class="pd-badges"><span class="pd-badge">🏅 Plan de Incentivos ${ANIO}</span><button class="btn" id="ent-volver-pi" style="margin-left:auto;background:#fff;color:var(--p2)">‹ Volver</button></div></div></div><div class="card" style="flex:1;min-height:0;padding:0"><div class="wrap" id="ent-body" style="padding:0"></div></div>`;
       $('ent-volver-pi').onclick = () => { tabE = 'hoy'; render(); }; $('ent-salir').onclick = () => { E = null; login(); }; cuerpo(); return; }
     // ponytail: Inversión pública también entra sin cabecera técnica — lista simple de obras; la ficha de cada una se abre debajo
-    if (tabE === 'inv') { el.innerHTML = `<div class="card" style="flex:0 0 auto;padding:0"><div class="pd-hdr" style="border-radius:var(--rad)">${cab}<div class="pd-badges"><span class="pd-badge">🏗 Inversión pública</span>${abiertos.invLista ? `<input type="search" id="ent-invq" placeholder="Buscar por CUI o nombre…" value="${q}" style="margin-left:auto;padding:6px 10px;border:1.5px solid var(--line);border-radius:8px;font:inherit;font-size:12px;width:240px">` : ''}<button class="btn" id="ent-volver-inv" style="background:#fff;color:var(--p2)${abiertos.invLista ? '' : ';margin-left:auto'}">‹ Volver</button></div></div></div><div class="card" style="flex:1;min-height:0;padding:0"><div class="wrap" id="ent-body" style="padding:0"></div></div>`;
+    if (tabE === 'inv') { el.innerHTML = `<div class="card" style="flex:0 0 auto;padding:0"><div class="pd-hdr" style="border-radius:var(--rad)">${cab}<div class="pd-badges"><span class="pd-badge">🏗 Inversión pública</span>${abiertos.invLista ? `<input type="search" id="ent-invq" placeholder="Buscar por CUI o nombre…" value="${q}" style="margin-left:auto;padding:6px 10px;border:1.5px solid var(--line);border-radius:8px;font:inherit;font-size:12px;width:240px">` : `<button class="btn" id="ent-ver-lista" style="background:#fff;color:var(--p2);margin-left:auto">📋 Ver lista completa</button>`}<button class="btn" id="ent-volver-inv" style="background:#fff;color:var(--p2)">‹ Volver</button></div></div></div><div class="card" style="flex:1;min-height:0;padding:0"><div class="wrap" id="ent-body" style="padding:0"></div></div>`;
       $('ent-volver-inv').onclick = () => { tabE = 'hoy'; render(); }; $('ent-salir').onclick = () => { E = null; login(); };
       if ($('ent-invq')) $('ent-invq').oninput = e => { q = e.target.value.trim().toLowerCase(); cuerpo(); };
+      if ($('ent-ver-lista')) $('ent-ver-lista').onclick = () => { abiertos.invLista = true; render(); };
       cuerpo(); return; }
     el.innerHTML = `<div class="card" style="flex:0 0 auto;padding:0"><div class="pd-hdr" style="border-radius:var(--rad)">${cab}
       <div class="pd-badges"><span class="pd-badge">${N(E.expedientes.length)} expedientes</span><span class="pd-badge">${N(inv().length)} inversiones · ${N(E.metas.length)} metas</span><span class="pd-badge">${N(E.modificaciones.length)} modificaciones presupuestales</span><span class="pd-badge ${nAl ? 'bad' : 'ok'}">${N(nAl)} alertas</span>
@@ -191,7 +192,15 @@
     const maxW = Math.round((W + margen) * (760 / 870)); // mantiene la misma escala px↔unidad-svg (13px de texto siempre se ve como 13px) sea cual sea el margen
     return `<svg viewBox="0 0 ${W + margen} ${H}" style="width:100%;max-width:${maxW}px;height:auto;display:block;margin:8px auto 2px">${partes}</svg>${sinDev > 0 ? `<p class="mutx" style="text-align:center;font-size:11px;margin:2px 0 0">${FM(sinDev)} (${Math.round(100 * sinDev / base)}%) del PIM aún no se devenga</p>` : ''}`;
   }
-  // ponytail: resumen de "Inversión pública" al entrar — KPIs y gráficos primero; la lista completa queda un clic más abajo
+  // ponytail: overlay liviano para el detalle de un stat (embudo / fuentes) — igual patrón visual que la ficha de inversión, pero el tablero de resumen queda fijo (sin scroll) en todo momento
+  function cerrarDetalleResumen() { const ov = $('res-overlay'); if (ov) ov.remove(); }
+  function verDetalleResumen(icono, titulo, html) {
+    let ov = $('res-overlay'); if (!ov) { ov = document.createElement('div'); ov.id = 'res-overlay'; document.body.appendChild(ov); }
+    ov.style.cssText = 'position:fixed;inset:0;z-index:9999;background:var(--bg);display:flex;flex-direction:column;animation:fiIn .16s ease';
+    ov.innerHTML = `<div class="pd-hdr" style="border-radius:0;flex:0 0 auto"><div class="pd-cui"><span>${icono} ${titulo}</span><span class="x" id="res-cerrar" title="Cerrar">×</span></div></div><div style="flex:1;min-height:0;overflow:auto;padding:16px 20px">${html}</div>`;
+    ov.querySelector('#res-cerrar').onclick = cerrarDetalleResumen;
+  }
+  // ponytail: resumen de "Inversión pública" al entrar — tablero fijo de dos columnas (KPIs + cartera a la izquierda, mapa a la derecha), sin scroll, como el dashboard MINAM; el detalle de cada KPI (embudo, fuentes) se abre en un overlay para no romper el layout fijo
   function resumenInversion(b, T, P_) {
     const items = inv().map(m => ({ ...m, c: LAKE[m.act_proy] || {} }));
     const ftsInv = P_.fuentes_inv && Object.keys(P_.fuentes_inv).length ? Object.values(P_.fuentes_inv).filter(f => f.pim > 0).sort((a, c) => c.pim - a.pim) : null;
@@ -200,21 +209,28 @@
     items.forEach(it => est[estadoInv(it.c)].push(it));
     const mapItems = items.map(it => ({ cui: it.act_proy, nombre: (it.c.nombre || nombreMeta(it)).slice(0, 70), lat: it.c.lat, lon: it.c.lon, est: estadoInv(it.c) }));
     const ueKey = E._ue.cod, bc = benefCache[ueKey];
-    paneles(b, [
-      { id: 'kpi', icono: '💰', titulo: 'RESUMEN GENERAL', valor: FM(T.pim), sub: `PIM de inversiones · devengado ${P((T.dev || 0) * 100 / (T.pim || 1))} · ${items.length} inversiones`, color: 'var(--gold)', medidor: 100 * (T.dev || 0) / (T.pim || 1),
-        detalle: () => funnelGasto(T) },
-      { id: 'benef', icono: '👥', titulo: 'BENEFICIARIOS DIRECTOS', valor: bc ? N(bc.total) : '…', sub: bc ? `según ficha SSI de cada inversión · ${bc.conDato} de ${items.length} con ese dato registrado` : 'calculando desde el Banco de Inversiones (SSI)…', color: 'var(--p)',
-        detalle: () => bc ? `<p class="mutx">Suma del campo "beneficiarios (habitantes)" que cada inversión declara en su ficha del SSI (Banco de Inversiones).${items.length - bc.conDato ? ` ${items.length - bc.conDato} inversión(es) aún no tienen ese dato registrado en el MEF.` : ''}</p>` : '<p class="mutx">Cargando…</p>' },
-      { id: 'fuentes', icono: '🏦', titulo: 'POR FUENTE DE FINANCIAMIENTO', valor: fts[0] ? cap(fts[0].nombre) : 'sin datos', sub: ftsInv ? `${fts.length} fuentes · solo inversiones` : `${fts.length} fuentes · cifra de todo el gasto (el desglose exclusivo de inversiones se activa en la próxima actualización de datos)`, color: 'var(--teal)',
-        detalle: () => fts.map(f => `<div style="margin-bottom:14px"><div style="font-weight:800;color:var(--p2);font-size:12.5px;margin-bottom:4px">${cap(f.nombre)}</div>${barras([['PIM', f.pim, fts[0].pim, 'var(--gold)', FM(f.pim)], ['Devengado', f.dev, fts[0].pim, 'var(--ok)', FM(f.dev)]])}</div>`).join('') },
-      { id: 'mapa', icono: '🗺', titulo: 'MAPA DE INVERSIONES', valor: `${items.length} inversiones`, sub: Object.entries(est).filter(([, v]) => v.length).map(([k, v]) => `${v.length} ${ESTINV[k][0].toLowerCase()}`).join(' · '), color: 'var(--p)',
-        detalle: () => `${cartera(Object.entries(est).filter(([, v]) => v.length).map(([k, v]) => [ESTINV[k][0], v.length, ESTINV[k][1]]), items.length)}<div id="inv-mapa" style="height:320px;border-radius:10px;margin-top:14px;background:var(--grid)"></div>` }
-    ], null, null, 'invR');
-    if (abiertos.invR === undefined) { abiertos.invR = 'mapa'; cuerpo(); return; } // ponytail: primera visita = mapa + cartera ya abiertos, como en el dashboard MINAM
-    if (abiertos.invR === 'mapa') pintarMapaInv(mapItems);
+    const estList = Object.entries(est).filter(([, v]) => v.length).map(([k, v]) => [ESTINV[k][0], v.length, ESTINV[k][1]]);
+    const stat = (id, icono, titulo, valor, sub, color) => `<div class="card pnl" data-p="${id}" style="flex:none;border-left:4px solid ${color};display:flex;gap:10px;align-items:flex-start;padding:10px 12px">
+      <div style="font-size:20px;line-height:1.2">${icono}</div>
+      <div style="flex:1;min-width:0"><div class="pd-lbl" style="margin:0;font-size:9px">${titulo}</div><div style="font-size:15px;font-weight:800;color:${color};margin:1px 0;line-height:1.25;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${valor}">${valor}</div><div class="mutx" style="font-size:10px;white-space:normal">${sub}</div></div>
+    </div>`;
+    b.innerHTML = `<div style="display:flex;gap:10px;height:100%;box-sizing:border-box;padding:8px">
+      <div style="width:300px;flex:none;display:flex;flex-direction:column;gap:8px;min-height:0">
+        ${stat('kpi', '💰', 'RESUMEN GENERAL', FM(T.pim), `PIM · devengado ${P((T.dev || 0) * 100 / (T.pim || 1))} · ${items.length} inversiones`, 'var(--gold)')}
+        ${stat('benef', '👥', 'BENEFICIARIOS DIRECTOS', bc ? N(bc.total) : '…', bc ? `${bc.conDato} de ${items.length} con dato SSI` : 'calculando desde el SSI…', 'var(--p)')}
+        ${stat('fuentes', '🏦', 'POR FUENTE DE FINANCIAMIENTO', fts[0] ? cap(fts[0].nombre) : 'sin datos', ftsInv ? `${fts.length} fuentes · solo inversiones` : `${fts.length} fuentes · todo el gasto`, 'var(--teal)')}
+        <div class="card" style="flex:1;min-height:0;padding:12px 14px;overflow:auto">${cartera(estList, items.length)}</div>
+      </div>
+      <div class="card" style="flex:1;min-width:0;display:flex;flex-direction:column;padding:12px">
+        <div class="pd-lbl" style="margin:0 0 8px">🗺 MAPA DE INVERSIONES</div>
+        <div id="inv-mapa" style="flex:1;min-height:0;border-radius:10px;background:var(--grid)"></div>
+      </div>
+    </div>`;
+    pintarMapaInv(mapItems);
     if (!bc) totalBeneficiarios(items, ueKey).then(() => { if (tabE === 'inv' && !abiertos.invLista && !abiertos.inv) cuerpo(); });
-    b.insertAdjacentHTML('beforeend', `<div class="card pnl" data-ir-lista style="cursor:pointer;flex-direction:row;align-items:center;gap:14px;padding:14px 16px;margin:0 8px 8px;border-left:5px solid var(--p2)"><div style="font-size:22px">🏗</div><div style="flex:1"><b style="color:var(--p2)">Inversiones públicas</b><div class="mutx" style="font-size:11.5px">Ver la lista completa (${items.length}) y entrar a la ficha de cada una</div></div><div style="font-size:20px;color:var(--mut)">›</div></div>`);
-    b.querySelector('[data-ir-lista]').onclick = () => { abiertos.invLista = true; render(); };
+    b.querySelector('[data-p="kpi"]').onclick = () => verDetalleResumen('💰', 'RESUMEN GENERAL', funnelGasto(T));
+    b.querySelector('[data-p="benef"]').onclick = () => verDetalleResumen('👥', 'BENEFICIARIOS DIRECTOS', bc ? `<p class="mutx">Suma del campo "beneficiarios (habitantes)" que cada inversión declara en su ficha del SSI (Banco de Inversiones).${items.length - bc.conDato ? ` ${items.length - bc.conDato} inversión(es) aún no tienen ese dato registrado en el MEF.` : ''}</p>` : '<p class="mutx">Cargando…</p>');
+    b.querySelector('[data-p="fuentes"]').onclick = () => verDetalleResumen('🏦', 'POR FUENTE DE FINANCIAMIENTO', fts.map(f => `<div style="margin-bottom:14px"><div style="font-weight:800;color:var(--p2);font-size:12.5px;margin-bottom:4px">${cap(f.nombre)}</div>${barras([['PIM', f.pim, fts[0].pim, 'var(--gold)', FM(f.pim)], ['Devengado', f.dev, fts[0].pim, 'var(--ok)', FM(f.dev)]])}</div>`).join(''));
   }
   // ponytail: ficha de inversión en overlay a pantalla completa — paneles resumen que se abren uno a la vez, mismo patrón que paneles()
   let invPanel = null;
