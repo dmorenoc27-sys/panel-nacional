@@ -123,6 +123,32 @@
   const ESTINV = { culminada: ['Culminada', '#2E7D32'], ejecucion: ['En ejecución de obra', '#1565C0'], expediente: ['En expediente técnico', '#8E24AA'], viable: ['Viable · por iniciar', '#F9A825'], paralizada: ['Paralizada / suspendida', '#C62828'] };
   // ponytail: mismos 5 estados y colores que ESTINV, solo que con etiquetas cortas — para que los chips de "estado de la cartera" nunca partan en 2 líneas
   const ESTCHIP = { culminada: 'Culminada', ejecucion: 'En ejecución', expediente: 'Expediente técnico', viable: 'Por iniciar', paralizada: 'Paralizada' };
+  // ponytail: mismo patrón "editable por David" del dashboard MINAM (Dashboard_UE003_MINAM/index.html) — array vacío listo para que él agregue normativa/prensa/documentos.
+  // Tipos: NORMA=normativa · PRENSA=nota de prensa · DOC=documento fijo · SEG=en seguimiento. pin:true = fijado arriba.
+  // Agregar así: {f:'AAAA-MM-DD', t:'NORMA', ti:'Título', d:'detalle corto (opcional)', u:'https://...'}
+  const NOVEDADES = [];
+  const NOV_TIPO = { NORMA: ['NORMATIVA', '#6A1B9A'], PRENSA: ['PRENSA', '#1565C0'], DOC: ['DOCUMENTO', '#2E7D32'], SEG: ['EN SEGUIMIENTO', '#E65100'] };
+  function novHTML() {
+    if (!NOVEDADES.length) return '<div style="font-size:11px;color:#90A4AE;padding:8px 4px">Sin novedades por ahora.</div>';
+    const hoy = new Date();
+    const items = NOVEDADES.slice().sort((a, b) => ((a.pin ? 1 : 0) - (b.pin ? 1 : 0)) || b.f.localeCompare(a.f));
+    return items.map(n => {
+      const m = NOV_TIPO[n.t] || NOV_TIPO.NORMA;
+      const dias = (hoy - new Date(n.f + 'T12:00:00')) / 86400000;
+      const nuevo = !n.pin && dias <= 7;
+      const fch = n.f.slice(8, 10) + '/' + n.f.slice(5, 7) + '/' + n.f.slice(2, 4);
+      return `<a href="${n.u || '#'}" target="_blank" rel="noopener" style="display:block;text-decoration:none;background:#fff;border:1px solid #E5E9EF;border-left:4px solid ${m[1]};border-radius:10px;padding:7px 9px;margin-bottom:7px;box-shadow:0 1px 3px rgba(16,24,40,.05)">
+        <div style="display:flex;align-items:center;gap:5px;margin-bottom:3px;flex-wrap:wrap">
+          ${n.pin ? '<span style="font-size:9px">📌</span>' : ''}
+          <span style="font-size:8px;font-weight:900;color:#fff;background:${m[1]};border-radius:4px;padding:1.5px 5px;letter-spacing:.4px">${m[0]}</span>
+          ${nuevo ? '<span style="font-size:8px;font-weight:900;color:#fff;background:#C62828;border-radius:4px;padding:1.5px 5px">NUEVO</span>' : ''}
+          <span style="font-size:8.5px;font-weight:700;color:#90A4AE;margin-left:auto">${fch}</span>
+        </div>
+        <div style="font-size:11px;font-weight:800;color:#263238;line-height:1.3">${n.ti}</div>
+        ${n.d ? `<div style="font-size:9.5px;color:#607D8B;line-height:1.35;margin-top:2px">${n.d}</div>` : ''}
+      </a>`;
+    }).join('');
+  }
   function estadoInv(c) {
     const s = ((c.situacion || '') + ' ' + (c.estado || '')).toUpperCase();
     if (/CULMIN|CERRAD/.test(s) || (c.avance_fisico != null && c.avance_fisico >= 99.5)) return 'culminada';
@@ -213,30 +239,54 @@
     const ueKey = E._ue.cod, bc = benefCache[ueKey];
     const estList = Object.entries(est).filter(([, v]) => v.length).map(([k, v]) => [ESTCHIP[k], v.length, ESTINV[k][1]]);
     const pim1 = T.pim || 1;
-    const stat = (id, icono, titulo, valor, sub, color) => `<div class="card pnl" data-p="${id}" style="flex:none;border-left:4px solid ${color};display:flex;gap:7px;align-items:flex-start;padding:7px 8px">
-      <div style="font-size:15px;line-height:1.2">${icono}</div>
-      <div style="flex:1;min-width:0"><div class="pd-lbl" style="margin:0;font-size:8px">${titulo}</div><div style="font-size:12.5px;font-weight:800;color:${color};margin:1px 0;line-height:1.2;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${valor}">${valor}</div><div class="mutx" style="font-size:8.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${sub}</div></div>
+    // ponytail: mismas medidas/colores que kpi()/chip()/barra() del dashboard MINAM (Dashboard_UE003_MINAM/index.html) — mismo look, tres columnas iguales
+    const kpiT = (id, icono, num, lbl, col, bg, br) => `<div class="pnl" data-p="${id}" style="cursor:pointer;background:${bg};border:1.5px solid ${br};border-left:5px solid ${col};border-radius:14px;padding:8px 12px;display:flex;align-items:center;gap:9px;box-shadow:0 1px 5px rgba(16,24,40,.08)">
+      <span style="font-size:22px;flex:none;line-height:1">${icono}</span>
+      <div style="min-width:0"><div style="font-size:16px;font-weight:900;color:${col};letter-spacing:-.4px;line-height:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis" title="${num}">${num}</div>
+      <div style="font-size:9px;font-weight:800;color:#546E7A;margin-top:3px;line-height:1.25;text-transform:uppercase;letter-spacing:.3px">${lbl}</div></div>
     </div>`;
-    // ponytail: reusa la misma paleta ordinal del embudo (funnelGasto) — misma etapa, mismo color, en toda la vista
+    const chipPill = (n, lbl, col) => `<div style="flex:1;background:${col};border-radius:13px;padding:7px 4px;text-align:center;color:#fff;box-shadow:0 2px 8px ${col}55">
+      <div style="font-size:17px;font-weight:900;line-height:1">${n}</div>
+      <div style="font-size:8.5px;font-weight:800;margin-top:2px;text-transform:uppercase;letter-spacing:.2px;opacity:.95;line-height:1.2">${lbl}</div>
+    </div>`;
+    const barra = (lbl, val, pctv, col) => `<div style="margin-bottom:8px"><div style="display:flex;justify-content:space-between;font-size:10px;font-weight:800;color:#37474F;margin-bottom:3px"><span>${lbl}</span><span style="color:${col}">${FM(val)}${pctv != null ? ` · ${Math.round(pctv)}%` : ''}</span></div>
+      <div style="height:7px;background:#ECEFF3;border-radius:6px;overflow:hidden"><div style="height:100%;width:${pctv != null ? Math.min(pctv, 100) : 100}%;background:linear-gradient(90deg,${col}CC,${col});border-radius:6px"></div></div>
+    </div>`;
     b.innerHTML = `<div style="display:flex;gap:10px;height:100%;box-sizing:border-box;padding:8px">
-      <div style="width:320px;flex:none;display:flex;flex-direction:column;gap:6px;min-height:0">
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">
-          ${stat('kpi', '💰', 'RESUMEN GENERAL', FM(T.pim), `PIM · devengado ${P((T.dev || 0) * 100 / pim1)}`, 'var(--gold)')}
-          ${stat('benef', '👥', 'BENEFICIARIOS', bc ? N(bc.total) : '…', bc ? `${bc.conDato}/${items.length} con dato` : 'calculando…', 'var(--p)')}
-          ${stat('fuentes', '🏦', 'POR FUENTE', fts[0] ? cap(fts[0].nombre) : 'sin datos', `${fts.length} fuentes`, 'var(--teal)')}
-          ${stat('cert', '📋', 'CERTIFICACIÓN', FM(T.cert), `${P((T.cert || 0) * 100 / pim1)} del PIM`, '#5598e7')}
-          ${stat('comp', '🤝', 'COMPROMISO', FM(T.comp_anual), `${P((T.comp_anual || 0) * 100 / pim1)} del PIM`, '#2a78d6')}
-          ${stat('dev', '💵', 'DEVENGADO', FM(T.dev), `${P((T.dev || 0) * 100 / pim1)} del PIM`, '#184f95')}
+      <div style="flex:1.15;min-width:0;display:flex;flex-direction:column;gap:8px;min-height:0">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+          ${kpiT('kpi', '💰', FM(T.pim), `Resumen general · devengado ${Math.round((T.dev || 0) * 100 / pim1)}%`, '#0F2A43', '#F4FBF4', '#C8E6C9')}
+          ${kpiT('benef', '👥', bc ? N(bc.total) : '…', bc ? `Beneficiarios · ${bc.conDato}/${items.length} con dato` : 'Beneficiarios · calculando…', '#1B5E20', '#F4FBF4', '#C8E6C9')}
+          ${kpiT('fuentes', '🏦', fts[0] ? cap(fts[0].nombre) : 'sin datos', `Por fuente · ${fts.length} fuentes`, '#1565C0', '#F5F9FF', '#BBDEFB')}
+          ${kpiT('cert', '📋', FM(T.cert), `Certificación · ${Math.round((T.cert || 0) * 100 / pim1)}% del PIM`, '#6A1B9A', '#F8F3FC', '#D8BFE0')}
+          ${kpiT('comp', '🤝', FM(T.comp_anual), `Compromiso · ${Math.round((T.comp_anual || 0) * 100 / pim1)}% del PIM`, '#00838F', '#F0FBFC', '#B2E0E4')}
+          ${kpiT('dev', '💵', FM(T.dev), `Devengado · ${Math.round((T.dev || 0) * 100 / pim1)}% del PIM`, '#E65100', '#FDEEE3', '#F5CBA0')}
         </div>
-        <div class="card" style="flex:1;min-height:0;padding:6px 8px;overflow:auto">${cartera(estList, items.length)}</div>
-        <div class="card" style="flex:none;padding:6px 8px">
-          <div class="pd-lbl" style="margin:0 0 4px">📊 EJECUCIÓN PRESUPUESTAL</div>
-          ${barras([['PIM', T.pim, pim1, 'var(--gold)', FM(T.pim)], ['Certificación', T.cert, pim1, '#5598e7', FM(T.cert)], ['Compromiso', T.comp_anual, pim1, '#2a78d6', FM(T.comp_anual)], ['Devengado', T.dev, pim1, 'var(--ok)', FM(T.dev)]])}
+        <div class="card" style="flex:none;padding:9px 11px">
+          <div class="pd-lbl" style="margin:0 0 7px">ESTADO DE LA CARTERA — ${items.length} INVERSIONES</div>
+          <div style="display:flex;gap:7px">${estList.map(([l, v, c]) => chipPill(v, l, c)).join('')}</div>
+        </div>
+        <div class="card" style="flex:1;min-height:0;padding:9px 11px;overflow:auto">
+          <div class="pd-lbl" style="margin:0 0 8px">EJECUCIÓN PRESUPUESTAL</div>
+          ${barra('PIM', T.pim, null, '#37474F')}
+          ${barra('Certificación', T.cert, (T.cert || 0) * 100 / pim1, '#6A1B9A')}
+          ${barra('Compromiso', T.comp_anual, (T.comp_anual || 0) * 100 / pim1, '#00838F')}
+          ${barra('Devengado', T.dev, (T.dev || 0) * 100 / pim1, '#E65100')}
         </div>
       </div>
-      <div class="card" style="flex:1;min-width:0;position:relative;padding:0">
-        <div class="pd-lbl" style="position:absolute;top:10px;left:12px;z-index:400;background:rgba(255,255,255,.92);padding:3px 8px;border-radius:6px">🗺 MAPA DE INVERSIONES</div>
-        <div id="inv-mapa" style="width:100%;height:100%;border-radius:var(--rad);background:var(--grid)"></div>
+      <div class="card" style="flex:1;min-width:0;display:flex;flex-direction:column;padding:10px 12px">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+          <div class="pd-lbl" style="margin:0">MAPA DE INVERSIONES</div>
+          <div style="display:flex;gap:8px;font-size:9px;font-weight:700;color:#546E7A;flex-wrap:wrap">${Object.values(ESTINV).map(([l, c]) => `<span><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${c};margin-right:3px"></span>${l}</span>`).join('')}</div>
+        </div>
+        <div id="inv-mapa" style="flex:1;min-height:0;border-radius:10px;background:var(--grid)"></div>
+      </div>
+      <div class="card" style="flex:0 0 230px;min-width:0;display:flex;flex-direction:column;padding:10px 10px">
+        <div style="padding:0 2px 8px;border-bottom:2px solid #E8F5E9;margin-bottom:8px">
+          <div class="pd-lbl" style="margin:0">🔔 NOVEDADES</div>
+          <div style="font-size:8.5px;font-weight:700;color:#90A4AE;margin-top:2px;letter-spacing:.3px">NORMATIVA · PRENSA · DOCUMENTOS</div>
+        </div>
+        <div style="flex:1;min-height:0;overflow:auto">${novHTML()}</div>
       </div>
     </div>`;
     pintarMapaInv(mapItems);
