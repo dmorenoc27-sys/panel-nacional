@@ -305,7 +305,7 @@
       </div>
       <div class="card" style="flex:1;min-width:0;display:flex;flex-direction:column;padding:10px 12px">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
-          <div class="pd-lbl" style="margin:0">MAPA DE INVERSIONES</div>
+          <div class="pd-lbl" style="margin:0">MAPA DE INVERSIONES${(() => { const tot = estSel ? est[estSel].length : items.length, con = mapItems.filter(it => (!estSel || it.est === estSel) && it.lat != null && it.lon != null).length; return con < tot ? ` · ${con}/${tot} con coordenadas` : ''; })()}</div>
           <div style="display:flex;gap:8px;font-size:9px;font-weight:700;color:#546E7A;flex-wrap:wrap">${Object.values(ESTINV).map(([l, c]) => `<span><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${c};margin-right:3px"></span>${l}</span>`).join('')}</div>
         </div>
         <div id="inv-mapa" style="flex:1;min-height:0;border-radius:10px;background:var(--grid)"></div>
