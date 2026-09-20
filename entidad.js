@@ -121,6 +121,8 @@
   const mlabel = s => META[s] ? (META[s].es_inv ? META[s].act_proy : 'meta ' + META[s].meta) : s;
   // ponytail: estado de ejecución de una inversión a partir de los campos ya cargados en LAKE (sin fetch adicional por CUI)
   const ESTINV = { culminada: ['Culminada', '#2E7D32'], ejecucion: ['En ejecución de obra', '#1565C0'], expediente: ['En expediente técnico', '#8E24AA'], viable: ['Viable · por iniciar', '#F9A825'], paralizada: ['Paralizada / suspendida', '#C62828'] };
+  // ponytail: mismos 5 estados y colores que ESTINV, solo que con etiquetas cortas — para que los chips de "estado de la cartera" nunca partan en 2 líneas
+  const ESTCHIP = { culminada: 'Culminada', ejecucion: 'En ejecución', expediente: 'Expediente técnico', viable: 'Por iniciar', paralizada: 'Paralizada' };
   function estadoInv(c) {
     const s = ((c.situacion || '') + ' ' + (c.estado || '')).toUpperCase();
     if (/CULMIN|CERRAD/.test(s) || (c.avance_fisico != null && c.avance_fisico >= 99.5)) return 'culminada';
@@ -209,19 +211,28 @@
     items.forEach(it => est[estadoInv(it.c)].push(it));
     const mapItems = items.map(it => ({ cui: it.act_proy, nombre: (it.c.nombre || nombreMeta(it)).slice(0, 70), lat: it.c.lat, lon: it.c.lon, est: estadoInv(it.c) }));
     const ueKey = E._ue.cod, bc = benefCache[ueKey];
-    const estList = Object.entries(est).filter(([, v]) => v.length).map(([k, v]) => [ESTINV[k][0], v.length, ESTINV[k][1]]);
-    const stat = (id, icono, titulo, valor, sub, color) => `<div class="card pnl" data-p="${id}" style="flex:none;border-left:4px solid ${color};display:flex;gap:10px;align-items:flex-start;padding:10px 12px">
-      <div style="font-size:20px;line-height:1.2">${icono}</div>
-      <div style="flex:1;min-width:0"><div class="pd-lbl" style="margin:0;font-size:9px">${titulo}</div><div style="font-size:15px;font-weight:800;color:${color};margin:1px 0;line-height:1.25;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${valor}">${valor}</div><div class="mutx" style="font-size:10px;white-space:normal">${sub}</div></div>
+    const estList = Object.entries(est).filter(([, v]) => v.length).map(([k, v]) => [ESTCHIP[k], v.length, ESTINV[k][1]]);
+    const pim1 = T.pim || 1;
+    const stat = (id, icono, titulo, valor, sub, color) => `<div class="card pnl" data-p="${id}" style="flex:none;border-left:4px solid ${color};display:flex;gap:7px;align-items:flex-start;padding:7px 8px">
+      <div style="font-size:15px;line-height:1.2">${icono}</div>
+      <div style="flex:1;min-width:0"><div class="pd-lbl" style="margin:0;font-size:8px">${titulo}</div><div style="font-size:12.5px;font-weight:800;color:${color};margin:1px 0;line-height:1.2;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${valor}">${valor}</div><div class="mutx" style="font-size:8.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${sub}</div></div>
     </div>`;
+    // ponytail: reusa la misma paleta ordinal del embudo (funnelGasto) — misma etapa, mismo color, en toda la vista
     b.innerHTML = `<div style="display:flex;gap:10px;height:100%;box-sizing:border-box;padding:8px">
-      <div style="width:280px;flex:none;display:flex;flex-direction:column;gap:8px;min-height:0">
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
-          ${stat('kpi', '💰', 'RESUMEN GENERAL', FM(T.pim), `PIM · devengado ${P((T.dev || 0) * 100 / (T.pim || 1))}`, 'var(--gold)')}
+      <div style="width:320px;flex:none;display:flex;flex-direction:column;gap:6px;min-height:0">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">
+          ${stat('kpi', '💰', 'RESUMEN GENERAL', FM(T.pim), `PIM · devengado ${P((T.dev || 0) * 100 / pim1)}`, 'var(--gold)')}
           ${stat('benef', '👥', 'BENEFICIARIOS', bc ? N(bc.total) : '…', bc ? `${bc.conDato}/${items.length} con dato` : 'calculando…', 'var(--p)')}
+          ${stat('fuentes', '🏦', 'POR FUENTE', fts[0] ? cap(fts[0].nombre) : 'sin datos', `${fts.length} fuentes`, 'var(--teal)')}
+          ${stat('cert', '📋', 'CERTIFICACIÓN', FM(T.cert), `${P((T.cert || 0) * 100 / pim1)} del PIM`, '#5598e7')}
+          ${stat('comp', '🤝', 'COMPROMISO', FM(T.comp_anual), `${P((T.comp_anual || 0) * 100 / pim1)} del PIM`, '#2a78d6')}
+          ${stat('dev', '💵', 'DEVENGADO', FM(T.dev), `${P((T.dev || 0) * 100 / pim1)} del PIM`, '#184f95')}
         </div>
-        ${stat('fuentes', '🏦', 'POR FUENTE DE FINANCIAMIENTO', fts[0] ? cap(fts[0].nombre) : 'sin datos', ftsInv ? `${fts.length} fuentes · solo inversiones` : `${fts.length} fuentes · todo el gasto`, 'var(--teal)')}
-        <div class="card" style="flex:1;min-height:0;padding:10px 12px;overflow:auto">${cartera(estList, items.length)}</div>
+        <div class="card" style="flex:1;min-height:0;padding:6px 8px;overflow:auto">${cartera(estList, items.length)}</div>
+        <div class="card" style="flex:none;padding:6px 8px">
+          <div class="pd-lbl" style="margin:0 0 4px">📊 EJECUCIÓN PRESUPUESTAL</div>
+          ${barras([['PIM', T.pim, pim1, 'var(--gold)', FM(T.pim)], ['Certificación', T.cert, pim1, '#5598e7', FM(T.cert)], ['Compromiso', T.comp_anual, pim1, '#2a78d6', FM(T.comp_anual)], ['Devengado', T.dev, pim1, 'var(--ok)', FM(T.dev)]])}
+        </div>
       </div>
       <div class="card" style="flex:1;min-width:0;position:relative;padding:0">
         <div class="pd-lbl" style="position:absolute;top:10px;left:12px;z-index:400;background:rgba(255,255,255,.92);padding:3px 8px;border-radius:6px">🗺 MAPA DE INVERSIONES</div>
@@ -231,6 +242,9 @@
     pintarMapaInv(mapItems);
     if (!bc) totalBeneficiarios(items, ueKey).then(() => { if (tabE === 'inv' && !abiertos.invLista && !abiertos.inv) cuerpo(); });
     b.querySelector('[data-p="kpi"]').onclick = () => verDetalleResumen('💰', 'RESUMEN GENERAL', funnelGasto(T));
+    b.querySelector('[data-p="cert"]').onclick = () => verDetalleResumen('📋', 'CERTIFICACIÓN', funnelGasto(T));
+    b.querySelector('[data-p="comp"]').onclick = () => verDetalleResumen('🤝', 'COMPROMISO', funnelGasto(T));
+    b.querySelector('[data-p="dev"]').onclick = () => verDetalleResumen('💵', 'DEVENGADO', funnelGasto(T));
     b.querySelector('[data-p="benef"]').onclick = () => verDetalleResumen('👥', 'BENEFICIARIOS DIRECTOS', bc ? `<p class="mutx">Suma del campo "beneficiarios (habitantes)" que cada inversión declara en su ficha del SSI (Banco de Inversiones).${items.length - bc.conDato ? ` ${items.length - bc.conDato} inversión(es) aún no tienen ese dato registrado en el MEF.` : ''}</p>` : '<p class="mutx">Cargando…</p>');
     b.querySelector('[data-p="fuentes"]').onclick = () => verDetalleResumen('🏦', 'POR FUENTE DE FINANCIAMIENTO', fts.map(f => `<div style="margin-bottom:14px"><div style="font-weight:800;color:var(--p2);font-size:12.5px;margin-bottom:4px">${cap(f.nombre)}</div>${barras([['PIM', f.pim, fts[0].pim, 'var(--gold)', FM(f.pim)], ['Devengado', f.dev, fts[0].pim, 'var(--ok)', FM(f.dev)]])}</div>`).join(''));
   }
