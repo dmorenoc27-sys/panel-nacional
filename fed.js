@@ -57,24 +57,61 @@
     const items = FED.ind.filter(i => M[i[0]]).map(([code, cat, tipo, nombre, unidad, siaf, menor]) => ({ code, cat, tipo, nombre, unidad: unidad || '%', siaf, menor: !!menor, m: M[code], e: S[code] || 'pend' }));
     return { region: r, items, S };
   }
+  // ---- vista: misma estética que el Plan de Incentivos (tarjetas compactas por eje -> detalle) ----
+  const COL = { ok: '#1B9E5A', proc: '#E39B1E', no: '#D64545', pend: '#1E5AA8' };
+  const TXT = { ok: 'Cumplido', proc: 'En proceso', no: 'En riesgo', pend: 'Sin registrar' };
+  let abierto = null, ultimo = null;
+  function resumenCat(items) {
+    const n = k => items.filter(i => i.e === k).length, ok = n('ok'), no = n('no'), pr = n('proc'), pe = n('pend');
+    const col = no ? 'no' : pr ? 'proc' : ok === items.length ? 'ok' : 'pend';
+    const partes = [ok && `${ok} cumplido${ok > 1 ? 's' : ''}`, pr && `${pr} en proceso`, no && `${no} en riesgo`, pe && `${pe} sin registrar`].filter(Boolean);
+    const titulo = pe === items.length ? `${items.length} indicador${items.length > 1 ? 'es' : ''} · sin registrar` : ok === items.length ? `${ok} de ${items.length} cumplidos` : partes.join(' · ');
+    return { col, titulo, ok, no, pr, pe };
+  }
+  function compactCard(c, n, items) {
+    const r = resumenCat(items), col = COL[r.col];
+    return `<div class="card pnl" data-abrir="${c}" style="cursor:pointer;border-left:5px solid ${col};padding:14px 16px;flex-direction:row;align-items:center;gap:14px">
+      <div style="width:34px;height:34px;border-radius:50%;background:${col}1F;display:grid;place-items:center;font-weight:800;color:${col};flex:0 0 auto;font-size:15px">${n}</div>
+      <div style="min-width:0;flex:1"><b style="font-size:13.5px;color:var(--p2)">${FED.cat[c][0]}</b><div style="font-size:11.5px;color:var(--ink);margin-top:2px">${r.titulo} <small class="mutx">· ${FED.cat[c][1]}</small></div></div>
+      <div style="font-size:20px;color:var(--mut);flex:0 0 auto">›</div></div>`;
+  }
+  function detalle(c, items, S, fase) {
+    const fila = i => { const col = COL[i.e], on = k => k === fase[0] ? 'style="background:#FFF3D6;font-weight:800"' : '';
+      return `<tr><td style="white-space:normal"><b>${i.code}</b> ${i.nombre}<small class="mutx" style="display:block">${i.tipo === 'cg' ? 'Compromiso de gestión' : 'Meta de cobertura'}${i.menor ? ' · menor es mejor' : ''}</small>${i.siaf ? `<small style="display:block;color:var(--p2)">${i.siaf}</small>` : ''}</td>
+        <td>${fmt(i.m.b, i.unidad)}</td>${i.m.u != null ? `<td colspan="2" style="background:#FFF3D6;font-weight:800">${fmt(i.m.u, i.unidad)} <small class="mutx">única</small></td>` : `<td ${on('1')}>${fmt(i.m['1'], i.unidad)}</td><td ${on('2')}>${fmt(i.m['2'], i.unidad)}</td>`}
+        <td><select data-estado="${i.code}" style="font:inherit;font-size:11px;font-weight:700;border:1.5px solid var(--line);border-radius:6px;padding:2px 4px;background:#fff;color:${col}">${ESTADOS.map(e => `<option value="${e[0]}" ${i.e === e[0] ? 'selected' : ''}>${e[1]}</option>`).join('')}</select></td></tr>`; };
+    return `<div style="padding:10px 0 0">
+      <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap"><div style="flex:1;min-width:240px"><b style="font-size:13px">${FED.cat[c][0]}</b><br><small class="mutx">Entidad rectora: ${FED.cat[c][1]} · ${items.length} indicador${items.length > 1 ? 'es' : ''} · ${fase[1]} en curso (${fase[2].slice(0, 7)} → ${fase[3].slice(0, 7)})</small></div></div>
+      <div class="pd-lbl" style="margin-top:10px">Indicadores, basal y metas <small>Anexo II · DS 012-2025-MIDIS</small></div>
+      <div style="overflow-x:auto"><table class="pd-tbl"><tr><th style="width:58%">Indicador</th><th>Basal</th><th>Meta 1.ª verif.</th><th>Meta 2.ª verif.</th><th>Estado</th></tr>${items.map(fila).join('')}</table></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:10px"><div style="min-width:0">
+        <div class="pd-lbl">Notas de seguimiento</div><textarea data-nota="${c}" rows="3" style="width:100%;font:inherit;font-size:11.5px;border:1.5px solid var(--line);border-radius:6px;padding:5px" placeholder="Responsable, avances, pendientes…">${S['nota_' + c] || ''}</textarea></div>
+        <div style="min-width:0"><div class="pd-lbl">Cómo se verifica y se paga</div>${FED.reglas.map(x => `<div class="pd-row"><span style="font-weight:500">${x}</span></div>`).join('')}</div></div></div>`;
+  }
   function ui(el, u) {
     const r = region(u); if (!r) return;
     if (!METAS) { fetch('data/fed_metas.json').then(x => x.json()).then(j => { METAS = j; ui(el, u); }).catch(() => { }); return; }
     const R = resumen(u); if (!R) return;
+    ultimo = [el, u];
     const h = hoy(), fase = FED.periodo.find(p => h >= p[2] && h <= p[3]) || FED.periodo[1];
-    const cnt = k => R.items.filter(i => i.e === k).length;
-    const cats = [...new Set(R.items.map(i => i.cat))];
-    const fila = i => { const meta = i.m.u != null ? [['única', i.m.u]] : [['1.ª', i.m['1']], ['2.ª', i.m['2']]]; const col = ESTADOS.find(e => e[0] === i.e)[2];
-      return `<div class="fed-i" style="border-left-color:${col}"><div class="fed-c">${i.code}<small>${i.tipo === 'cg' ? 'compromiso de gestión' : 'meta de cobertura'}</small></div><div class="fed-n">${i.nombre}${i.siaf ? `<div class="fed-siaf">${i.siaf}</div>` : ''}</div>
-        <div class="fed-m"><span>basal <b>${fmt(i.m.b, i.unidad)}</b></span>${meta.map(([k, v]) => `<span class="${k === fase[0] + '.ª' || k === 'única' ? 'on' : ''}">${k} <b>${fmt(v, i.unidad)}</b></span>`).join('')}</div>
-        <select class="fed-e" data-c="${i.code}" style="color:${col}">${ESTADOS.map(e => `<option value="${e[0]}" ${i.e === e[0] ? 'selected' : ''}>${e[1]}</option>`).join('')}</select></div>`; };
-    const ex = el.querySelector('.fed'); if (ex) ex.remove();
-    el.insertAdjacentHTML('afterbegin', `<div class="fed"><div class="fed-h"><div><b>FED 2025-2026 · FONDO DE ESTÍMULO AL DESEMPEÑO</b><small>${FED.norma} · el incentivo de los gobiernos regionales</small></div>
-      <div class="fed-k"><b>${R.items.length}</b> indicadores le aplican · <b style="color:#1B9E5A">${cnt('ok')}</b> cumplidos · <b style="color:#E39B1E">${cnt('proc')}</b> en proceso · <b style="color:#D64545">${cnt('no')}</b> en riesgo · ${cnt('pend')} sin registrar</div></div>
-      <div class="fed-fase">${FED.periodo.map(p => `<span class="${p === fase ? 'on' : ''}">${p[1]} · ${p[2].slice(0, 7)} → ${p[3].slice(0, 7)}</span>`).join('')}<span class="mutx">El pago llega por DS tras cada verificación; cumplimiento parcial paga en proporción (art. 8.10 y 10).</span></div>
-      ${cats.map(c => `<div class="fed-cat"><span>${FED.cat[c][0]}</span><small>${FED.cat[c][1]}</small></div>${R.items.filter(i => i.cat === c).map(fila).join('')}`).join('')}
-      <details class="fed-reglas"><summary>Cómo se verifica y se paga (DS 012-2025-MIDIS)</summary><ul>${FED.reglas.map(x => `<li>${x}</li>`).join('')}</ul><p class="mutx">El estado por indicador lo registra la entidad aquí (se guarda solo en este navegador); las metas son las del Anexo II. Las fichas técnicas están en www.gob.pe/midis.</p></details></div>`);
-    el.querySelectorAll('.fed-e').forEach(s => s.onchange = () => { const S = st.get(R.region); S[s.dataset.c] = s.value; st.set(R.region, S); ui(el, u); });
+    const cats = [...new Set(R.items.map(i => i.cat))], de = c => R.items.filter(i => i.cat === c), S = R.S;
+    if (abierto !== null && !cats.includes(abierto)) abierto = null;
+    if (abierto !== null) {
+      el.innerHTML = `<div style="padding:8px">
+       <div style="display:flex;align-items:center;gap:12px;margin-bottom:8px"><button class="btn" data-atras-fed>‹ Volver al FED</button><div class="pd-lbl" style="margin:0">${cats.indexOf(abierto) + 1}. ${FED.cat[abierto][0]}</div></div>
+       <div class="card" style="padding:0 14px 14px">${detalle(abierto, de(abierto), S, fase)}</div></div>`;
+      el.querySelector('[data-atras-fed]').onclick = () => { abierto = null; ui(el, u); };
+    } else {
+      const t = resumenCat(R.items);
+      el.innerHTML = `<div style="padding:8px">
+       <div class="pd-lbl">FED 2025-2026 · Fondo de Estímulo al Desempeño<small>${FED.norma} · ${r}</small></div>
+       <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:0 0 10px;font-size:11.5px"><span class="tag" style="background:var(--p2);color:#fff">${fase[1]} · ${fase[2].slice(0, 7)} → ${fase[3].slice(0, 7)}</span><span>${R.items.length} indicadores le aplican</span><span class="tag ok">${t.ok} cumplidos</span><span class="tag warn">${t.pr} en proceso</span><span class="tag bad">${t.no} en riesgo</span><span class="tag" style="background:var(--sup);color:var(--ink2)">${t.pe} sin registrar</span></div>
+       <p class="mutx" style="font-size:11.5px;margin:0 0 10px">Clic en un eje para ver sus indicadores, metas y registrar el avance. El pago llega por DS tras cada verificación; cumplimiento parcial paga en proporción (art. 8.10 y 10).</p>
+       <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">${cats.map((c, i) => compactCard(c, i + 1, de(c))).join('')}</div></div>`;
+    }
+    el.querySelectorAll('[data-abrir]').forEach(x => x.onclick = () => { abierto = x.dataset.abrir; ui(el, u); });
+    el.querySelectorAll('[data-estado]').forEach(x => x.onchange = () => { const S2 = st.get(r); S2[x.dataset.estado] = x.value; st.set(r, S2); ui(el, u); });
+    el.querySelectorAll('[data-nota]').forEach(x => x.onblur = () => { const S2 = st.get(r); S2['nota_' + x.dataset.nota] = x.value; st.set(r, S2); });
   }
-  window.FED = { ui, region, resumen, FED };
+  window.FED = { ui, region, resumen, FED, atras: () => { if (abierto === null || !ultimo) return false; abierto = null; ui(...ultimo); return true; } };
 })();
