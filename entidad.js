@@ -31,6 +31,50 @@
   async function preparar(ue) {
     META = {}; E.metas.forEach(m => META[m.sec_func] = m);
     const uf = await ficha(ue).catch(() => null); if (!SEA_R) SEA_R = await fetch('data/seace/resumen.json').then(r => r.json()).catch(() => ({})); LAKE = {}; (uf?.cuis || []).forEach(c => LAKE[c.cui] = c); E._ue = UES.find(u => u.cod === ue) || { cod: ue, nombre: 'UE ' + ue }; E._uf = uf;
+    // reporte PPT a medida (solo con clave): existe si la entidad tiene plantilla en reportes/<ue>.json
+    E._rep = await fetch(`reportes/${ue}.json`).then(r => r.ok ? r.json() : null).catch(() => null);
+    if (E._rep) E._repFechas = await fetch(`data/reportes/${ue}/index.json?v=${Date.now()}`).then(r => r.ok ? r.json() : []).catch(() => []);
+  }
+  // ---- Reporte PPT a medida: botón + fecha de corte (calendario nativo) ----
+  function repCorteHTML() {
+    if (!E._rep) return '';
+    const hoy = R.corte.slice(0, 10), anio = +hoy.slice(0, 4);
+    return `<span style="display:inline-flex;align-items:center;gap:6px;margin-left:auto;background:#fff;border-radius:8px;padding:3px 6px 3px 10px;color:var(--p2);font-size:12px">
+      <label for="rep-corte" style="font-weight:700">Fecha de corte</label><input type="date" id="rep-corte" value="${E._repCorte || hoy}" min="${anio}-01-01" max="${hoy}" style="font:inherit;border:1px solid var(--line);border-radius:6px;padding:3px 6px">
+      <span id="rep-nota" class="mutx" style="font-size:11px"></span>
+      <button class="btn p" id="rep-ppt" title="Genera el reporte oficial en PowerPoint con los datos a la fecha de corte">📑 Generar reporte PPT</button></span>`;
+  }
+  // qué datos se usan para una fecha: fin de mes ya cerrado -> devengado mensual del MEF (exacto); otro día -> foto diaria guardada
+  // (si la hay) o la foto más cercana anterior; hoy -> datos actuales
+  function repResolver(fecha) {
+    const hoy = R.corte.slice(0, 10), d = new Date(fecha + 'T00:00:00'), fin = new Date(d.getFullYear(), d.getMonth() + 1, 0).getDate();
+    if (fecha >= hoy) return { corte: null, nota: 'datos de hoy' };
+    if (d.getDate() === fin && d.getFullYear() === +hoy.slice(0, 4)) return { corte: { mes: d.getMonth() + 1 }, nota: 'cierre mensual (MEF)' };
+    const fotos = (E._repFechas || []).filter(f => f <= fecha).sort();
+    if (fotos.length) { const f = fotos[fotos.length - 1]; return { corte: { fecha: f, foto: true }, nota: f === fecha ? 'foto diaria guardada' : 'foto diaria más cercana: ' + f.split('-').reverse().join('/') }; }
+    const m = d.getMonth() + (d.getDate() === fin ? 1 : 0);
+    return m >= 1 ? { corte: { mes: m }, nota: 'sin foto de ese día; se usa el cierre de ' + ReporteUE.MESES[m - 1].toLowerCase() } : { corte: null, nota: 'sin datos para esa fecha; se usan los de hoy' };
+  }
+  function repWire() {
+    const inp = $('rep-corte'), btn = $('rep-ppt'); if (!inp || !btn) return;
+    const nota = () => { E._repCorte = inp.value; $('rep-nota').textContent = '· ' + repResolver(inp.value).nota; };
+    inp.onchange = nota; nota();
+    btn.onclick = async () => {
+      btn.disabled = true; const txt = btn.textContent; btn.textContent = 'Generando…';
+      try {
+        if (!window.JSZip) await new Promise((ok, err) => { const s = document.createElement('script'); s.src = 'https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js'; s.onload = ok; s.onerror = err; document.head.appendChild(s); });
+        const cfg = E._rep, ue = E._ue.cod, r = repResolver(inp.value);
+        const datos = await fetch(`data/reportes/${ue}.json?v=${Date.now()}`).then(x => x.json());
+        if (r.corte && r.corte.foto) r.corte.datos = await fetch(`data/reportes/${ue}/${r.corte.fecha}.json`).then(x => x.json());
+        const buf = await fetch(cfg.plantilla).then(x => { if (!x.ok) throw new Error('plantilla'); return x.arrayBuffer(); });
+        const zip = await JSZip.loadAsync(buf);
+        const { D } = await ReporteUE.generar(zip, cfg, datos, r.corte);
+        const blob = await zip.generateAsync({ type: 'blob', compression: 'DEFLATE', mimeType: 'application/vnd.openxmlformats-officedocument.presentationml.presentation' });
+        const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `${cfg.archivo || 'Reporte_UE_' + ue}_${D.corte.fecha}.pptx`; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 5000);
+        toast(`Reporte al ${D.corte.fecha.split('-').reverse().join('/')} · ${r.nota}${D.conProg ? '' : ' · sin programación 12-B (MEF)'}`);
+      } catch (e) { console.error(e); toast('No se pudo generar el reporte PPT'); }
+      btn.disabled = false; btn.textContent = txt;
+    };
   }
   let SEA_R = null;   // resumen SEACE por CUI: conv, firma, ini, fin, monto, prov, ruc
   const inv = () => E.metas.filter(m => m.es_inv);
@@ -47,8 +91,8 @@
     const tabs = [['hoy', '🏛 Alcalde'], ['res', 'Resumen'], ['ppto', 'Presupuesto'], ['inv', modoInv ? 'Inversiones' : 'Metas'], ['exp', 'Expedientes' + (filtroMeta ? ' · ' + filtroMeta : '')], ['ing', 'Ingresos'], ['plz', '⏱ Plazos'], ['pi', '🏅 Incentivos Municipales'], ['al', `Alertas (${nAl})`], ['prov', 'Proveedores'], ['cert', 'Certificaciones']];
     const cab = `<div class="pd-cui"><span>MI ENTIDAD · UE ${u.cod}</span><span>· SIAF al ${E.corte}</span><span>· Transparencia al ${R.corte}</span><span class="x" id="ent-salir" title="Cerrar sesión">×</span></div><div class="pd-title">${u.nombre}</div>`;
     // ponytail: vista alcalde = cabecera con el nombre y 6 paneles grandes; lo técnico (KPIs, pestañas, buscador) solo al pedir el detalle
-    if (tabE === 'hoy') { el.innerHTML = `<div class="card" style="flex:0 0 auto;padding:0"><div class="pd-hdr" style="border-radius:var(--rad)">${cab}<div class="pd-badges"><span class="pd-badge">Vista de alta dirección · alcalde y gerencia municipal</span><span class="pd-badge">${u.pi ? 'PI tipo ' + u.pi : ''}</span><button class="btn" id="ent-tec" style="margin-left:auto;background:#fff;color:var(--p2)">Ver detalle técnico ▸</button></div></div></div><div class="card" style="flex:1;min-height:0;padding:0"><div class="wrap" id="ent-body" style="padding:0"></div></div>`;
-      $('ent-tec').onclick = () => { tabE = 'res'; render(); }; $('ent-salir').onclick = () => { E = null; login(); }; cuerpo(); return; }
+    if (tabE === 'hoy') { el.innerHTML = `<div class="card" style="flex:0 0 auto;padding:0"><div class="pd-hdr" style="border-radius:var(--rad)">${cab}<div class="pd-badges"><span class="pd-badge">Vista de alta dirección · alcalde y gerencia municipal</span><span class="pd-badge">${u.pi ? 'PI tipo ' + u.pi : ''}</span>${repCorteHTML()}<button class="btn" id="ent-tec" style="${E._rep ? '' : 'margin-left:auto;'}background:#fff;color:var(--p2)">Ver detalle técnico ▸</button></div></div></div><div class="card" style="flex:1;min-height:0;padding:0"><div class="wrap" id="ent-body" style="padding:0"></div></div>`;
+      $('ent-tec').onclick = () => { tabE = 'res'; render(); }; $('ent-salir').onclick = () => { E = null; login(); }; repWire(); cuerpo(); return; }
     // ponytail: Plan de Incentivos también entra sin la cabecera técnica (KPIs, barra HOY, pestañas) — solo cabecera + volver
     if (tabE === 'pi') { el.innerHTML = `<div class="card" style="flex:0 0 auto;padding:0"><div class="pd-hdr" style="border-radius:var(--rad)">${cab}<div class="pd-badges"><span class="pd-badge">🏅 Plan de Incentivos ${ANIO}</span><button class="btn" id="ent-volver-pi" style="margin-left:auto;background:#fff;color:var(--p2)">‹ Volver</button></div></div></div><div class="card" style="flex:1;min-height:0;padding:0"><div class="wrap" id="ent-body" style="padding:0"></div></div>`;
       $('ent-volver-pi').onclick = () => { tabE = 'hoy'; render(); }; $('ent-salir').onclick = () => { E = null; login(); }; cuerpo(); return; }
@@ -374,6 +418,43 @@
   // Queda fuera lo que en ese dashboard es específico de GICA/JICA y no tiene dato genérico equivalente
   // a nivel nacional: desglose control concurrente/controversias/carta fianza, chip "programado en el
   // PMI", hectáreas/vehículos/tipo de obra, y exportación a PPT (Descargar Ficha usa impresión del navegador).
+  // ponytail: extraído de fichaInversionHTML para reusarlo también en el modal de Seguimiento (modelo MINAM _situDetalle)
+  function buildSituDet(f, c, sp) {
+    return [
+      f?.situ_act ? `<div style="font-size:10.5px;margin-bottom:6px">${f.situ_act}</div>` : '',
+      f?.problema ? `<div style="font-size:9.5px;color:#B71C1C;margin-bottom:6px"><b>Problemática:</b> ${f.problema}</div>` : '',
+      sp && sp.length ? contratacion(sp, c, f, true) : ''
+    ].join('') || '<p class="vacio" style="font-size:10.5px">Sin seguimiento adicional registrado.</p>';
+  }
+  // Modal de Seguimiento (Formato 12-B) — clon del lightbox #situ-detalle del Dashboard UE003 MINAM
+  function mostrarSeguimientoModal(cui, nombre, contenidoHTML) {
+    let lb = $('fi-situ-modal');
+    if (!lb) {
+      lb = document.createElement('div'); lb.id = 'fi-situ-modal';
+      lb.style.cssText = 'display:none;position:fixed;inset:0;z-index:99998;background:rgba(10,20,35,.55);align-items:center;justify-content:center;padding:24px;box-sizing:border-box;cursor:pointer';
+      lb.onclick = () => { lb.style.display = 'none'; };
+      document.body.appendChild(lb);
+    }
+    lb.innerHTML = `<div class="fi-situ-card" onclick="event.stopPropagation()" style="cursor:default;background:#fff;border-radius:16px;max-width:560px;width:100%;max-height:80vh;overflow-y:auto;box-shadow:0 12px 44px rgba(0,0,0,.35);padding:16px 20px 14px">
+      <div style="display:flex;align-items:center;gap:10px;border-bottom:2px solid #DCE7F5;padding-bottom:10px;margin-bottom:11px">
+        <div style="width:38px;height:38px;border-radius:10px;background:linear-gradient(135deg,#0A1B2E,#1E6BB8);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0">📡</div>
+        <div><div style="font-size:14px;font-weight:900;color:#0F2A43">Seguimiento de la inversión</div>
+        <div style="font-size:10.5px;font-weight:700;color:#5E7290">CUI ${cui} · Formato 12-B — Ejecución de la inversión</div></div>
+        <button class="fi-situ-copy" style="margin-left:auto;flex-shrink:0;background:#0F2A43;color:#fff;border:none;border-radius:9px;padding:7px 14px;font-size:11px;font-weight:900;cursor:pointer;letter-spacing:.3px;box-shadow:0 2px 6px rgba(15,42,67,.3)">⧉ Copiar</button>
+      </div>
+      ${nombre ? `<div class="fi-situ-nom" style="font-size:10.5px;font-weight:700;color:#78909C;line-height:1.4;margin-bottom:10px">${nombre}</div>` : ''}
+      <div class="fi-situ-txt" style="background:#EAF1FB;border:1.5px solid #B9D0EC;border-radius:12px;padding:12px 15px;font-size:12.5px;color:#1E293B;line-height:1.65;font-weight:600;user-select:text;cursor:text">${contenidoHTML}</div>
+      <div style="font-size:9px;color:#9AA8BC;text-align:center;margin-top:10px">Fuente: Formato 12-B — Seguimiento de la ejecución · MEF (Banco de Inversiones) · clic fuera para cerrar</div>
+    </div>`;
+    lb.style.display = 'flex';
+    const btn = lb.querySelector('.fi-situ-copy');
+    btn.onclick = () => {
+      const nom = lb.querySelector('.fi-situ-nom'), cont = lb.querySelector('.fi-situ-txt');
+      const txt = ((nom ? nom.innerText + '\n' : '') + 'CUI ' + cui + ' — Seguimiento (Formato 12-B — MEF)\n\n' + (cont ? cont.innerText : '')).trim();
+      const listo = () => { btn.textContent = '✓ Copiado'; btn.style.background = '#2E7D32'; setTimeout(() => { btn.textContent = '⧉ Copiar'; btn.style.background = '#0F2A43'; }, 1600); };
+      if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(txt).then(listo, listo); else listo();
+    };
+  }
   function fichaInversionHTML(cui, f, c, sp) {
     c = c || {};
     const F = n => n == null ? '—' : 'S/ ' + Number(n).toLocaleString('es-PE', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -420,18 +501,13 @@
       <div style="width:26px;height:26px;border-radius:8px;background:${bg};display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0">${ic}</div>
       <div style="display:flex;flex-direction:column;gap:1px;min-width:0"><span style="font-size:12px;font-weight:800;color:#1E293B;text-transform:uppercase;letter-spacing:.5px;line-height:1.15">${tit}</span>${sub ? `<span style="font-size:9px;font-weight:600;color:#94A3B8">${sub}</span>` : ''}</div>
     </div>`;
-    const situDet = [
-      f?.situ_act ? `<div style="font-size:10.5px;margin-bottom:6px">${f.situ_act}</div>` : '',
-      f?.problema ? `<div style="font-size:9.5px;color:#B71C1C;margin-bottom:6px"><b>Problemática:</b> ${f.problema}</div>` : '',
-      sp && sp.length ? contratacion(sp, c, f, true) : ''
-    ].join('') || '<p class="vacio" style="font-size:10.5px">Sin seguimiento adicional registrado.</p>';
     const comp = f?.comp || [];
     const compTot = comp.reduce((s, cp) => s + cp.a.reduce((t, a) => t + (+a.c || 0), 0), 0);
     const PALETA = ['#1E5AA8', '#E65100', '#5E35B1', '#00838F', '#AD1457', '#3572BE'];
     const compAccHTML = comp.length ? comp.map(cp => {
       const nAcc = cp.a.length;
       return `<div style="margin-bottom:8px">
-        <div class="fi-comp-hdr" style="cursor:pointer;background:#3D8B85;color:#fff;border-radius:10px;padding:9px 13px;display:flex;align-items:center;justify-content:space-between;gap:8px">
+        <div class="fi-comp-hdr" style="cursor:pointer;background:#1E5AA8;color:#fff;border-radius:10px;padding:9px 13px;display:flex;align-items:center;justify-content:space-between;gap:8px">
           <span style="font-size:11.5px;font-weight:700;display:flex;align-items:center;gap:6px"><span style="font-size:9px">►</span>${cp.n}</span>
           <span style="background:rgba(255,255,255,.22);border-radius:9px;padding:2px 9px;font-size:10px;font-weight:800;white-space:nowrap">${nAcc} acci${nAcc === 1 ? 'ón' : 'ones'}</span>
         </div>
@@ -525,7 +601,6 @@
           <div style="font-size:12px;font-weight:900;color:#0F2A43;text-transform:uppercase;letter-spacing:.6px;display:flex;align-items:center;gap:8px"><span style="width:30px;height:30px;border-radius:9px;background:linear-gradient(135deg,#0A1B2E,#1E6BB8);display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0">📡</span>Seguimiento</div>
           <div style="font-size:10px;color:#7C93B8;font-weight:700;margin-top:4px;padding-left:38px">Clic para ver · Formato 12-B</div>
         </div>
-        <div style="display:none;background:#fff;border:1px solid #E5E9EF;border-radius:10px;padding:8px 10px;font-size:10px">${situDet}</div>
         <div style="flex:1;background:#EDF3FB;border:1.5px solid #B9D0EC;border-radius:12px;padding:8px 11px;display:flex;flex-direction:column;justify-content:center">
           <div style="font-size:12px;font-weight:900;color:#0F2A43;text-transform:uppercase;letter-spacing:.6px;display:flex;align-items:center;gap:8px"><span style="width:30px;height:30px;border-radius:9px;background:linear-gradient(135deg,#0D47A1,#1976D2);display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0">🚀</span>Puesta en Marcha</div>
           <div style="font-size:10px;color:#8FA0BC;font-weight:600;margin-top:4px;padding-left:38px">Información en preparación</div>
@@ -540,7 +615,7 @@
     </div>
     <div style="display:grid;grid-template-columns:1.55fr 1.05fr 0.52fr;gap:10px;padding:10px 0 0">
       <div style="background:#fff;border:1px solid #E5E9EF;border-radius:14px;padding:14px 16px;overflow-y:auto">
-        ${secHdrFi('🧩', '#E0F2F1', 'Componentes y Acciones Programados')}
+        ${secHdrFi('🧩', '#DCE7F5', 'Componentes y Acciones Programados')}
         <div>${compAccHTML}</div>
       </div>
       <div style="background:#fff;border:1px solid #E5E9EF;border-radius:14px;padding:14px 16px;overflow-y:auto">
@@ -557,7 +632,9 @@
     el.innerHTML = fichaInversionHTML(cui, f, c, sp);
     if (onVolver) el.querySelectorAll('.fi-regresar').forEach(x => x.onclick = onVolver);
     el.querySelectorAll('.fi-print').forEach(x => x.onclick = () => window.print());
-    el.querySelectorAll('.fi-comp-hdr, .fi-seg-hdr').forEach(x => x.onclick = () => { const d = x.nextElementSibling; d.style.display = d.style.display === 'none' ? 'block' : 'none'; });
+    el.querySelectorAll('.fi-comp-hdr').forEach(x => x.onclick = () => { const d = x.nextElementSibling; d.style.display = d.style.display === 'none' ? 'block' : 'none'; });
+    const nombre = f?.nombre || c?.nombre || null;
+    el.querySelectorAll('.fi-seg-hdr').forEach(x => x.onclick = () => mostrarSeguimientoModal(cui, nombre, buildSituDet(f, c, sp)));
   }
   window.FichaInversion = { render: fichaInversionRender, html: fichaInversionHTML };
   function cerrarFicha() { const ov = $('inv-overlay'); if (ov) ov.remove(); abiertos.inv = null; cuerpo(); }
