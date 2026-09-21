@@ -170,7 +170,7 @@
     });
     return _leafletP;
   }
-  function pintarMapaInv(items, estSel) {
+  function pintarMapaInv(items, estSel, onGoto) {
     cargarLeaflet().then(() => {
       const el = $('inv-mapa'); if (!el || !window.L) return;
       const mp = L.map(el, { scrollWheelZoom: false });
@@ -179,7 +179,7 @@
       if (!document.getElementById('nac-pulse-css')) {
         const pc = document.createElement('style'); pc.id = 'nac-pulse-css';
         pc.textContent = '@keyframes nacPulse{0%{transform:scale(.55);opacity:.85}70%{transform:scale(2.2);opacity:0}100%{opacity:0}}'
-          + '.nac-pin{position:relative}'
+          + '.nac-pin{position:relative;cursor:pointer}'
           + '.nac-pin .nu{width:12px;height:12px;border:2px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,.45);position:absolute;top:4px;left:4px}'
           + '.nac-pin .on{width:20px;height:20px;border-radius:50%;position:absolute;top:0;left:0;animation:nacPulse 2s ease-out infinite}';
         document.head.appendChild(pc);
@@ -187,7 +187,8 @@
       // ponytail: el MEF suele georreferenciar varias inversiones al mismo punto (capital de distrito, no la obra exacta) — se agrupan en un solo marcador con contador para que no se tapen entre sí
       const grupos = {};
       items.forEach(it => {
-        if (it.lat == null || it.lon == null) return;
+        // ponytail: "0,0" (null island, frente a África) es el valor centinela típico cuando al MEF le falta la coordenada real — nunca es un dato válido en Perú (longitud siempre negativa)
+        if (it.lat == null || it.lon == null || it.lon === 0) return;
         if (estSel && it.est !== estSel) return; // al seleccionar un estado, el mapa muestra solo esos puntos (igual que _mapaFiltroToggle del dashboard MINAM)
         const key = it.lat.toFixed(4) + ',' + it.lon.toFixed(4);
         (grupos[key] || (grupos[key] = [])).push(it);
@@ -203,10 +204,15 @@
           ? `<div class="nac-pin"><div class="on" style="background:${col}88"></div><div class="nu" style="background:${col};${forma}"></div></div>`
           : `<div class="nac-pin"><div class="on" style="background:${col}88"></div><div style="width:22px;height:22px;${forma};background:${col};border:2px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,.45);position:absolute;top:-1px;left:-1px;color:#fff;font-size:10px;font-weight:900;display:flex;align-items:center;justify-content:center">${n}</div></div>`;
         const ic = L.divIcon({ className: '', html, iconSize: [20, 20], iconAnchor: [10, 10] });
+        // ponytail: clic en el CUI (uno solo = el marcador mismo; varios = el CUI dentro del tooltip) abre su ficha — mismo onGoto que usa el resto del tablero
         const tip = n === 1
           ? `<b>${arr[0].cui}</b> ${arr[0].nombre}<br>${ESTINV[arr[0].est][0]}`
-          : `<b>${n} inversiones en este punto</b><br>${arr.slice(0, 8).map(x => `${x.cui} · ${ESTINV[x.est][0]}`).join('<br>')}${n > 8 ? `<br>y ${n - 8} más…` : ''}`;
-        L.marker([lat, lon], { icon: ic }).addTo(mp).bindTooltip(tip);
+          : `<b>${n} inversiones en este punto</b><br>${arr.slice(0, 8).map(x => `<span class="nac-cui" data-cui="${x.cui}" style="${onGoto ? 'cursor:pointer;text-decoration:underline' : ''}">${x.cui}</span> · ${ESTINV[x.est][0]}`).join('<br>')}${n > 8 ? `<br>y ${n - 8} más…` : ''}`;
+        const mk = L.marker([lat, lon], { icon: ic }).addTo(mp).bindTooltip(tip, n > 1 ? { interactive: true } : undefined);
+        if (onGoto) {
+          if (n === 1) mk.on('click', () => onGoto(arr[0].cui));
+          else mk.on('tooltipopen', e => { const el2 = e.tooltip.getElement(); if (el2) el2.querySelectorAll('.nac-cui').forEach(s => s.onclick = ev => { ev.stopPropagation(); onGoto(s.dataset.cui); }); });
+        }
         pts.push([lat, lon]);
       });
       if (pts.length) mp.fitBounds(pts, { padding: [24, 24], maxZoom: 13 }); else mp.setView([-9.19, -75.02], 5);
@@ -339,7 +345,8 @@
             ['sea', '📑', 'Contrataciones', '#00897B'],
             ['al', '🚨', nAl ? `Alertas · ${nAl}` : 'Alertas', '#D64545']
           ];
-          return GO.map(([id, ic, t, c]) => `<div class="pnl go-btn" data-go="${id}" style="cursor:pointer;flex:1;min-height:0;border-left:0;border-radius:12px;background:linear-gradient(160deg,#fff 55%,${c}14);border:1px solid ${c}33;display:flex;align-items:center;gap:11px;padding:0 13px;box-shadow:0 2px 8px rgba(15,42,67,.07)">
+          // ponytail: SIN class="pnl" a propósito — esa clase global trae flex-direction:column y pisaba el layout en fila (ver mismo bug ya corregido en kpiT/chipPill)
+          return GO.map(([id, ic, t, c]) => `<div class="go-btn" data-go="${id}" style="cursor:pointer;flex:1;min-height:0;border-radius:12px;background:linear-gradient(160deg,#fff 55%,${c}14);border:1px solid ${c}33;display:flex;flex-direction:row;align-items:center;gap:11px;padding:0 13px;box-shadow:0 2px 8px rgba(15,42,67,.07)">
             <span style="font-size:26px;flex:none;line-height:1">${ic}</span>
             <span style="font-size:12.5px;font-weight:800;color:${c};line-height:1.25">${t}</span>
           </div>`).join('');
@@ -348,7 +355,7 @@
     </div>`;
     if (!document.getElementById('nac-gobtn-css')) { const gc = document.createElement('style'); gc.id = 'nac-gobtn-css'; gc.textContent = '.go-btn{transition:transform .15s,box-shadow .15s}.go-btn:hover{transform:translateY(-2px);box-shadow:0 8px 18px rgba(15,42,67,.14)!important}'; document.head.appendChild(gc); }
     b.querySelectorAll('[data-go]').forEach(x => x.onclick = () => opts.onNav && opts.onNav(x.dataset.go));
-    pintarMapaInv(mapItems, estSel);
+    pintarMapaInv(mapItems, estSel, opts.onCuiGoto);
     const kpi = (id, cb) => { const el2 = b.querySelector(`[data-p="${id}"]`); if (el2) el2.onclick = cb; };
     kpi('kpi', () => opts.onKpi && opts.onKpi('kpi', T));
     kpi('cert', () => opts.onKpi && opts.onKpi('cert', T));
