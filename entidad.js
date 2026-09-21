@@ -3,7 +3,7 @@
 (function () {
   const F = n => n == null ? '—' : 'S/ ' + Number(n).toLocaleString('es-PE', { maximumFractionDigits: 0 });
   const FASE = { C: 'Compromiso', D: 'Devengado', G: 'Girado', P: 'Pagado', R: 'Rendición' };
-  let E = null, META = {}, LAKE = {}, tabE = 'hoy', filtroMeta = '', q = '', modoInv = true, abierto = null;
+  let E = null, META = {}, LAKE = {}, tabE = 'inv', filtroMeta = '', q = '', modoInv = true, abierto = null;
   const b64 = s => Uint8Array.from(atob(s), c => c.charCodeAt(0));
 
   async function descifrar(ue, clave) {
@@ -24,7 +24,7 @@
      <label class="mutx" style="font-size:11px">Clave de acceso</label><input type="password" id="ent-clave" style="width:100%;padding:8px 10px;border:1.5px solid var(--line);border-radius:8px;font:inherit;margin:4px 0 12px" placeholder="••••••••" autocomplete="current-password">
      <div style="display:flex;gap:8px;align-items:center"><button class="btn p" id="ent-ir">Entrar</button><span class="mutx" id="ent-msg" style="font-size:12px"></span></div></div></div>`;
     const ir = async () => { const ue = $('ent-ue')?.value, clave = $('ent-clave').value; if (!ue || !clave) return; $('ent-msg').textContent = 'Descifrando…';
-      try { E = await descifrar(ue, clave); await preparar(ue); render(); } catch (e) { console.warn(e); $('ent-msg').textContent = 'Clave incorrecta o archivo no disponible.'; } };
+      try { E = await descifrar(ue, clave); await preparar(ue); tabE = 'inv'; abiertos.invLista = false; render(); } catch (e) { console.warn(e); $('ent-msg').textContent = 'Clave incorrecta o archivo no disponible.'; } };
     $('ent-ir').onclick = ir; $('ent-clave').onkeydown = e => { if (e.key === 'Enter') ir(); }; $('ent-clave').focus();
   }
 
@@ -88,19 +88,18 @@
     if (!restaurando) { const cur = [tabE, filtroMeta, modoInv, q].join('|'); if (pila[pila.length - 1] !== cur) pila.push(cur); }
     restaurando = false;
     const el = $('ent'), u = E._ue, P_ = E.presupuesto, I = E.ingresos, T = modoInv ? P_.inversiones : P_.total, nAl = E.alertas.dev_sin_girar.length + E.alertas.comp_sin_devengar.length + E.alertas.cert_sin_comp.length;
-    const tabs = [['hoy', '🏛 Alcalde'], ['res', 'Resumen'], ['ppto', 'Presupuesto'], ['inv', modoInv ? 'Inversiones' : 'Metas'], ['exp', 'Expedientes' + (filtroMeta ? ' · ' + filtroMeta : '')], ['ing', 'Ingresos'], ['plz', '⏱ Plazos'], ['pi', '🏅 Incentivos Municipales'], ['al', `Alertas (${nAl})`], ['prov', 'Proveedores'], ['cert', 'Certificaciones']];
+    const tabs = [['res', 'Resumen'], ['ppto', 'Presupuesto'], ['inv', modoInv ? 'Inversiones' : 'Metas'], ['exp', 'Expedientes' + (filtroMeta ? ' · ' + filtroMeta : '')], ['ing', 'Ingresos'], ['plz', '⏱ Plazos'], ['pi', '🏅 Incentivos Municipales'], ['al', `Alertas (${nAl})`], ['prov', 'Proveedores'], ['cert', 'Certificaciones']];
     const cab = `<div class="pd-cui"><span>MI ENTIDAD · UE ${u.cod}</span><span>· ${E.publico ? 'Datos MEF' : 'SIAF'} al ${E.corte}</span><span>· Transparencia al ${R.corte}</span><span class="x" id="ent-salir" title="Cerrar sesión">×</span></div><div class="pd-title">${u.nombre}</div>`;
-    // ponytail: vista alcalde = cabecera con el nombre y 6 paneles grandes; lo técnico (KPIs, pestañas, buscador) solo al pedir el detalle
-    if (tabE === 'hoy') { el.innerHTML = `<div class="card" style="flex:0 0 auto;padding:0"><div class="pd-hdr" style="border-radius:var(--rad)">${cab}<div class="pd-badges"><span class="pd-badge">Vista de alta dirección · alcalde y gerencia municipal</span><span class="pd-badge">${u.pi ? 'PI tipo ' + u.pi : ''}</span>${repCorteHTML()}<button class="btn" id="ent-tec" style="${E._rep ? '' : 'margin-left:auto;'}background:#fff;color:var(--p2)">Ver detalle técnico ▸</button></div></div></div><div class="card" style="flex:1;min-height:0;padding:0"><div class="wrap" id="ent-body" style="padding:0"></div></div>`;
-      $('ent-tec').onclick = () => { tabE = 'res'; render(); }; $('ent-salir').onclick = () => { E = null; login(); }; repWire(); cuerpo(); return; }
     // ponytail: Plan de Incentivos también entra sin la cabecera técnica (KPIs, barra HOY, pestañas) — solo cabecera + volver
     if (tabE === 'pi') { el.innerHTML = `<div class="card" style="flex:0 0 auto;padding:0"><div class="pd-hdr" style="border-radius:var(--rad)">${cab}<div class="pd-badges"><span class="pd-badge">🏅 Plan de Incentivos ${ANIO}</span><button class="btn" id="ent-volver-pi" style="margin-left:auto;background:#fff;color:var(--p2)">‹ Volver</button></div></div></div><div class="card" style="flex:1;min-height:0;padding:0"><div class="wrap" id="ent-body" style="padding:0"></div></div>`;
-      $('ent-volver-pi').onclick = () => { tabE = 'hoy'; render(); }; $('ent-salir').onclick = () => { E = null; login(); }; cuerpo(); return; }
+      $('ent-volver-pi').onclick = () => { tabE = 'inv'; render(); }; $('ent-salir').onclick = () => { E = null; login(); }; cuerpo(); return; }
     // ponytail: Inversión pública también entra sin cabecera técnica — lista simple de obras; la ficha de cada una se abre debajo
-    if (tabE === 'inv') { el.innerHTML = `<div class="card" style="flex:0 0 auto;padding:0"><div class="pd-hdr" style="border-radius:var(--rad)">${cab}<div class="pd-badges"><span class="pd-badge">🏗 Inversión pública</span>${abiertos.invLista ? `<input type="search" id="ent-invq" placeholder="Buscar por CUI o nombre…" value="${q}" style="margin-left:auto;padding:6px 10px;border:1.5px solid var(--line);border-radius:8px;font:inherit;font-size:12px;width:240px">` : `<button class="btn" id="ent-ver-lista" style="background:#fff;color:var(--p2);margin-left:auto">📋 Ver lista completa</button>`}<button class="btn" id="ent-volver-inv" style="background:#fff;color:var(--p2)">‹ Volver</button></div></div></div><div class="card" style="flex:1;min-height:0;padding:0"><div class="wrap" id="ent-body" style="padding:0"></div></div>`;
-      $('ent-volver-inv').onclick = () => { tabE = 'hoy'; render(); }; $('ent-salir').onclick = () => { E = null; login(); };
+    if (tabE === 'inv') { el.innerHTML = `<div class="card" style="flex:0 0 auto;padding:0"><div class="pd-hdr" style="border-radius:var(--rad)">${cab}<div class="pd-badges"><span class="pd-badge">🏗 Inversión pública</span>${repCorteHTML()}${abiertos.invLista ? `<input type="search" id="ent-invq" placeholder="Buscar por CUI o nombre…" value="${q}" style="${E._rep ? '' : 'margin-left:auto;'}padding:6px 10px;border:1.5px solid var(--line);border-radius:8px;font:inherit;font-size:12px;width:240px"><button class="btn" id="ent-volver-inv" style="background:#fff;color:var(--p2)">‹ Volver</button>` : `<button class="btn" id="ent-ver-lista" style="background:#fff;color:var(--p2);${E._rep ? '' : 'margin-left:auto'}">📋 Ver lista completa</button>`}<button class="btn" id="ent-tec" style="background:#fff;color:var(--p2)">Ver detalle técnico ▸</button></div></div></div><div class="card" style="flex:1;min-height:0;padding:0"><div class="wrap" id="ent-body" style="padding:0"></div></div>`;
+      $('ent-tec').onclick = () => { tabE = 'res'; render(); }; $('ent-salir').onclick = () => { E = null; login(); };
+      if ($('ent-volver-inv')) $('ent-volver-inv').onclick = () => { abiertos.invLista = false; render(); };
       if ($('ent-invq')) $('ent-invq').oninput = e => { q = e.target.value.trim().toLowerCase(); cuerpo(); };
       if ($('ent-ver-lista')) $('ent-ver-lista').onclick = () => { abiertos.invLista = true; render(); };
+      repWire();
       cuerpo(); return; }
     el.innerHTML = `<div class="card" style="flex:0 0 auto;padding:0"><div class="pd-hdr" style="border-radius:var(--rad)">${cab}
       <div class="pd-badges"><span class="pd-badge">${N(E.expedientes.length)} expedientes</span><span class="pd-badge">${N(inv().length)} inversiones · ${N(E.metas.length)} metas</span><span class="pd-badge">${N(E.modificaciones.length)} modificaciones presupuestales</span><span class="pd-badge ${nAl ? 'bad' : 'ok'}">${N(nAl)} alertas</span>
@@ -143,23 +142,6 @@
   const ir = (k, txt) => `<div style="margin-top:8px"><button class="btn ir" data-ir="${k}" style="background:var(--p2);color:#fff">${txt || 'Abrir el detalle completo ▸'}</button></div>`;
   const hoyS = () => new Date().toISOString().slice(0, 10);
   // ponytail: vista alcalde = 4 botones grandes de acceso directo, sin datos; cada uno abre su pestana completa
-  function hoyAlcalde(b) {
-    const BTN = [
-      { id: 'inv', icono: '\ud83c\udfd7', t: 'Inversi\u00f3n p\u00fablica', c: '#1E5AA8' },
-      { id: 'pi', icono: '\ud83c\udfc5', t: 'Plan de Incentivos', c: '#C9A227' },
-      { id: 'sea', icono: '\ud83d\udcd1', t: 'Contrataciones', c: '#00897B' },
-      { id: 'al', icono: '\ud83d\udea8', t: 'Alertas', c: '#D64545' }
-    ];
-    b.innerHTML = `<style>.hoy-btn{transition:transform .18s,box-shadow .18s}.hoy-btn:hover{transform:translateY(-4px);box-shadow:0 12px 28px rgba(15,42,67,.16)!important}.hoy-btn:active{transform:translateY(-1px)}</style>
-    <div style="display:flex;align-items:center;justify-content:center;min-height:100%;padding:24px">
-      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:22px;max-width:980px;width:100%">${BTN.map(x => `
-        <div class="pnl hoy-btn" data-go="${x.id}" style="border-left:0;border-radius:20px;box-shadow:0 3px 14px rgba(15,42,67,.09);align-items:center;justify-content:center;text-align:center;padding:34px 16px;gap:16px;background:linear-gradient(160deg,#fff 55%,${x.c}14)">
-          <div style="width:68px;height:68px;border-radius:50%;background:${x.c}1F;display:grid;place-items:center;font-size:32px">${x.icono}</div>
-          <div style="font-size:15px;font-weight:800;color:var(--p2);letter-spacing:-.01em">${x.t}</div>
-        </div>`).join('')}</div>
-    </div>`;
-    b.querySelectorAll('[data-go]').forEach(c => c.onclick = () => { tabE = c.dataset.go; render(); });
-  }
   const cap = t => { t = (t || '').replace(/^[\d.\s-]+/, '').toLowerCase(); t = t.charAt(0).toUpperCase() + t.slice(1); return t.length > 34 ? t.slice(0, 32) + '…' : t; };
   const FM = n => 'S/ ' + M(n) + ' M';
   const mlabel = s => META[s] ? (META[s].es_inv ? META[s].act_proy : 'meta ' + META[s].meta) : s;
@@ -652,7 +634,6 @@
   function cuerpo() {
     const b = $('ent-body'), P_ = E.presupuesto, I = E.ingresos, T = modoInv ? P_.inversiones : P_.total, A = E.alertas;
     const pct = (a, c) => 100 * (a || 0) / (c || 1);
-    if (tabE === 'hoy') { hoyAlcalde(b); return; }
     if (tabE === 'res') {
       const cad = [['PIM', T.pim, 'lo que puede gastar este año', 'var(--gold)'], ['Certificado', T.cert, 'presupuesto ya reservado para un gasto concreto', 'var(--p2)'], ['Compromiso anual', T.comp_anual, 'contratos y órdenes firmados por su valor total del año', 'var(--p)'], ['Comprometido', T.comp, 'la parte de esos contratos ya registrada para pagar', 'var(--p)'], ['Devengado', T.dev, 'bien o servicio recibido: deuda reconocida', 'var(--ok)'], ['Girado', T.gir, 'cheque o transferencia emitida', 'var(--teal)'], ['Pagado', T.pag, 'dinero que ya salió de la cuenta', '#5E35B1']];
       const fts = Object.values(P_.fuentes).filter(f => f.pim > 0).sort((a, c) => c.pim - a.pim);
