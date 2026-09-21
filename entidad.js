@@ -427,7 +427,7 @@
     ].join('') || '<p class="vacio" style="font-size:10.5px">Sin seguimiento adicional registrado.</p>';
     const comp = f?.comp || [];
     const compTot = comp.reduce((s, cp) => s + cp.a.reduce((t, a) => t + (+a.c || 0), 0), 0);
-    const PALETA = ['#2E7D32', '#E65100', '#1565C0', '#5E35B1', '#00838F', '#AD1457'];
+    const PALETA = ['#1E5AA8', '#E65100', '#5E35B1', '#00838F', '#AD1457', '#3572BE'];
     const compAccHTML = comp.length ? comp.map(cp => {
       const nAcc = cp.a.length;
       return `<div style="margin-bottom:8px">
@@ -448,18 +448,18 @@
         <div style="text-align:right;font-size:10px;font-weight:800;color:#37474F;margin-top:2px">${F(monto)}</div>
       </div>`;
     }).join('') : '<p class="vacio" style="font-size:11px">Sin desglose de actividad.</p>';
-    const footerHTML = `<div style="margin-top:6px;padding:8px 11px;background:rgba(27,94,32,.09);border:2px solid #2E7D32;border-radius:10px;display:flex;justify-content:space-between;align-items:center">
-      <span style="font-size:10px;font-weight:900;color:#1B5E20;text-transform:uppercase;letter-spacing:.4px">Total Devengado</span>
+    const footerHTML = `<div style="margin-top:6px;padding:8px 11px;background:rgba(30,90,168,.09);border:2px solid #1E5AA8;border-radius:10px;display:flex;justify-content:space-between;align-items:center">
+      <span style="font-size:10px;font-weight:900;color:#0F2A43;text-transform:uppercase;letter-spacing:.4px">Total Devengado</span>
       <span style="font-size:13px;font-weight:900;color:#0F2A43">${F(c.dev)}</span>
     </div>`;
     const benef = f?.beneficiarios || c.beneficiarios;
     const impactoHTML = benef
-      ? `<div style="background:#F0FBF0;border:1.5px solid #A5D6A7;border-radius:14px;padding:10px 12px;display:flex;align-items:center;gap:10px">
+      ? `<div style="background:#EAF1FB;border:1.5px solid #B9D0EC;border-radius:14px;padding:10px 12px;display:flex;align-items:center;gap:10px">
           <span style="font-size:30px">👥</span>
-          <div style="flex:1;text-align:center"><div style="font-size:23px;font-weight:900;color:#0F2A43;line-height:1">${N(benef)}</div><div style="font-size:10px;font-weight:800;color:#2E7D32;margin-top:3px">Beneficiarios</div></div>
+          <div style="flex:1;text-align:center"><div style="font-size:23px;font-weight:900;color:#0F2A43;line-height:1">${N(benef)}</div><div style="font-size:10px;font-weight:800;color:#1E5AA8;margin-top:3px">Beneficiarios</div></div>
         </div>`
       : '<p class="vacio" style="font-size:11px;text-align:center;padding:14px 0">Sin datos de impacto registrados a nivel nacional.</p>';
-    return `<div style="background:linear-gradient(135deg,#3D9A5C 0%,#4EAD6E 55%,#5BBD7A 100%);padding:10px 18px 9px;position:relative">
+    return `<div style="background:linear-gradient(135deg,#153F6E 0%,#1E5AA8 55%,#5F94D1 100%);padding:10px 18px 9px;position:relative">
       <button class="fi-regresar" style="position:absolute;top:12px;right:12px;height:28px;border-radius:14px;border:1.5px solid rgba(255,255,255,.32);background:rgba(255,255,255,.12);cursor:pointer;font-size:10.5px;color:#fff;font-weight:800;letter-spacing:.4px;display:flex;align-items:center;gap:6px;padding:0 14px;font-family:inherit">← Regresar</button>
       <button class="fi-print" style="position:absolute;bottom:10px;right:12px;height:28px;border-radius:14px;border:none;background:#fff;cursor:pointer;font-size:10.5px;color:#0F2A43;font-weight:900;letter-spacing:.4px;display:flex;align-items:center;gap:5px;padding:0 14px;font-family:inherit;box-shadow:0 2px 8px rgba(0,20,0,.28)">⬇ Descargar Ficha</button>
       <div style="font-size:13.5px;font-weight:800;color:#fff;letter-spacing:.8px;text-transform:uppercase;margin-bottom:4px">CUI ${cui}</div>
@@ -476,8 +476,8 @@
       </div>
     </div>
     <div style="display:grid;grid-template-columns:22% 17% 19% 24% 18%;background:#fff;border:1px solid #E5E9EF;border-top:none;overflow:hidden">
-      <div style="border-right:1px solid #E8F5E9;padding:8px 14px;display:flex;flex-direction:column;gap:6px;justify-content:center;background:linear-gradient(180deg,#F4FBF4 0%,#FAFFFE 100%)">
-        ${secHdrFi('💰', '#E8F5EC', 'Presupuesto de Inversión')}
+      <div style="border-right:1px solid #DCE7F5;padding:8px 14px;display:flex;flex-direction:column;gap:6px;justify-content:center;background:linear-gradient(180deg,#EAF1FB 0%,#FAFBFE 100%)">
+        ${secHdrFi('💰', '#DCE7F5', 'Presupuesto de Inversión')}
         <div style="display:flex;flex-direction:column;gap:3px">
           <div style="display:flex;justify-content:space-between;align-items:baseline;gap:6px;background:#F8FFFE;border:1px solid #CFD8DC;border-radius:8px;padding:3px 8px">
             <span style="font-size:8.5px;font-weight:800;color:#607D8B;text-transform:uppercase;letter-spacing:.4px">● Perfil Viable</span>
@@ -499,42 +499,42 @@
             <span style="font-size:8px;font-weight:800;color:#78909C;text-transform:uppercase;letter-spacing:.3px;white-space:nowrap">Carta fianza <span style="color:#B0BEC5">(d)</span></span>
             <span style="font-size:9.5px;font-weight:800;color:#455A64;white-space:nowrap">${F(f?.carta)}</span>
           </div>
-          <div style="display:flex;justify-content:space-between;align-items:baseline;gap:6px;background:#F0FBF0;border:1.5px solid #A5D6A7;border-radius:8px;padding:4px 8px" title="Costo total de la inversión actualizado = (a)+(b)+(c)+(d)">
-            <span style="font-size:8.5px;font-weight:900;color:#2E7D32;text-transform:uppercase;letter-spacing:.4px">● Costo Total <span style="color:#81C784">(a+b+c+d)</span></span>
+          <div style="display:flex;justify-content:space-between;align-items:baseline;gap:6px;background:#EAF1FB;border:1.5px solid #B9D0EC;border-radius:8px;padding:4px 8px" title="Costo total de la inversión actualizado = (a)+(b)+(c)+(d)">
+            <span style="font-size:8.5px;font-weight:900;color:#1E5AA8;text-transform:uppercase;letter-spacing:.4px">● Costo Total <span style="color:#8FB4E0">(a+b+c+d)</span></span>
             <span style="font-size:11px;font-weight:900;color:#0F2A43;white-space:nowrap">${F(f?.costo_total || f?.costo)}</span>
           </div>
         </div>
       </div>
-      <div style="border-right:1px solid #E8F5E9;display:flex;flex-direction:column;gap:7px;align-items:center;justify-content:center;padding:6px;background:linear-gradient(180deg,#F4FBF4 0%,#FAFFFE 100%)">
+      <div style="border-right:1px solid #DCE7F5;display:flex;flex-direction:column;gap:7px;align-items:center;justify-content:center;padding:6px;background:linear-gradient(180deg,#EAF1FB 0%,#FAFBFE 100%)">
         <div style="width:100%;box-sizing:border-box;background:${f?.pmi === 'SI' ? '#F0FBF0' : f?.pmi === 'NO' ? '#FFF5F5' : '#F8FAFB'};border:1.5px solid ${f?.pmi === 'SI' ? '#A5D6A7' : f?.pmi === 'NO' ? '#FFCDD2' : '#E0E0E0'};border-radius:9px;padding:4px 8px;display:flex;align-items:center;justify-content:center;gap:6px">
           <span style="width:16px;height:16px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:${f?.pmi === 'SI' ? 'rgba(16,80,0,.12)' : f?.pmi === 'NO' ? 'rgba(183,28,28,.1)' : 'rgba(120,120,120,.12)'};font-size:9px;flex-shrink:0">${f?.pmi === 'SI' ? '✓' : f?.pmi === 'NO' ? '✗' : '?'}</span>
           <span style="font-size:9.5px;font-weight:900;color:${f?.pmi === 'SI' ? '#0F2A43' : f?.pmi === 'NO' ? '#B71C1C' : '#78909C'};letter-spacing:.2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${f?.pmi === 'SI' ? 'PROGRAMADO EN EL PMI' : f?.pmi === 'NO' ? 'NO PROGRAMADO EN EL PMI' : 'SIN DATO DE PMI'}</span>
         </div>
         <div style="display:flex;gap:5px;justify-content:center">
           ${donutTick(f?.av_fis, '#0D47A1', 'Av. Físico')}
-          ${donutTick(f?.av_ejec, '#2E7D32', 'Av. Financiero')}
+          ${donutTick(f?.av_ejec, '#00897B', 'Av. Financiero')}
         </div>
       </div>
-      <div style="border-right:1px solid #E8F5E9;display:flex;flex-direction:column;justify-content:center;padding:6px 10px;gap:4px;background:linear-gradient(180deg,#F4FBF4 0%,#FAFFFE 100%)">
-        ${tarjeta('PIM ' + ANIO, c.pim, '#2E7D32', '#F0FBF0', '#A5D6A7', '#0F2A43')}
+      <div style="border-right:1px solid #DCE7F5;display:flex;flex-direction:column;justify-content:center;padding:6px 10px;gap:4px;background:linear-gradient(180deg,#EAF1FB 0%,#FAFBFE 100%)">
+        ${tarjeta('PIM ' + ANIO, c.pim, '#1E5AA8', '#EAF1FB', '#B9D0EC', '#0F2A43')}
         ${tarjeta('Certificación ' + ANIO, c.cert, '#6A1B9A', '#F7F0FB', '#CE93D8', '#4A148C')}
         ${tarjeta('Devengado ' + ANIO, c.dev, '#E65100', '#FFF8F0', '#FFCC80', '#BF360C')}
       </div>
-      <div style="border-right:1px solid #E8F5E9;display:flex;flex-direction:column;gap:7px;padding:8px 8px;background:linear-gradient(180deg,#F4FBF4 0%,#FAFFFE 100%)">
-        <div class="fi-seg-hdr" style="flex:1;background:#F6FDF6;border:1.5px solid #A5D6A7;border-radius:12px;padding:8px 11px;display:flex;flex-direction:column;justify-content:center;cursor:pointer">
-          <div style="font-size:12px;font-weight:900;color:#1B5E20;text-transform:uppercase;letter-spacing:.6px;display:flex;align-items:center;gap:8px"><span style="width:30px;height:30px;border-radius:9px;background:linear-gradient(135deg,#0A1B2E,#1E6BB8);display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0">📡</span>Seguimiento</div>
-          <div style="font-size:10px;color:#7CA87C;font-weight:700;margin-top:4px;padding-left:38px">Clic para ver · Formato 12-B</div>
+      <div style="border-right:1px solid #DCE7F5;display:flex;flex-direction:column;gap:7px;padding:8px 8px;background:linear-gradient(180deg,#EAF1FB 0%,#FAFBFE 100%)">
+        <div class="fi-seg-hdr" style="flex:1;background:#EDF3FB;border:1.5px solid #B9D0EC;border-radius:12px;padding:8px 11px;display:flex;flex-direction:column;justify-content:center;cursor:pointer">
+          <div style="font-size:12px;font-weight:900;color:#0F2A43;text-transform:uppercase;letter-spacing:.6px;display:flex;align-items:center;gap:8px"><span style="width:30px;height:30px;border-radius:9px;background:linear-gradient(135deg,#0A1B2E,#1E6BB8);display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0">📡</span>Seguimiento</div>
+          <div style="font-size:10px;color:#7C93B8;font-weight:700;margin-top:4px;padding-left:38px">Clic para ver · Formato 12-B</div>
         </div>
         <div style="display:none;background:#fff;border:1px solid #E5E9EF;border-radius:10px;padding:8px 10px;font-size:10px">${situDet}</div>
-        <div style="flex:1;background:#F6FDF6;border:1.5px solid #A5D6A7;border-radius:12px;padding:8px 11px;display:flex;flex-direction:column;justify-content:center">
-          <div style="font-size:12px;font-weight:900;color:#1B5E20;text-transform:uppercase;letter-spacing:.6px;display:flex;align-items:center;gap:8px"><span style="width:30px;height:30px;border-radius:9px;background:linear-gradient(135deg,#0D47A1,#1976D2);display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0">🚀</span>Puesta en Marcha</div>
-          <div style="font-size:10px;color:#A5B8A5;font-weight:600;margin-top:4px;padding-left:38px">Información en preparación</div>
+        <div style="flex:1;background:#EDF3FB;border:1.5px solid #B9D0EC;border-radius:12px;padding:8px 11px;display:flex;flex-direction:column;justify-content:center">
+          <div style="font-size:12px;font-weight:900;color:#0F2A43;text-transform:uppercase;letter-spacing:.6px;display:flex;align-items:center;gap:8px"><span style="width:30px;height:30px;border-radius:9px;background:linear-gradient(135deg,#0D47A1,#1976D2);display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0">🚀</span>Puesta en Marcha</div>
+          <div style="font-size:10px;color:#8FA0BC;font-weight:600;margin-top:4px;padding-left:38px">Información en preparación</div>
         </div>
       </div>
-      <div style="padding:6px;display:flex;flex-direction:column;justify-content:center;background:linear-gradient(180deg,#FAFFFE 0%,#F4FBF4 100%)">
-        <div style="position:relative;width:100%;aspect-ratio:3/2;border-radius:8px;border:1.5px solid #C8E6C9;background:#EEF4EC;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;text-align:center;padding:4px">
-          <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="#A5C8A5" stroke-width="1.5"><rect x="3" y="5" width="18" height="14" rx="2"/><circle cx="8.5" cy="10" r="1.6"/><path d="M3 16l5-5 4 4 3-3 6 6"/></svg>
-          <div style="font-size:9px;font-weight:700;color:#8AA98A;text-transform:uppercase;letter-spacing:.3px;line-height:1.3">Fotografía de obra<br>en preparación</div>
+      <div style="padding:6px;display:flex;flex-direction:column;justify-content:center;background:linear-gradient(180deg,#FAFBFE 0%,#EAF1FB 100%)">
+        <div style="position:relative;width:100%;aspect-ratio:3/2;border-radius:8px;border:1.5px solid #B9D0EC;background:#EEF2F8;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;text-align:center;padding:4px">
+          <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="#A9BEDC" stroke-width="1.5"><rect x="3" y="5" width="18" height="14" rx="2"/><circle cx="8.5" cy="10" r="1.6"/><path d="M3 16l5-5 4 4 3-3 6 6"/></svg>
+          <div style="font-size:9px;font-weight:700;color:#8CA0C4;text-transform:uppercase;letter-spacing:.3px;line-height:1.3">Fotografía de obra<br>en preparación</div>
         </div>
       </div>
     </div>
@@ -544,7 +544,7 @@
         <div>${compAccHTML}</div>
       </div>
       <div style="background:#fff;border:1px solid #E5E9EF;border-radius:14px;padding:14px 16px;overflow-y:auto">
-        ${secHdrFi('📊', '#E8F5EC', 'Ejecución por Actividad', 'Por componente de inversión')}
+        ${secHdrFi('📊', '#DCE7F5', 'Ejecución por Actividad', 'Por componente de inversión')}
         ${actividadHTML}${footerHTML}
       </div>
       <div style="background:#fff;border:1px solid #E5E9EF;border-radius:14px;padding:14px 16px;overflow-y:auto">
