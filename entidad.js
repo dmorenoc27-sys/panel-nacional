@@ -123,6 +123,8 @@
   const ESTINV = { culminada: ['Culminada', '#2E7D32'], ejecucion: ['En ejecución de obra', '#1565C0'], expediente: ['En expediente técnico', '#8E24AA'], viable: ['Viable · por iniciar', '#F9A825'], paralizada: ['Paralizada / suspendida', '#C62828'] };
   // ponytail: mismos 5 estados y colores que ESTINV, solo que con etiquetas cortas — para que los chips de "estado de la cartera" nunca partan en 2 líneas
   const ESTCHIP = { culminada: 'Culminada', ejecucion: 'En ejecución', expediente: 'Expediente técnico', viable: 'Por iniciar', paralizada: 'Paralizada' };
+  // ponytail: forma además de color (igual que el dashboard MINAM: círculo=avanza normal, rombo/cuadrado=requiere atención) — así el estado no depende solo del color, ni en la leyenda ni en los puntos del mapa
+  const ESTSHAPE = { culminada: 'border-radius:50%', ejecucion: 'border-radius:50%', expediente: 'border-radius:50%', viable: 'border-radius:2px;transform:rotate(45deg)', paralizada: 'border-radius:2px' };
   // ponytail: mismo patrón "editable por David" del dashboard MINAM (Dashboard_UE003_MINAM/index.html) — array vacío listo para que él agregue normativa/prensa/documentos.
   // Tipos: NORMA=normativa · PRENSA=nota de prensa · DOC=documento fijo · SEG=en seguimiento. pin:true = fijado arriba.
   // Agregar así: {f:'AAAA-MM-DD', t:'NORMA', ti:'Título', d:'detalle corto (opcional)', u:'https://...'}
@@ -178,7 +180,7 @@
         const pc = document.createElement('style'); pc.id = 'nac-pulse-css';
         pc.textContent = '@keyframes nacPulse{0%{transform:scale(.55);opacity:.85}70%{transform:scale(2.2);opacity:0}100%{opacity:0}}'
           + '.nac-pin{position:relative}'
-          + '.nac-pin .nu{width:12px;height:12px;border-radius:50%;border:2px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,.45);position:absolute;top:4px;left:4px}'
+          + '.nac-pin .nu{width:12px;height:12px;border:2px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,.45);position:absolute;top:4px;left:4px}'
           + '.nac-pin .on{width:20px;height:20px;border-radius:50%;position:absolute;top:0;left:0;animation:nacPulse 2s ease-out infinite}';
         document.head.appendChild(pc);
       }
@@ -196,9 +198,10 @@
         const estUnico = arr.every(x => x.est === arr[0].est) ? arr[0].est : null;
         const col = estUnico ? ESTINV[estUnico][1] : '#37474F';
         const n = arr.length;
+        const forma = estUnico ? ESTSHAPE[estUnico] : 'border-radius:50%';
         const html = n === 1
-          ? `<div class="nac-pin"><div class="on" style="background:${col}88"></div><div class="nu" style="background:${col}"></div></div>`
-          : `<div class="nac-pin"><div class="on" style="background:${col}88"></div><div style="width:22px;height:22px;border-radius:50%;background:${col};border:2px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,.45);position:absolute;top:-1px;left:-1px;color:#fff;font-size:10px;font-weight:900;display:flex;align-items:center;justify-content:center">${n}</div></div>`;
+          ? `<div class="nac-pin"><div class="on" style="background:${col}88"></div><div class="nu" style="background:${col};${forma}"></div></div>`
+          : `<div class="nac-pin"><div class="on" style="background:${col}88"></div><div style="width:22px;height:22px;${forma};background:${col};border:2px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,.45);position:absolute;top:-1px;left:-1px;color:#fff;font-size:10px;font-weight:900;display:flex;align-items:center;justify-content:center">${n}</div></div>`;
         const ic = L.divIcon({ className: '', html, iconSize: [20, 20], iconAnchor: [10, 10] });
         const tip = n === 1
           ? `<b>${arr[0].cui}</b> ${arr[0].nombre}<br>${ESTINV[arr[0].est][0]}`
@@ -270,41 +273,43 @@
     const ueKey = E._ue.cod, bc = benefCache[ueKey];
     const estList = Object.entries(est).filter(([, v]) => v.length).map(([k, v]) => [ESTCHIP[k], v.length, ESTINV[k][1], k]);
     const pim1 = T.pim || 1;
-    // ponytail: mismas medidas/colores que kpi()/chip()/barra() del dashboard MINAM (Dashboard_UE003_MINAM/index.html) — mismo look, tres columnas iguales
-    const kpiT = (id, icono, num, lbl, col, bg, br) => `<div class="pnl" data-p="${id}" style="cursor:pointer;min-width:0;background:${bg};border:1.5px solid ${br};border-left:5px solid ${col};border-radius:12px;padding:6px 9px;display:flex;align-items:center;gap:7px;box-shadow:0 1px 5px rgba(16,24,40,.08)">
-      <span style="font-size:19px;flex:none;line-height:1">${icono}</span>
-      <div style="min-width:0"><div style="font-size:14px;font-weight:900;color:${col};letter-spacing:-.3px;line-height:1.15;white-space:nowrap;overflow:hidden;text-overflow:ellipsis" title="${num}">${num}</div>
-      <div style="font-size:8.5px;font-weight:800;color:#546E7A;margin-top:2px;line-height:1.2;text-transform:uppercase;letter-spacing:.2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis" title="${lbl}">${lbl}</div></div>
+    // ponytail: medidas calcadas del kpi()/chip()/barra() reales del dashboard MINAM (Dashboard_UE003_MINAM/index.html, función _renderImpacto) — la letra nunca va por debajo de esos tamaños; solo los paddings/gaps se ajustan un poco más apretados para no dejar aire de sobra
+    const secHdr = (txt, mb) => `<div style="font-size:11px;font-weight:900;color:#37474F;text-transform:uppercase;letter-spacing:.6px;margin-bottom:${mb == null ? 7 : mb}px">${txt}</div>`;
+    const kpiT = (id, icono, num, lbl, col, bg, br) => `<div data-p="${id}" style="cursor:pointer;min-width:0;background:${bg};border:1.5px solid ${br};border-left:5px solid ${col};border-radius:14px;padding:7px 11px;display:flex;flex-direction:row;align-items:center;gap:8px;box-shadow:0 1px 5px rgba(16,24,40,.08)">
+      <span style="font-size:23px;flex:none;line-height:1">${icono}</span>
+      <div style="min-width:0"><div style="font-size:18px;font-weight:900;color:${col};letter-spacing:-.5px;line-height:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis" title="${num}">${num}</div>
+      <div style="font-size:10px;font-weight:800;color:#546E7A;margin-top:3px;line-height:1.25;text-transform:uppercase;letter-spacing:.3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis" title="${lbl}">${lbl}</div></div>
     </div>`;
     // ponytail: clic en un chip de estado reemplaza "Ejecución presupuestal" por la lista de CUIs de ese estado (mismo patrón que _estadoListaHTML del dashboard MINAM, con CUI en vez de nombre corto — acá no hay catálogo de nombres cortos)
     const estSel = abiertos.invEstado && est[abiertos.invEstado] ? abiertos.invEstado : null;
     // ponytail: chips no seleccionados se atenúan y el seleccionado crece un poco — igual que window._mapaFiltroToggle del dashboard MINAM
-    const chipPill = (n, lbl, col, key) => { const on = !estSel || key === estSel; return `<div class="pnl" data-est="${key}" style="cursor:pointer;flex:1;min-width:0;background:${col};border-radius:12px;padding:6px 4px;text-align:center;color:#fff;box-shadow:0 2px 8px ${col}55;opacity:${on ? 1 : .35};transform:${estSel && key === estSel ? 'scale(1.04)' : 'scale(1)'};transition:opacity .15s,transform .15s">
-      <div style="font-size:15px;font-weight:900;line-height:1">${n}</div>
-      <div style="font-size:8px;font-weight:800;margin-top:2px;text-transform:uppercase;letter-spacing:.1px;opacity:.95;line-height:1.15;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${lbl}">${lbl}</div>
+    const chipPill = (n, lbl, col, key) => { const on = !estSel || key === estSel; return `<div data-est="${key}" style="cursor:pointer;flex:1;min-width:0;background:${col};border-radius:13px;padding:6px 5px;text-align:center;color:#fff;box-shadow:0 2px 8px ${col}55;opacity:${on ? 1 : .35};transform:${estSel && key === estSel ? 'scale(1.04)' : 'scale(1)'};transition:opacity .15s,transform .15s">
+      <div style="font-size:19px;font-weight:900;line-height:1">${n}</div>
+      <div style="font-size:9.5px;font-weight:800;margin-top:3px;text-transform:uppercase;letter-spacing:.3px;opacity:.95;line-height:1.2;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${lbl}">${lbl}</div>
     </div>`; };
-    const barra = (lbl, val, pctv, col) => `<div style="margin-bottom:6px"><div style="display:flex;justify-content:space-between;font-size:10px;font-weight:800;color:#37474F;margin-bottom:2px"><span>${lbl}</span><span style="color:${col}">${FM(val)}${pctv != null ? ` · ${Math.round(pctv)}%` : ''}</span></div>
-      <div style="height:6px;background:#ECEFF3;border-radius:6px;overflow:hidden"><div style="height:100%;width:${pctv != null ? Math.min(pctv, 100) : 100}%;background:linear-gradient(90deg,${col}CC,${col});border-radius:6px"></div></div>
+    const barra = (lbl, val, pctv, col) => `<div style="margin-bottom:7px"><div style="display:flex;justify-content:space-between;font-size:10.5px;font-weight:800;color:#37474F;margin-bottom:3px"><span>${lbl}</span><span style="color:${col}">${FM(val)}${pctv != null ? ` · ${Math.round(pctv)}%` : ''}</span></div>
+      <div style="height:7px;background:#ECEFF3;border-radius:6px;overflow:hidden"><div style="height:100%;width:${pctv != null ? Math.min(pctv, 100) : 100}%;background:linear-gradient(90deg,${col}CC,${col});border-radius:6px"></div></div>
     </div>`;
     const panelInferior = estSel ? (() => {
       const [lbl, col] = ESTINV[estSel], arr = est[estSel];
-      return `<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
-        <div style="font-size:10px;font-weight:900;color:${col};text-transform:uppercase;letter-spacing:.4px"><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${col};margin-right:5px"></span>${lbl.toUpperCase()} — ${arr.length} INVERSI${arr.length === 1 ? 'ÓN' : 'ONES'}</div>
+      return `<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:7px">
+        <div style="font-size:10.5px;font-weight:900;color:${col};text-transform:uppercase;letter-spacing:.4px"><span style="display:inline-block;width:8px;height:8px;${ESTSHAPE[estSel]};background:${col};margin-right:5px"></span>${lbl.toUpperCase()} — ${arr.length} INVERSI${arr.length === 1 ? 'ÓN' : 'ONES'}</div>
         <div data-est-clear title="Volver a ejecución presupuestal" style="cursor:pointer;width:18px;height:18px;border-radius:50%;background:#ECEFF3;color:#546E7A;font-size:11px;font-weight:900;line-height:18px;text-align:center;flex:none">✕</div>
       </div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:1px 8px">${arr.map(it => `<div data-inv-goto="${it.act_proy}" style="display:flex;align-items:center;gap:5px;padding:2px 4px;border-radius:6px;cursor:pointer">
-        <span style="flex:1;font-size:11px;font-weight:700;color:#37474F;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${it.act_proy}</span>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:2px 8px">${arr.map(it => `<div data-inv-goto="${it.act_proy}" style="display:flex;align-items:center;gap:5px;padding:3px 4px;border-radius:6px;cursor:pointer">
+        <span style="flex:1;font-size:11.5px;font-weight:700;color:#37474F;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${it.act_proy}</span>
         <span style="color:${col};font-weight:900;font-size:10px;flex:none">→</span>
       </div>`).join('')}</div>
-      <div style="font-size:8.5px;color:#90A4AE;margin-top:5px">Clic en un CUI para abrir su ficha · ✕ o el mismo estado para volver</div>`;
-    })() : `<div class="pd-lbl" style="margin:0 0 6px">EJECUCIÓN PRESUPUESTAL</div>
+      <div style="font-size:9px;color:#90A4AE;margin-top:6px">Clic en un CUI para abrir su ficha · ✕ o el mismo estado para volver</div>`;
+    })() : `${secHdr('Ejecución presupuestal')}
       ${barra('PIM', T.pim, null, '#37474F')}
       ${barra('Certificación', T.cert, (T.cert || 0) * 100 / pim1, '#6A1B9A')}
       ${barra('Compromiso', T.comp_anual, (T.comp_anual || 0) * 100 / pim1, '#00838F')}
-      ${barra('Devengado', T.dev, (T.dev || 0) * 100 / pim1, '#E65100')}`;
-    b.innerHTML = `<div style="display:flex;gap:8px;height:100%;box-sizing:border-box;padding:8px">
-      <div style="flex:1.15;min-width:0;display:flex;flex-direction:column;gap:6px;min-height:0">
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">
+      ${barra('Devengado', T.dev, (T.dev || 0) * 100 / pim1, '#E65100')}
+      <div style="font-size:9px;color:#90A4AE;margin-top:2px">Fuente: Transparencia Económica — MEF</div>`;
+    b.innerHTML = `<div style="display:flex;gap:9px;height:100%;box-sizing:border-box;padding:8px">
+      <div style="flex:1.15;min-width:0;display:flex;flex-direction:column;gap:7px;min-height:0">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:7px">
           ${kpiT('kpi', '💰', FM(T.pim), `Resumen general · devengado ${Math.round((T.dev || 0) * 100 / pim1)}%`, '#0F2A43', '#F4FBF4', '#C8E6C9')}
           ${kpiT('benef', '👥', bc ? N(bc.total) : '…', bc ? `Beneficiarios · ${bc.conDato}/${items.length} con dato` : 'Beneficiarios · calculando…', '#1B5E20', '#F4FBF4', '#C8E6C9')}
           ${kpiT('fuentes', '🏦', fts[0] ? cap(fts[0].nombre) : 'sin datos', `Por fuente · ${fts.length} fuentes`, '#1565C0', '#F5F9FF', '#BBDEFB')}
@@ -312,22 +317,22 @@
           ${kpiT('comp', '🤝', FM(T.comp_anual), `Compromiso · ${Math.round((T.comp_anual || 0) * 100 / pim1)}% del PIM`, '#00838F', '#F0FBFC', '#B2E0E4')}
           ${kpiT('dev', '💵', FM(T.dev), `Devengado · ${Math.round((T.dev || 0) * 100 / pim1)}% del PIM`, '#E65100', '#FDEEE3', '#F5CBA0')}
         </div>
-        <div class="card" style="flex:none;padding:7px 9px">
-          <div class="pd-lbl" style="margin:0 0 5px">ESTADO DE LA CARTERA — ${items.length} INVERSIONES</div>
-          <div style="display:flex;gap:6px">${estList.map(([l, v, c, k]) => chipPill(v, l, c, k)).join('')}</div>
+        <div class="card" style="flex:none;border-radius:14px;padding:8px 11px">
+          ${secHdr(`Estado de la cartera — ${items.length} inversiones`)}
+          <div style="display:flex;gap:7px">${estList.map(([l, v, c, k]) => chipPill(v, l, c, k)).join('')}</div>
         </div>
-        <div class="card" style="flex:1;min-height:0;padding:7px 9px;overflow:auto">${panelInferior}</div>
+        <div class="card" style="flex:1;min-height:0;border-radius:14px;padding:8px 11px;overflow:auto">${panelInferior}</div>
       </div>
-      <div class="card" style="flex:1;min-width:0;display:flex;flex-direction:column;padding:10px 12px">
+      <div class="card" style="flex:1;min-width:0;border-radius:14px;display:flex;flex-direction:column;padding:10px 12px">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
-          <div class="pd-lbl" style="margin:0">MAPA DE INVERSIONES${(() => { const tot = estSel ? est[estSel].length : items.length, con = mapItems.filter(it => (!estSel || it.est === estSel) && it.lat != null && it.lon != null).length; return con < tot ? ` · ${con}/${tot} con coordenadas` : ''; })()}</div>
-          <div style="display:flex;gap:8px;font-size:9px;font-weight:700;color:#546E7A;flex-wrap:wrap">${Object.values(ESTINV).map(([l, c]) => `<span><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${c};margin-right:3px"></span>${l}</span>`).join('')}</div>
+          ${secHdr(`Mapa de inversiones${(() => { const tot = estSel ? est[estSel].length : items.length, con = mapItems.filter(it => (!estSel || it.est === estSel) && it.lat != null && it.lon != null).length; return con < tot ? ` · ${con}/${tot} con coordenadas` : ''; })()}`, 0)}
+          <div style="display:flex;gap:8px;font-size:9px;font-weight:700;color:#546E7A;flex-wrap:wrap">${Object.entries(ESTINV).map(([k, [l, c]]) => `<span><span style="display:inline-block;width:8px;height:8px;${ESTSHAPE[k]};background:${c};margin-right:3px"></span>${l}</span>`).join('')}</div>
         </div>
-        <div id="inv-mapa" style="flex:1;min-height:0;border-radius:10px;background:var(--grid)"></div>
+        <div id="inv-mapa" style="flex:1;min-height:0;border-radius:11px;background:var(--grid)"></div>
       </div>
-      <div class="card" style="flex:0 0 230px;min-width:0;display:flex;flex-direction:column;padding:10px 10px">
+      <div class="card" style="flex:0 0 240px;min-width:0;border-radius:14px;display:flex;flex-direction:column;padding:10px 10px">
         <div style="padding:0 2px 8px;border-bottom:2px solid #E8F5E9;margin-bottom:8px">
-          <div class="pd-lbl" style="margin:0">🔔 NOVEDADES</div>
+          ${secHdr('🔔 Novedades', 0)}
           <div style="font-size:8.5px;font-weight:700;color:#90A4AE;margin-top:2px;letter-spacing:.3px">NORMATIVA · PRENSA · DOCUMENTOS</div>
         </div>
         <div style="flex:1;min-height:0;overflow:auto">${novHTML()}</div>
