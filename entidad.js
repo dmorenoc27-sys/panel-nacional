@@ -123,11 +123,17 @@
       lb.innerHTML = `<div onclick="event.stopPropagation()" style="cursor:default;background:#fff;border-radius:16px;max-width:520px;width:100%;box-shadow:0 12px 44px rgba(0,0,0,.35);padding:18px 22px 16px">
         <div style="display:flex;align-items:center;gap:10px;border-bottom:2px solid #DCE7F5;padding-bottom:10px;margin-bottom:12px">
           <div style="width:38px;height:38px;border-radius:10px;background:linear-gradient(135deg,#0A1B2E,#1E6BB8);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0">📑</div>
-          <div><div style="font-size:14px;font-weight:900;color:#0F2A43">Reportes a medida</div><div style="font-size:10.5px;font-weight:700;color:#5E7290">${nombre || 'Su entidad'}</div></div>
+          <div><div style="font-size:14px;font-weight:900;color:#0F2A43">Exportaciones y reportes a medida</div><div style="font-size:10.5px;font-weight:700;color:#5E7290">${nombre || 'Su entidad'}</div></div>
           <button style="margin-left:auto;background:none;border:0;font-size:20px;color:#94A3B8;cursor:pointer" onclick="this.closest('#rep-aviso').remove()">×</button></div>
-        <p style="font-size:13px;line-height:1.55;margin:0 0 8px;color:#1E293B">Los reportes en PowerPoint con el formato propio de cada entidad, a la fecha de corte que se necesite, se habilitan por contrato.</p>
+        <p style="font-size:13px;line-height:1.55;margin:0 0 8px;color:#1E293B">Las exportaciones (Excel, PowerPoint, PDF) y los reportes con el formato propio de cada entidad, a la fecha de corte que se necesite, se habilitan por contrato.</p>
         <p style="font-size:13px;line-height:1.55;margin:0;color:#1E293B">Para activarlo, escríbanos a <a href="mailto:${CONTACTO}" style="font-weight:800;color:var(--p)">${CONTACTO}</a>.</p>
         <div style="font-size:9.5px;color:#9AA8BC;text-align:center;margin-top:12px">clic fuera para cerrar</div></div>`;
+    },
+    // compuerta de TODA exportación (Excel, PPT, PDF/imprimir): con contrato (reportes/<ue>.json) ejecuta fn; si no, el aviso de contacto
+    async exportar(ue, nombre, fn) {
+      const rep = ue ? (await this.config(ue)).rep : null;
+      if (rep) return fn();
+      this.sinPago(nombre || 'esta vista');
     },
     // cablea el widget: onCorte(fecha) -> Promise (aplica el corte y repinta); nombre = para el aviso de contacto
     wire(ctx, onCorte) {
@@ -215,7 +221,7 @@
     el.querySelectorAll('.ptabs button[data-t]').forEach(b => b.onclick = () => { tabE = b.dataset.t; if (tabE !== 'exp') filtroMeta = ''; render(); });
     el.querySelectorAll('.sw button').forEach(b => b.onclick = () => { modoInv = b.dataset.m === '1'; filtroMeta = ''; render(); });
     if ($('ent-q')) $('ent-q').oninput = e => { q = e.target.value.trim().toLowerCase(); cuerpo(); }; $('ent-salir').onclick = () => { E = null; login(); };
-    $('ent-xls').onclick = () => { const rows = [...$('ent-body').querySelectorAll('tr:not(.det)')].map(tr => [...tr.children].map(td => td.innerText.replace(/\n/g, ' ').trim())); const ws = XLSX.utils.aoa_to_sheet(rows); const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, 'MiEntidad'); XLSX.writeFile(wb, `mi_entidad_${u.cod}_${tabE}.xlsx`); };
+    $('ent-xls').onclick = () => CR.exportar(E._ue.cod, E._ue.nombre, () => { const rows = [...$('ent-body').querySelectorAll('tr:not(.det)')].map(tr => [...tr.children].map(td => td.innerText.replace(/\n/g, ' ').trim())); const ws = XLSX.utils.aoa_to_sheet(rows); const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, 'MiEntidad'); XLSX.writeFile(wb, `mi_entidad_${u.cod}_${tabE}.xlsx`); });
     cuerpo();
   }
   const hit = (s) => !q || (s || '').toLowerCase().includes(q);
@@ -719,7 +725,7 @@
   function fichaInversionRender(el, cui, f, c, sp, onVolver) {
     el.innerHTML = fichaInversionHTML(cui, f, c, sp);
     if (onVolver) el.querySelectorAll('.fi-regresar').forEach(x => x.onclick = onVolver);
-    el.querySelectorAll('.fi-print').forEach(x => x.onclick = () => window.print());
+    el.querySelectorAll('.fi-print').forEach(x => x.onclick = () => CR.exportar((c && c.ue) || (E && E._ue && E._ue.cod), (c && c.ue_nombre) || (E && E._ue && E._ue.nombre), () => window.print()));
     el.querySelectorAll('.fi-comp-hdr').forEach(x => x.onclick = () => { const d = x.nextElementSibling; d.style.display = d.style.display === 'none' ? 'block' : 'none'; });
     const nombre = f?.nombre || c?.nombre || null;
     el.querySelectorAll('.fi-seg-hdr').forEach(x => x.onclick = () => mostrarSeguimientoModal(cui, nombre, buildSituDet(f, c, sp)));
