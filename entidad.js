@@ -391,11 +391,11 @@
     ov.style.cssText = 'position:fixed;inset:0;z-index:9999;background:var(--bg);display:flex;align-items:center;justify-content:center';
     ov.innerHTML = `<p class="mutx">Cargando ficha de la inversión ${cui}…</p>`;
   }
-  function pintarFicha(cui, f, c, sp) {
-    let ov = $('inv-overlay'); if (!ov) { ov = document.createElement('div'); ov.id = 'inv-overlay'; document.body.appendChild(ov); }
-    ov.style.cssText = 'position:fixed;inset:0;z-index:9999;background:var(--bg);display:flex;flex-direction:column;animation:fiIn .16s ease';
-    const nombre = f?.nombre || c.nombre || 'Inversión ' + cui;
-    const items = !f ? [] : [
+  // ponytail: ficha de una inversión (5 tiles con medidor, clic para expandir) — reutilizable entre el overlay de "Mi entidad" y la ficha pública del CUI, ambas alimentadas por las mismas ssi()/seace()/ficha() públicas. Expuesta en window.FichaInversion.
+  function fichaInversionHTML(cui, f, c, sp) {
+    c = c || {};
+    if (!f) return `<p class="mutx">Sin ficha del Banco de Inversiones capturada aún para este CUI.${c.pim ? ` PIM ${F(c.pim)} · devengado ${F(c.dev)}.` : ''}</p>`;
+    const items = [
       { id: 'ppto', icono: '💰', titulo: 'PRESUPUESTO', valor: F(c.pim ?? f.pim), sub: `certificado ${F(c.cert)} · devengado ${F(c.dev)}${f.costo ? ` · costo actualizado ${F(f.costo)}` : ''}`, color: 'var(--p2)', bg: '#EAF3FC', medidor: c.pim ? 100 * (c.dev || 0) / c.pim : null,
         detalle: () => `<table class="pd-tbl"><tr><th>PIM</th><th>Certificado</th><th>Comprometido</th><th>Devengado</th><th>Girado</th></tr><tr><td>${F(c.pim)}</td><td>${F(c.cert)}</td><td>${F(c.comp)}</td><td>${F(c.dev)}</td><td>${F(c.gir)}</td></tr></table>${bancoExtra(c, f) || ''}` },
       { id: 'obra', icono: '🏗', titulo: 'AVANCE DE LA OBRA', valor: f.av_fis != null ? f.av_fis.toFixed(0) + '% físico' : 'sin avance físico', sub: `financiero ${f.av_ejec != null ? f.av_ejec.toFixed(0) + '%' : '—'} · ${f.inicio || '—'} → ${f.fin || '—'}`, color: f.av_fis != null ? `var(--${cls(f.av_fis)})` : 'var(--p)', bg: '#F1F8F2', medidor: f.av_fis,
@@ -407,15 +407,26 @@
       { id: 'comp', icono: '🧩', titulo: 'COMPONENTES Y METAS', valor: f.comp ? `${f.comp.length} componente(s)` : 'sin datos', sub: f.formato || '', color: '#5E35B1', bg: '#F1EEFC',
         detalle: () => f.comp ? `<table class="pd-tbl"><tr><th>Componente / acción</th><th>Meta</th><th>Costo</th></tr>${f.comp.map(cp => `<tr class="c"><td colspan="2">${cp.n}</td><td>${F(cp.a.reduce((t, a) => t + (+a.c || 0), 0) || null)}</td></tr>` + cp.a.map(a => `<tr><td style="padding-left:14px;font-weight:500">${a.n}${a.f ? ` <small class="mutx">· ${a.f}</small>` : ''}</td><td>${a.u || ''}</td><td>${F(+a.c || null)}</td></tr>`).join('')).join('')}</table>` : '<p class="vacio">Sin componentes registrados.</p>' }
     ];
+    return pnlFicha(items);
+  }
+  function fichaInversionRender(el, cui, f, c, sp) {
+    el.innerHTML = fichaInversionHTML(cui, f, c, sp);
+    el.querySelectorAll('[data-fp]').forEach(x => x.onclick = () => { invPanel = invPanel === x.dataset.fp ? null : x.dataset.fp; fichaInversionRender(el, cui, f, c, sp); });
+  }
+  window.FichaInversion = { render: fichaInversionRender, html: fichaInversionHTML };
+  function pintarFicha(cui, f, c, sp) {
+    let ov = $('inv-overlay'); if (!ov) { ov = document.createElement('div'); ov.id = 'inv-overlay'; document.body.appendChild(ov); }
+    ov.style.cssText = 'position:fixed;inset:0;z-index:9999;background:var(--bg);display:flex;flex-direction:column;animation:fiIn .16s ease';
+    const nombre = f?.nombre || c.nombre || 'Inversión ' + cui;
     ov.innerHTML = `<style>@keyframes fiIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}.fi-pnl{transition:transform .15s,box-shadow .15s}.fi-pnl:hover{transform:translateY(-2px)}</style>
      <div class="pd-hdr" style="border-radius:0;flex:0 0 auto">
       <div class="pd-cui"><span>${E._ue.nombre}</span><span>· CUI ${cui}</span>${f?.tipo ? `<span>· ${f.tipo}</span>` : ''}${f?.beneficiarios ? `<span>· 👥 ${N(f.beneficiarios)} beneficiarios</span>` : ''}${f?.actualizado ? `<span>· capturado ${f.actualizado}</span>` : ''}<span class="x" id="fi-cerrar" title="Cerrar">×</span></div>
       <div class="pd-title" style="font-size:15px">${nombre}</div>
       <div class="pd-badges"><button class="btn" id="fi-volver" style="background:#fff;color:var(--p2)">‹ Volver a inversiones</button></div>
      </div>
-     <div style="flex:1;min-height:0;overflow:auto;padding:12px 16px">${f ? pnlFicha(items) : `<p class="mutx">Sin ficha del Banco de Inversiones capturada aún para este CUI.${c.pim ? ` PIM ${F(c.pim)} · devengado ${F(c.dev)}.` : ''}</p>`}</div>`;
+     <div id="fi-body" style="flex:1;min-height:0;overflow:auto;padding:12px 16px"></div>`;
     ov.querySelector('#fi-cerrar').onclick = ov.querySelector('#fi-volver').onclick = cerrarFicha;
-    ov.querySelectorAll('[data-fp]').forEach(x => x.onclick = () => { invPanel = invPanel === x.dataset.fp ? null : x.dataset.fp; pintarFicha(cui, f, c, sp); });
+    fichaInversionRender($('fi-body'), cui, f, c, sp);
   }
   function cuerpo() {
     const b = $('ent-body'), P_ = E.presupuesto, I = E.ingresos, T = modoInv ? P_.inversiones : P_.total, A = E.alertas;

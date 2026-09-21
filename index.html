@@ -228,7 +228,7 @@ body.sala .lens a{background:#fff;color:#0F172A;border-left-color:#1E5AA8}body.s
 <script src="expediente.js?v=10d3f3a"></script>
 <script src="incentivos.js?v=4492226"></script>
 <script src="fed.js?v=fbbc718"></script>
-<script src="entidad.js?v=9bc1d37"></script>
+<script src="entidad.js?v=03120ae"></script>
 <script>
 const M=n=>{const v=(n||0)/1e6;return v.toLocaleString('es-PE',{maximumFractionDigits:Math.abs(v)>=1000?0:1})};
 const N=n=>(n||0).toLocaleString('es-PE');
@@ -340,38 +340,14 @@ function contratacionMini(sp,f){const F=n=>n==null?'—':'S/ '+Number(n).toLocal
  const avFis=f?.av_fis;const brecha=pl!=null&&avFis!=null?pl-avFis:null;const col=brecha==null?'var(--ink)':brecha>20?'var(--bad)':brecha>10?'var(--warn)':'var(--ok)';
  return `<div class="row"><span>Contratista</span><b>${bp?.prov||'—'}</b></div><div class="row"><span>Plazo</span><b>${ct?.dias?ct.dias+' días':'—'}${ct?.ampliado?' · ampliado':''}</b></div><div class="row"><span>Fin programado</span><b>${fin||'—'}</b></div>${pl!=null?`<div class="row"><span>Plazo consumido</span><b style="color:${col}">${pl} %</b></div>`:''}`}
 async function fichaCUI(cui){const [f,sp]=await Promise.all([ssi(cui),seace(cui)]);const c=U?.cuis.find(x=>x.cui===cui)||{};$('fx').innerHTML=fichaHTML(cui,f,c,false,sp);$('fx').showModal()}
+// ponytail: mismo modelo de ficha (5 tiles con medidor) que "Mi entidad" — window.FichaInversion viene de entidad.js, ya cargado antes; ssi()/seace()/ficha() son las mismas fuentes públicas que usa el lado privado, así que el contenido es idéntico con y sin clave
 async function paginaCUI(cui){$('ficha').innerHTML='<div class="fxb mutx">Cargando ficha…</div>';const [f,sp]=await Promise.all([ssi(cui),seace(cui)]);let c=(U||ULT_U)?.cuis?.find(x=>x.cui===cui)||{};const uex=f?.uep&&UES.find(u=>f.uep[u.cod]);if(uex){const uf=await ficha(uex.cod).catch(()=>null);c=uf?.cuis.find(x=>x.cui===cui)||c}
  uepAb=null;
- if(!f){const F0=n=>n==null?'—':'S/ '+Number(n).toLocaleString('es-PE',{maximumFractionDigits:0});
-  $('ficha').innerHTML=`<div class="pd-hdr" style="padding:10px 18px 8px"><div class="pd-cui">CUI ${cui}</div><div class="pd-title" style="font-size:13.5px;margin-bottom:6px">${c.nombre||'Inversión '+cui}</div><div class="pd-badges">${c.tipo?`<span class="pd-badge">${c.tipo}</span>`:''}${c.situacion?`<span class="pd-badge p">${c.situacion}</span>`:''}</div></div>
-  <div style="flex:1;min-height:0;overflow:auto;padding:14px 18px 14px 18px;margin-top:8px">
-   <div class="pd-lbl">Banco de Inversiones</div><p class="mutx" style="font-size:12px">La ficha del SSI de esta inversión aún no fue capturada por el vigilante; se incorpora en la próxima ronda nocturna.</p>${c.pim?`<div class="pd-row"><b>PIM ${ANIO}</b><span>${F0(c.pim)}</span></div><div class="pd-row"><b>Devengado ${ANIO}</b><span>${F0(c.dev)} (${(c.pim?100*c.dev/c.pim:0).toFixed(1)} %)</span></div>`:''}
-   ${bancoExtra(c,null)}
-   <div class="pd-lbl" style="margin-top:14px">Contratación</div>${contratacion(sp,c,null,true)}
-  </div>`;
-  starUI();return}
- const F=n=>n==null?'—':'S/ '+Number(n).toLocaleString('es-PE',{maximumFractionDigits:0});
- const avF=f.av_fis!=null&&f.av_fis>=0?f.av_fis:null,avE=f.av_ejec;
- const est=(f.situacion||'').toUpperCase();const estC=/CULMIN|CERRAD/.test(est)?'ok':/SUSPEND|PARALIZ|DESACTIV/.test(est)?'bad':/EJECUCI/.test(est)?'ok':'p';
- const fmt={'08-A seccion-C':'Formato 08-A · sección C (proyecto)','08-B programa':'Formato 08-B (programa)','08-C ioarr-activos':'Formato 08-C · activos (IOARR)','productos/acciones':'productos y acciones'}[f.formato]||f.formato||'';
- const comps=f.comp?`<table class="pd-tbl"><tr><th>Componente / acción</th><th>Meta</th><th>Costo</th></tr>${f.comp.map(cp=>`<tr class="c"><td colspan="2">${cp.n}</td><td>${F(cp.a.reduce((t,a)=>t+(+a.c||0),0)||null)}</td></tr>`+cp.a.map(a=>`<tr><td style="padding-left:14px;font-weight:500">${a.n}${a.f?` <small class="mutx">· ${a.f}</small>`:''}</td><td>${a.u||''}</td><td>${F(+a.c||null)}</td></tr>`).join('')).join('')}</table>`:`<p class="vacio">Sin componentes registrados en la ficha de ejecución.</p>`;
- const anualRows=f.anual&&Object.keys(f.anual).length?Object.entries(f.anual).sort((a,b)=>a[0]-b[0]).map(([y,v])=>`<div class="row"><span>${y}</span><b>${F(v)}</b></div>`).join(''):`<p class="vacio">Sin histórico de devengado.</p>`;
- uepAb=null;
- $('ficha').innerHTML=`<div class="pd-hdr" style="padding:10px 18px 8px"><div class="pd-cui"><span>CUI ${cui}</span>${f.tipo?`<span>· ${f.tipo}</span>`:''}${f.f12b?`<span>· último F12-B ${f.f12b}</span>`:''}<span>· capturado ${f.actualizado}</span></div><div class="pd-title" style="font-size:13.5px;margin-bottom:6px">${f.nombre||c.nombre||''}</div><div class="pd-badges">${est?`<span class="pd-badge ${estC}">${est}</span>`:''}${f.modalidad?`<span class="pd-badge">${f.modalidad}</span>`:''}${uex?`<span class="pd-badge"><a href="#/ue/${uex.cod}">${uex.nombre}</a></span>`:f.uei?`<span class="pd-badge">${f.uei}</span>`:''}<button class="pd-badge" style="cursor:pointer;border:0;font:inherit" onclick="fichaCUI('${cui}')">${ICO.detalle.replace('class="ic"','class="ic" style="stroke:#fff"')} Situación, contratación e histórico mensual</button></div></div>
-  <div style="flex:1;min-height:0;overflow:auto;padding:14px 16px;display:flex;flex-direction:column;gap:10px">
-   <div class="mrow">
-    <div class="mbox acc" style="flex:1.4"><h4><i>${ICO.presupuesto}</i>Presupuesto de inversión</h4><div class="row"><span>Perfil viable</span><b>${F(f.viable)}</b></div><div class="row"><span>Costo inversión act. (A)</span><b>${F(f.costo)}</b></div><div class="row"><span>Control concurrente (B)</span><b>${F(f.cc_eje)}</b></div><div class="row"><span>Controversias (C)</span><b>${F(f.contro)}</b></div><div class="row"><span>Carta fianza (D)</span><b>${F(f.carta)}</b></div><div class="tot"><span>Costo total (A+B+C+D)</span><span>${F(f.costo_total||f.costo)}</span></div></div>
-    <div class="mbox acc" style="flex:1.1;align-items:center;text-align:center;justify-content:center"><div class="${f.pmi==='SI'?'mchip ok':'mchip'}">${f.pmi==='SI'?'Programado en el PMI':f.pmi==='NO'?'No programado en el PMI':'Sin dato de PMI'}</div><div style="display:flex;gap:10px;justify-content:center;margin-top:6px">${donut(avF,`var(--${cls(avF||0)})`,'Av. físico')}${donut(avE,`var(--${cls(avE||0)})`,'Av. financiero')}</div></div>
-    <div class="mbox">${c.pim>0?`<div class="mchip ok">PIM ${ANIO}: ${F(c.pim)}</div>`:`<div class="mchip">Sin PIM ${ANIO}</div>`}<div class="mstat"><div class="l">Certificación ${ANIO}</div><div class="v">—</div></div><div class="mstat"><div class="l">Devengado ${ANIO}</div><div class="v">${F(c.dev)}</div></div></div>
-    <div class="mbox" style="flex:.7"><h4><i>${ICO.seguimiento}</i>Seguimiento</h4><div class="row"><span>Último F12-B</span><b>${f.f12b||'—'}</b></div></div>
-    <div class="mbox" style="flex:1.2"><h4><i>${ICO.contrato}</i>Contratación</h4>${contratacionMini(sp,f)}</div>
-   </div>
-   <div class="mrow r2" style="flex:1;min-height:0">
-    <div class="mbox" style="flex:1.3;max-height:260px"><h4><i>${ICO.comp}</i>Componentes y acciones <small class="mutx" style="font-weight:600;text-transform:none">${fmt}</small></h4><div style="overflow:auto">${comps}</div></div>
-    <div class="mbox" style="max-height:260px"><h4><i>${ICO.cal}</i>Devengado por año</h4><div style="overflow:auto">${anualRows}</div></div>
-    <div class="mbox low" style="flex:.8"><h4><i>${ICO.impacto}</i>Impacto de la inversión</h4><div class="mph">No disponible a nivel nacional</div></div>
-   </div>
-  </div>`;
+ const est=(f?.situacion||'').toUpperCase();const estC=/CULMIN|CERRAD/.test(est)?'ok':/SUSPEND|PARALIZ|DESACTIV/.test(est)?'bad':/EJECUCI/.test(est)?'ok':'p';
+ const nombre=f?.nombre||c.nombre||'Inversión '+cui;
+ $('ficha').innerHTML=`<div class="pd-hdr" style="padding:10px 18px 8px"><div class="pd-cui"><span>CUI ${cui}</span>${f?.tipo?`<span>· ${f.tipo}</span>`:''}${f?.f12b?`<span>· último F12-B ${f.f12b}</span>`:''}${f?.actualizado?`<span>· capturado ${f.actualizado}</span>`:''}${f?.beneficiarios?`<span>· 👥 ${N(f.beneficiarios)} beneficiarios</span>`:''}</div><div class="pd-title" style="font-size:15px;margin-bottom:6px">${nombre}</div><div class="pd-badges">${f&&est?`<span class="pd-badge ${estC}">${est}</span>`:c.situacion?`<span class="pd-badge p">${c.situacion}</span>`:''}${c.tipo&&!f?`<span class="pd-badge">${c.tipo}</span>`:''}${f?.modalidad?`<span class="pd-badge">${f.modalidad}</span>`:''}${uex?`<span class="pd-badge"><a href="#/ue/${uex.cod}">${uex.nombre}</a></span>`:f?.uei?`<span class="pd-badge">${f.uei}</span>`:''}${f?`<button class="pd-badge" style="cursor:pointer;border:0;font:inherit" onclick="fichaCUI('${cui}')">${ICO.detalle.replace('class="ic"','class="ic" style="stroke:#fff"')} Situación, contratación e histórico mensual</button>`:''}</div></div>
+  <div id="ficha-body" style="flex:1;min-height:0;overflow:auto;padding:14px 18px"></div>`;
+ window.FichaInversion.render($('ficha-body'),cui,f,c,sp);
  starUI()}
 let uepAb=null;
 async function paginaUE(ue){uepAb=null;$('uep').innerHTML='<div class="fxb mutx">Cargando…</div>';const av=U.pim?100*U.dev/U.pim:0;const cuis=U.cuis||[];
