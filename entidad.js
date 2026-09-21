@@ -32,49 +32,154 @@
     META = {}; E.metas.forEach(m => META[m.sec_func] = m);
     const uf = await ficha(ue).catch(() => null); if (!SEA_R) SEA_R = await fetch('data/seace/resumen.json').then(r => r.json()).catch(() => ({})); LAKE = {}; (uf?.cuis || []).forEach(c => LAKE[c.cui] = c); E._ue = UES.find(u => u.cod === ue) || { cod: ue, nombre: 'UE ' + ue }; E._uf = uf;
     // reporte PPT a medida (solo con clave): existe si la entidad tiene plantilla en reportes/<ue>.json
-    E._rep = await fetch(`reportes/${ue}.json`).then(r => r.ok ? r.json() : null).catch(() => null);
-    if (E._rep) E._repFechas = await fetch(`data/reportes/${ue}/index.json?v=${Date.now()}`).then(r => r.ok ? r.json() : []).catch(() => []);
+    const cr = await CR.config(ue); E._rep = cr.rep; E._repFechas = cr.fechas;
   }
-  // ---- Reporte PPT a medida: botón + fecha de corte (calendario nativo) ----
-  function repCorteHTML() {
-    if (!E._rep) return '';
-    const hoy = R.corte.slice(0, 10), anio = +hoy.slice(0, 4);
-    return `<span style="display:inline-flex;align-items:center;gap:6px;margin-left:auto;background:#fff;border-radius:8px;padding:3px 6px 3px 10px;color:var(--p2);font-size:12px">
-      <label for="rep-corte" style="font-weight:700">Fecha de corte</label><input type="date" id="rep-corte" value="${E._repCorte || hoy}" min="${anio}-01-01" max="${hoy}" style="font:inherit;border:1px solid var(--line);border-radius:6px;padding:3px 6px">
-      <span id="rep-nota" class="mutx" style="font-size:11px"></span>
-      <button class="btn p" id="rep-ppt" title="Genera el reporte oficial en PowerPoint con los datos a la fecha de corte">📑 Generar reporte PPT</button></span>`;
-  }
-  // qué datos se usan para una fecha: fin de mes ya cerrado -> devengado mensual del MEF (exacto); otro día -> foto diaria guardada
-  // (si la hay) o la foto más cercana anterior; hoy -> datos actuales
-  function repResolver(fecha) {
-    const hoy = R.corte.slice(0, 10), d = new Date(fecha + 'T00:00:00'), fin = new Date(d.getFullYear(), d.getMonth() + 1, 0).getDate();
-    if (fecha >= hoy) return { corte: null, nota: 'datos de hoy' };
-    if (d.getDate() === fin && d.getFullYear() === +hoy.slice(0, 4)) return { corte: { mes: d.getMonth() + 1 }, nota: 'cierre mensual (MEF)' };
-    const fotos = (E._repFechas || []).filter(f => f <= fecha).sort();
-    if (fotos.length) { const f = fotos[fotos.length - 1]; return { corte: { fecha: f, foto: true }, nota: f === fecha ? 'foto diaria guardada' : 'foto diaria más cercana: ' + f.split('-').reverse().join('/') }; }
-    const m = d.getMonth() + (d.getDate() === fin ? 1 : 0);
-    return m >= 1 ? { corte: { mes: m }, nota: 'sin foto de ese día; se usa el cierre de ' + ReporteUE.MESES[m - 1].toLowerCase() } : { corte: null, nota: 'sin datos para esa fecha; se usan los de hoy' };
+  // ---- Fecha de corte + Reporte PPT: widget compartido por Mi entidad (con clave) y la ficha pública (sin clave) ----
+  // ponytail: la versión de pago y la gratuita son idénticas; la única diferencia es que "Generar reporte PPT" en una entidad
+  // sin plantilla contratada (reportes/<ue>.json) abre el aviso de contacto en vez del reporte.
+  const CONTACTO = 'consultas@arkaproyectos.com.pe';
+  const fDMY = f => f.split('-').reverse().join('/');
+  const CR = {
+    cache: {},
+    async config(ue) {   // {rep, fechas}: plantilla contratada y fotos diarias guardadas
+      if (!this.cache[ue]) {
+        const rep = await fetch(`reportes/${ue}.json`).then(r => r.ok ? r.json() : null).catch(() => null);
+        const fechas = rep ? await fetch(`data/reportes/${ue}/index.json?v=${Date.now()}`).then(r => r.ok ? r.json() : []).catch(() => []) : [];
+        this.cache[ue] = { rep, fechas };
+      }
+      return this.cache[ue];
+    },
+    hoy: () => R.corte.slice(0, 10),
+    // días con datos exactos: cierres de mes ya pasados (devengado mensual del MEF), fotos diarias guardadas y hoy
+    fechasConDatos(fechas) {
+      const hoy = this.hoy(), anio = +hoy.slice(0, 4), set = new Set([hoy, ...(fechas || [])]);
+      for (let m = 1; m <= 12; m++) { const f = `${anio}-${String(m).padStart(2, '0')}-${String(new Date(anio, m, 0).getDate()).padStart(2, '0')}`; if (f < hoy) set.add(f); }
+      return set;
+    },
+    // qué datos se usan para una fecha: foto diaria exacta > fin de mes (devengado mensual del MEF) > foto anterior > cierre de mes anterior > hoy
+    resolver(fecha, fechas) {
+      const hoy = this.hoy(), d = new Date(fecha + 'T00:00:00'), fin = new Date(d.getFullYear(), d.getMonth() + 1, 0).getDate();
+      if (fecha >= hoy) return { corte: null, nota: 'datos de hoy' };
+      if ((fechas || []).includes(fecha)) return { corte: { fecha, foto: true }, nota: 'foto diaria guardada' };
+      if (d.getDate() === fin && d.getFullYear() === +hoy.slice(0, 4)) return { corte: { mes: d.getMonth() + 1 }, nota: 'cierre mensual (MEF)' };
+      const fotos = (fechas || []).filter(f => f <= fecha).sort();
+      if (fotos.length) { const f = fotos[fotos.length - 1]; return { corte: { fecha: f, foto: true }, nota: 'foto diaria más cercana: ' + fDMY(f) }; }
+      const m = d.getMonth() + (d.getDate() === fin ? 1 : 0);
+      return m >= 1 ? { corte: { mes: m }, nota: 'sin foto de ese día; se usa el cierre de ' + ReporteUE.MESES[m - 1].toLowerCase() } : { corte: null, nota: 'sin datos para esa fecha; se usan los de hoy' };
+    },
+    html(ctx) {   // ctx = {rep, fechas, corte}; el calendario solo tiene sentido con plantilla (datos por corte); el botón va siempre
+      const v = ctx.corte || this.hoy();
+      return `<span style="display:inline-flex;align-items:center;gap:6px;margin-left:auto;background:#fff;border-radius:8px;padding:3px 6px 3px 10px;color:var(--p2);font-size:12px;position:relative">
+        ${ctx.rep ? `<label style="font-weight:700">Fecha de corte</label><input type="hidden" id="rep-corte" value="${v}">
+        <button class="btn" id="rep-corte-btn" style="font:inherit;font-weight:700;border:1px solid var(--line);border-radius:6px;padding:3px 8px;background:#fff;color:var(--p2)">${fDMY(v)} ▾</button>
+        <div id="rep-cal" hidden style="position:fixed;z-index:9999;background:#fff;border:1px solid var(--line);border-radius:10px;box-shadow:0 8px 28px rgba(15,42,67,.18);padding:10px;width:270px"></div>
+        <span id="rep-nota" class="mutx" style="font-size:11px"></span>` : ''}
+        <button class="btn p" id="rep-ppt" title="Reporte oficial en PowerPoint con los datos a la fecha de corte">📑 Generar reporte PPT</button></span>`;
+    },
+    // calendario propio (el <input type=date> nativo no deja marcar días): negrita = hay datos de ese día; futuro deshabilitado
+    calendario(y, m, ctx) {
+      const cal = $('rep-cal'), hoy = this.hoy(), con = this.fechasConDatos(ctx.fechas), sel = $('rep-corte').value, MESL = ReporteUE.MESES;
+      const prim = new Date(y, m, 1).getDay(), dias = new Date(y, m + 1, 0).getDate();
+      let celdas = ''; for (let i = 0; i < prim; i++) celdas += '<span></span>';
+      for (let d = 1; d <= dias; d++) {
+        const f = `${y}-${String(m + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`, fut = f > hoy, tiene = con.has(f);
+        celdas += `<button data-f="${f}" ${fut ? 'disabled' : ''} style="font-family:inherit;font-size:12px;border:0;border-radius:6px;padding:5px 0;cursor:${fut ? 'default' : 'pointer'};background:${f === sel ? 'var(--p)' : 'transparent'};color:${f === sel ? '#fff' : fut ? '#C5CCD6' : tiene ? 'var(--p2)' : '#98A2B3'};font-weight:${tiene ? '800' : '400'}">${d}</button>`;
+      }
+      cal.innerHTML = `<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px"><button data-nav="-1" class="btn" style="padding:2px 8px">‹</button><b style="font-size:12.5px;color:var(--p2)">${MESL[m]} ${y}</b><button data-nav="1" class="btn" style="padding:2px 8px">›</button></div>
+        <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:2px;text-align:center">${['D', 'L', 'M', 'M', 'J', 'V', 'S'].map(x => `<span class="mutx" style="font-size:10px">${x}</span>`).join('')}${celdas}</div>
+        <div class="mutx" style="font-size:10px;margin-top:6px"><b style="color:var(--p2)">Negrita</b> = hay datos exactos de ese día (cierre de mes, foto diaria u hoy)</div>`;
+      cal.querySelectorAll('[data-nav]').forEach(b => b.onclick = e => { e.stopPropagation(); const n = new Date(y, m + +b.dataset.nav, 1); this.calendario(n.getFullYear(), n.getMonth(), ctx); });
+      cal.querySelectorAll('[data-f]').forEach(b => b.onclick = e => { e.stopPropagation(); $('rep-corte').value = b.dataset.f; cal.hidden = true; $('rep-corte').onchange(); });
+    },
+    // datos de un corte: {k, datos} con k = ReporteUE.resolverCorte (mes/foto) y datos = json de reportes (actual o foto diaria)
+    async cargar(ue, r) {
+      const datos = r.corte && r.corte.foto ? await fetch(`data/reportes/${ue}/${r.corte.fecha}.json`).then(x => x.json()) : await fetch(`data/reportes/${ue}.json?v=${Date.now()}`).then(x => x.json());
+      return { datos, k: ReporteUE.resolverCorte(r.corte, datos) };
+    },
+    // valores por CUI al corte: {cui: {pim,cert,comp,dev}} y por fuente {cod: {nombre,pia,pim,dev}}
+    valores(datos, k) {
+      const porCui = {}, porFte = {};
+      (datos.cuis || []).forEach(c => {
+        const dev = k.porMes ? c.m.slice(0, k.mes).reduce((a, b) => a + b, 0) : (c.dev || 0);
+        porCui[c.cui] = { pim: c.pim || 0, cert: c.cert || 0, comp: c.comp || 0, dev };
+        Object.entries(c.ff || {}).forEach(([cod, f]) => { const key = cod.replace(/F$/, ''); porFte[key] = porFte[key] || { nombre: f.nombre.replace(' - BONOS', ''), pia: 0, pim: 0, cert: 0, comp: 0, dev: 0 }; porFte[key].pia += f.pia || 0; porFte[key].pim += f.pim || 0; porFte[key].dev += k.porMes ? f.m.slice(0, k.mes).reduce((a, b) => a + b, 0) : (f.dev || 0); });
+      });
+      return { porCui, porFte };
+    },
+    async generarPPT(cfg, ue, r) {
+      if (!window.JSZip) await new Promise((ok, err) => { const s = document.createElement('script'); s.src = 'https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js'; s.onload = ok; s.onerror = err; document.head.appendChild(s); });
+      const datos = await fetch(`data/reportes/${ue}.json?v=${Date.now()}`).then(x => x.json());
+      if (r.corte && r.corte.foto) r.corte.datos = await fetch(`data/reportes/${ue}/${r.corte.fecha}.json`).then(x => x.json());
+      const buf = await fetch(cfg.plantilla).then(x => { if (!x.ok) throw new Error('plantilla'); return x.arrayBuffer(); });
+      const zip = await JSZip.loadAsync(buf);
+      const { D } = await ReporteUE.generar(zip, cfg, datos, r.corte);
+      const blob = await zip.generateAsync({ type: 'blob', compression: 'DEFLATE', mimeType: 'application/vnd.openxmlformats-officedocument.presentationml.presentation' });
+      const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `${cfg.archivo || 'Reporte_UE_' + ue}_${D.corte.fecha}.pptx`; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 5000);
+      toast(`Reporte al ${fDMY(D.corte.fecha)} · ${r.nota}${D.conProg ? '' : ' · sin programación 12-B (MEF)'}`);
+    },
+    sinPago(nombre) {   // ventana emergente compacta (mismo patrón que el modal de Seguimiento), clic fuera cierra
+      let lb = $('rep-aviso');
+      if (!lb) { lb = document.createElement('div'); lb.id = 'rep-aviso'; lb.style.cssText = 'position:fixed;inset:0;z-index:99998;background:rgba(10,20,35,.55);display:flex;align-items:center;justify-content:center;padding:24px;box-sizing:border-box;cursor:pointer'; lb.onclick = () => lb.remove(); document.body.appendChild(lb); }
+      lb.innerHTML = `<div onclick="event.stopPropagation()" style="cursor:default;background:#fff;border-radius:16px;max-width:520px;width:100%;box-shadow:0 12px 44px rgba(0,0,0,.35);padding:18px 22px 16px">
+        <div style="display:flex;align-items:center;gap:10px;border-bottom:2px solid #DCE7F5;padding-bottom:10px;margin-bottom:12px">
+          <div style="width:38px;height:38px;border-radius:10px;background:linear-gradient(135deg,#0A1B2E,#1E6BB8);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0">📑</div>
+          <div><div style="font-size:14px;font-weight:900;color:#0F2A43">Reportes a medida</div><div style="font-size:10.5px;font-weight:700;color:#5E7290">${nombre || 'Su entidad'}</div></div>
+          <button style="margin-left:auto;background:none;border:0;font-size:20px;color:#94A3B8;cursor:pointer" onclick="this.closest('#rep-aviso').remove()">×</button></div>
+        <p style="font-size:13px;line-height:1.55;margin:0 0 8px;color:#1E293B">Los reportes en PowerPoint con el formato propio de cada entidad, a la fecha de corte que se necesite, se habilitan por contrato.</p>
+        <p style="font-size:13px;line-height:1.55;margin:0;color:#1E293B">Para activarlo, escríbanos a <a href="mailto:${CONTACTO}" style="font-weight:800;color:var(--p)">${CONTACTO}</a>.</p>
+        <div style="font-size:9.5px;color:#9AA8BC;text-align:center;margin-top:12px">clic fuera para cerrar</div></div>`;
+    },
+    // cablea el widget: onCorte(fecha) -> Promise (aplica el corte y repinta); nombre = para el aviso de contacto
+    wire(ctx, onCorte) {
+      const btn = $('rep-ppt'); if (!btn) return;
+      btn.onclick = async () => {
+        if (!ctx.rep) return this.sinPago(ctx.nombre);
+        btn.disabled = true; const txt = btn.textContent; btn.textContent = 'Generando…';
+        try { await this.generarPPT(ctx.rep, ctx.ue, this.resolver($('rep-corte').value, ctx.fechas)); } catch (e) { console.error(e); toast('No se pudo generar el reporte PPT'); }
+        btn.disabled = false; btn.textContent = txt;
+      };
+      const inp = $('rep-corte'), cb = $('rep-corte-btn'); if (!inp) return;
+      if (!document.getElementById('rep-cal-css')) { const st = document.createElement('style'); st.id = 'rep-cal-css'; st.textContent = '#rep-cal button[data-f]:not(:disabled):hover{background:var(--q1)}'; document.head.appendChild(st); }
+      inp.onchange = async () => {
+        ctx.corte = inp.value; if (cb) cb.textContent = fDMY(inp.value) + ' ▾';
+        $('rep-nota').textContent = '· cargando…';
+        try { await onCorte(inp.value); } catch (e) { console.error(e); if ($('rep-nota')) $('rep-nota').textContent = '· no se pudo cargar ese corte'; }
+      };
+      $('rep-nota').textContent = '· ' + this.resolver(inp.value, ctx.fechas).nota;
+      cb.onclick = e => { e.stopPropagation(); const cal = $('rep-cal'); if (cal.hidden) { const d = new Date(inp.value + 'T00:00:00'), rc = cb.getBoundingClientRect(); cal.style.top = (rc.bottom + 6) + 'px'; cal.style.left = rc.left + 'px'; this.calendario(d.getFullYear(), d.getMonth(), ctx); cal.hidden = false; } else cal.hidden = true; };
+      if (!window._repCalDoc) { window._repCalDoc = true; document.addEventListener('click', () => { const cal = $('rep-cal'); if (cal) cal.hidden = true; }); }
+    }
+  };
+  window.CorteReporte = CR;
+  // --- Mi entidad: el widget sobre el paquete E ---
+  function repCorteHTML() { return CR.html({ rep: E._rep, fechas: E._repFechas, corte: E._repCorte }); }
+  // aplica la fecha de corte a TODO lo que muestra la ficha de la entidad: PIM/cert/comp/devengado por inversión (metas y LAKE),
+  // por fuente y los totales. Cierre de mes: devengado exacto al mes (PIM/cert/comp actuales, el MEF no los publica por mes); foto diaria: todo al día.
+  async function aplicarCorte(fecha) {
+    const r = CR.resolver(fecha, E._repFechas), ue = E._ue.cod, cp = x => JSON.parse(JSON.stringify(x));
+    if (!E._orig) E._orig = { metas: cp(E.metas), lake: cp(LAKE), fi: cp(E.presupuesto.fuentes_inv || {}), inv: cp(E.presupuesto.inversiones), total: cp(E.presupuesto.total) };
+    E.metas = cp(E._orig.metas); LAKE = cp(E._orig.lake); E.presupuesto.fuentes_inv = cp(E._orig.fi); E.presupuesto.inversiones = cp(E._orig.inv); E.presupuesto.total = cp(E._orig.total);
+    E._corteVista = null;
+    if (!r.corte) return r;
+    const { datos, k } = await CR.cargar(ue, r), { porCui, porFte } = CR.valores(datos, k);
+    Object.entries(porCui).forEach(([cui, v]) => {
+      // ponytail: con SIAF un CUI puede tener varias metas; el monto al corte se reparte proporcional al PIM original de cada meta
+      const ms = E.metas.filter(m => m.act_proy === cui), base = ms.reduce((a, m) => a + (m.pim || 0), 0);
+      ms.forEach(m => { const w = ms.length === 1 ? 1 : base ? (m.pim || 0) / base : 1 / ms.length; Object.assign(m, { pim: v.pim * w, cert: v.cert * w, comp: v.comp * w, comp_anual: v.comp * w, dev: v.dev * w, gir: v.dev * w, pag: v.dev * w }); });
+      if (LAKE[cui]) Object.assign(LAKE[cui], { pim: v.pim, cert: v.cert, comp: v.comp, dev: v.dev, gir: v.dev });
+    });
+    Object.values(porFte).forEach(f => { f.comp_anual = f.comp; f.gir = f.pag = f.dev; });
+    if (Object.keys(porFte).length) E.presupuesto.fuentes_inv = porFte;
+    const K = ['pim', 'cert', 'comp', 'comp_anual', 'dev', 'gir', 'pag'], I0 = E._orig.inv, I1 = {};
+    K.forEach(k2 => I1[k2] = E.metas.filter(m => m.es_inv).reduce((a, m) => a + (m[k2] || 0), 0));
+    Object.assign(E.presupuesto.inversiones, I1);
+    K.forEach(k2 => { if (E.presupuesto.total[k2] != null) E.presupuesto.total[k2] = E.presupuesto.total[k2] - (I0[k2] || 0) + I1[k2]; });
+    E._corteVista = k.fecha;
+    return r;
   }
   function repWire() {
-    const inp = $('rep-corte'), btn = $('rep-ppt'); if (!inp || !btn) return;
-    const nota = () => { E._repCorte = inp.value; $('rep-nota').textContent = '· ' + repResolver(inp.value).nota; };
-    inp.onchange = nota; nota();
-    btn.onclick = async () => {
-      btn.disabled = true; const txt = btn.textContent; btn.textContent = 'Generando…';
-      try {
-        if (!window.JSZip) await new Promise((ok, err) => { const s = document.createElement('script'); s.src = 'https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js'; s.onload = ok; s.onerror = err; document.head.appendChild(s); });
-        const cfg = E._rep, ue = E._ue.cod, r = repResolver(inp.value);
-        const datos = await fetch(`data/reportes/${ue}.json?v=${Date.now()}`).then(x => x.json());
-        if (r.corte && r.corte.foto) r.corte.datos = await fetch(`data/reportes/${ue}/${r.corte.fecha}.json`).then(x => x.json());
-        const buf = await fetch(cfg.plantilla).then(x => { if (!x.ok) throw new Error('plantilla'); return x.arrayBuffer(); });
-        const zip = await JSZip.loadAsync(buf);
-        const { D } = await ReporteUE.generar(zip, cfg, datos, r.corte);
-        const blob = await zip.generateAsync({ type: 'blob', compression: 'DEFLATE', mimeType: 'application/vnd.openxmlformats-officedocument.presentationml.presentation' });
-        const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `${cfg.archivo || 'Reporte_UE_' + ue}_${D.corte.fecha}.pptx`; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 5000);
-        toast(`Reporte al ${D.corte.fecha.split('-').reverse().join('/')} · ${r.nota}${D.conProg ? '' : ' · sin programación 12-B (MEF)'}`);
-      } catch (e) { console.error(e); toast('No se pudo generar el reporte PPT'); }
-      btn.disabled = false; btn.textContent = txt;
-    };
+    const ctx = { rep: E._rep, fechas: E._repFechas, corte: E._repCorte, ue: E._ue.cod, nombre: E._ue.nombre };
+    CR.wire(ctx, async fecha => { E._repCorte = fecha; const r = await aplicarCorte(fecha); render(); if ($('rep-nota')) $('rep-nota').textContent = '· ' + r.nota; });
   }
   let SEA_R = null;   // resumen SEACE por CUI: conv, firma, ini, fin, monto, prov, ruc
   const inv = () => E.metas.filter(m => m.es_inv);
@@ -88,13 +193,13 @@
     if (!restaurando) { const cur = [tabE, filtroMeta, modoInv, q].join('|'); if (pila[pila.length - 1] !== cur) pila.push(cur); }
     restaurando = false;
     const el = $('ent'), u = E._ue, P_ = E.presupuesto, I = E.ingresos, T = modoInv ? P_.inversiones : P_.total, nAl = E.alertas.dev_sin_girar.length + E.alertas.comp_sin_devengar.length + E.alertas.cert_sin_comp.length;
-    const tabs = [['res', 'Resumen'], ['ppto', 'Presupuesto'], ['inv', modoInv ? 'Inversiones' : 'Metas'], ['exp', 'Expedientes' + (filtroMeta ? ' · ' + filtroMeta : '')], ['ing', 'Ingresos'], ['plz', '⏱ Plazos'], ['pi', '🏅 Incentivos Municipales'], ['al', `Alertas (${nAl})`], ['prov', 'Proveedores'], ['cert', 'Certificaciones']];
-    const cab = `<div class="pd-cui"><span>MI ENTIDAD · UE ${u.cod}</span><span>· ${E.publico ? 'Datos MEF' : 'SIAF'} al ${E.corte}</span><span>· Transparencia al ${R.corte}</span><span class="x" id="ent-salir" title="Cerrar sesión">×</span></div><div class="pd-title">${u.nombre}</div>`;
+    const tabs = [['res', 'Resumen'], ['ppto', 'Presupuesto'], ['inv', modoInv ? 'Inversiones' : 'Metas'], ['exp', 'Expedientes' + (filtroMeta ? ' · ' + filtroMeta : '')], ['ing', 'Ingresos'], ['plz', '⏱ Plazos'], ['pi', E._ue.nivel === 'R' ? '🏅 FED' : E._ue.nivel === 'E' ? '🎯 Metas' : '🏅 Incentivos Municipales'], ['al', `Alertas (${nAl})`], ['prov', 'Proveedores'], ['cert', 'Certificaciones']];
+    const cab = `<div class="pd-cui"><span>MI ENTIDAD · UE ${u.cod}</span><span>· ${E.publico ? 'Datos MEF' : 'SIAF'} al ${E.corte}</span>${E._corteVista ? `<span style="background:var(--gold);color:#1C1917;border-radius:6px;padding:1px 8px;margin-left:6px">CORTE ${fDMY(E._corteVista)}</span>` : ''}<span>· Transparencia al ${R.corte}</span><span class="x" id="ent-salir" title="Cerrar sesión">×</span></div><div class="pd-title">${u.nombre}</div>`;
     // ponytail: Plan de Incentivos también entra sin la cabecera técnica (KPIs, barra HOY, pestañas) — solo cabecera + volver
-    if (tabE === 'pi') { el.innerHTML = `<div class="card" style="flex:0 0 auto;padding:0"><div class="pd-hdr" style="border-radius:var(--rad)">${cab}<div class="pd-badges"><span class="pd-badge">🏅 Plan de Incentivos ${ANIO}</span><button class="btn" id="ent-volver-pi" style="margin-left:auto;background:#fff;color:var(--p2)">‹ Volver</button></div></div></div><div class="card" style="flex:1;min-height:0;padding:0"><div class="wrap" id="ent-body" style="padding:0"></div></div>`;
+    if (tabE === 'pi') { el.innerHTML = `<div class="card" style="flex:0 0 auto;padding:0"><div class="pd-hdr" style="border-radius:var(--rad)">${cab}<div class="pd-badges"><span class="pd-badge">${E._ue.nivel === 'R' ? '🏅 FED · Fondo de Estímulo al Desempeño' : E._ue.nivel === 'E' ? '🎯 Metas' : '🏅 Plan de Incentivos ' + ANIO}</span><button class="btn" id="ent-volver-pi" style="margin-left:auto;background:#fff;color:var(--p2)">‹ Volver</button></div></div></div><div class="card" style="flex:1;min-height:0;padding:0"><div class="wrap" id="ent-body" style="padding:0"></div></div>`;
       $('ent-volver-pi').onclick = () => { tabE = 'inv'; render(); }; $('ent-salir').onclick = () => { E = null; login(); }; cuerpo(); return; }
     // ponytail: Inversión pública también entra sin cabecera técnica — lista simple de obras; la ficha de cada una se abre debajo
-    if (tabE === 'inv') { el.innerHTML = `<div class="card" style="flex:0 0 auto;padding:0"><div class="pd-hdr" style="border-radius:var(--rad)">${cab}<div class="pd-badges"><span class="pd-badge">🏗 Inversión pública</span>${repCorteHTML()}${abiertos.invLista ? `<input type="search" id="ent-invq" placeholder="Buscar por CUI o nombre…" value="${q}" style="${E._rep ? '' : 'margin-left:auto;'}padding:6px 10px;border:1.5px solid var(--line);border-radius:8px;font:inherit;font-size:12px;width:240px"><button class="btn" id="ent-volver-inv" style="background:#fff;color:var(--p2)">‹ Volver</button>` : `<button class="btn" id="ent-ver-lista" style="background:#fff;color:var(--p2);${E._rep ? '' : 'margin-left:auto'}">📋 Ver lista completa</button>`}<button class="btn" id="ent-tec" style="background:#fff;color:var(--p2)">Ver detalle técnico ▸</button></div></div></div><div class="card" style="flex:1;min-height:0;padding:0"><div class="wrap" id="ent-body" style="padding:0"></div></div>`;
+    if (tabE === 'inv') { el.innerHTML = `<div class="card" style="flex:0 0 auto;padding:0"><div class="pd-hdr" style="border-radius:var(--rad)">${cab}<div class="pd-badges"><span class="pd-badge">🏗 Inversión pública</span>${repCorteHTML()}${abiertos.invLista ? `<input type="search" id="ent-invq" placeholder="Buscar por CUI o nombre…" value="${q}" style="padding:6px 10px;border:1.5px solid var(--line);border-radius:8px;font:inherit;font-size:12px;width:240px"><button class="btn" id="ent-volver-inv" style="background:#fff;color:var(--p2)">‹ Volver</button>` : `<button class="btn" id="ent-ver-lista" style="background:#fff;color:var(--p2)">📋 Ver lista completa</button>`}<button class="btn" id="ent-tec" style="background:#fff;color:var(--p2)">Ver detalle técnico ▸</button></div></div></div><div class="card" style="flex:1;min-height:0;padding:0"><div class="wrap" id="ent-body" style="padding:0"></div></div>`;
       $('ent-tec').onclick = () => { tabE = 'res'; render(); }; $('ent-salir').onclick = () => { E = null; login(); };
       if ($('ent-volver-inv')) $('ent-volver-inv').onclick = () => { abiertos.invLista = false; render(); };
       if ($('ent-invq')) $('ent-invq').oninput = e => { q = e.target.value.trim().toLowerCase(); cuerpo(); };
@@ -366,8 +471,9 @@
         ${secHdr('Ir al detalle', 6)}
         ${(() => {
           const nAl = opts.nAlertas || 0;
+          // ponytail: el incentivo cambia por nivel de gobierno: municipal = Plan de Incentivos, regional = FED, nacional = Metas (en elaboración)
           const GO = [
-            ['pi', '🏅', 'Plan de Incentivos', '#C9A227'],
+            ['pi', ...(opts.nivel === 'R' ? ['🏅', 'FED', '#C9A227'] : opts.nivel === 'E' ? ['🎯', 'Metas', '#C9A227'] : ['🏅', 'Plan de Incentivos', '#C9A227'])],
             ['sea', '📑', 'Contrataciones', '#00897B'],
             ['al', '🚨', nAl ? `Alertas · ${nAl}` : 'Alertas', '#D64545']
           ];
@@ -679,6 +785,11 @@
         { id: 'ir', icono: '🧾', titulo: 'Por rubro de ingreso', valor: cl[0] ? cap(cl[0].nombre) : '—', sub: `${cl.length} rubros · el principal recauda ${P(pct(cl[0]?.recaudado, I.total.recaudado))} del total`, color: 'var(--gold)',
           detalle: () => `<table class="pd-tbl"><tr><th>Clasificador</th><th>Concepto</th><th>PIM</th><th>Recaudado</th><th>Avance</th></tr>${cl.slice(0, 80).map(c => `<tr><td>${c.cod}</td><td style="white-space:normal">${c.nombre}</td><td>${F(c.pim)}</td><td>${F(c.recaudado)}</td><td>${c.pim ? P(pct(c.recaudado, c.pim)) : '—'}</td></tr>`).join('')}</table>` }
       ]);
+    } else if (tabE === 'pi' && E._ue.nivel === 'E') {
+      b.innerHTML = `<div class="card" style="margin:16px;padding:28px;text-align:center"><div style="font-size:34px">🎯</div><b style="font-size:15px;color:var(--p2)">Metas</b><p class="mutx" style="font-size:12.5px;margin-top:6px">En elaboración.</p></div>`;
+    } else if (tabE === 'pi' && E._ue.nivel === 'R') {
+      b.innerHTML = '<div style="padding:12px"></div>';
+      if (window.FED) FED.ui(b.firstChild, E._ue); else b.innerHTML = '<p class="mutx" style="padding:16px">No se pudo cargar el módulo FED.</p>';
     } else if (tabE === 'pi') {
       try { Incentivos.render(b, E, META, E._ue.cod, exp => { q = String(+exp); filtroMeta = ''; tabE = 'exp'; render(); }); }
       catch (e) { console.error('Incentivos.render', e); b.innerHTML = `<div class="card" style="margin:16px;padding:16px"><b style="color:var(--bad)">No se pudo mostrar el detalle de Incentivos Municipales.</b><p class="mutx" style="font-size:12px;margin-top:6px">Hubo un problema leyendo los datos de esta meta. Prueba con "🏛 Alcalde" arriba y avísale a soporte con este mensaje: <code>${(e && e.message || e).toString().replace(/</g, '&lt;')}</code></p></div>`; }
@@ -718,7 +829,7 @@
         const ueKey = E._ue.cod, bc = benefCache[ueKey];
         const nAl = (E.alertas?.dev_sin_girar?.length || 0) + (E.alertas?.comp_sin_devengar?.length || 0) + (E.alertas?.cert_sin_comp?.length || 0);
         resumenInversion(b, T, items, {
-          fts, beneficiarios: bc, nAlertas: nAl, estSel: abiertos.invEstado, nombreFallback: nombreMeta,
+          nivel: E._ue.nivel, fts, beneficiarios: bc, nAlertas: nAl, estSel: abiertos.invEstado, nombreFallback: nombreMeta,
           onNav: id => { tabE = id; render(); },
           onEstSel: k => { abiertos.invEstado = k; cuerpo(); },
           onCuiGoto: cui => { abiertos.inv = cui; cuerpo(); },

@@ -228,7 +228,7 @@ body.sala .lens a{background:#fff;color:#0F172A;border-left-color:#1E5AA8}body.s
 <script src="expediente.js?v=10d3f3a"></script>
 <script src="incentivos.js?v=4492226"></script>
 <script src="fed.js?v=fbbc718"></script>
-<script src="entidad.js?v=d10398c"></script>
+<script src="entidad.js?v=f3a5eed"></script>
 <script src="reporte_ue.js?v=1c58747"></script>
 <script>
 const M=n=>{const v=(n||0)/1e6;return v.toLocaleString('es-PE',{maximumFractionDigits:Math.abs(v)>=1000?0:1})};
@@ -350,6 +350,7 @@ async function paginaCUI(cui){$('ficha').innerHTML='<div class="fxb mutx">Cargan
  starUI()}
 let uepAb=null;
 async function paginaUE(ue){uepAb=null;$('uep').innerHTML='<div class="fxb mutx">Cargando…</div>';const av=U.pim?100*U.dev/U.pim:0;const cuis=U.cuis||[];
+ const CRc=window.CorteReporte?await CorteReporte.config(ue):{rep:null,fechas:[]};const ctxCR={rep:CRc.rep,fechas:CRc.fechas,corte:U._corte,ue,nombre:U.nombre};
  const muestra=cuis.filter(c=>c.pim>0).sort((a,b)=>b.pim-a.pim).slice(0,40);const sp=await Promise.all(muestra.map(c=>seace(c.cui).catch(()=>[])));
  const hoy=new Date().toISOString().slice(0,10);const SEA={};muestra.forEach((c,i)=>SEA[c.cui]=sp[i]||[]);
  const estSea=c=>{const p=SEA[c.cui];if(!p.length)return null;const ct=p.find(x=>x.contrato),e=(p[0].estado||'').toUpperCase();
@@ -405,8 +406,10 @@ async function paginaUE(ue){uepAb=null;$('uep').innerHTML='<div class="fxb mutx"
     <p style="margin-top:10px"><a href="#/entidad" class="pd-badge p" style="text-decoration:none;display:inline-block">🔒 Ver el diagnóstico en vivo por meta, cruzado con el SIAF, en Mi entidad</a></p>`};
  } else if(U.nivel==='R'&&typeof FED!=='undefined'){
   P4={ic:'🏅',n4:'FED',val:'Fondo de Estímulo al Desempeño',sub:FED.FED.norma,col:'var(--p)',med:null,info:'',det:()=>'<div id="fed-slot"></div>'};
+ } else if(U.nivel==='E'){
+  P4={ic:'🎯',n4:'Metas',val:'En elaboración',sub:'',col:'var(--p)',med:null,info:'',det:()=>'<p class="mutx" style="font-size:12.5px">En elaboración.</p>'};
  }
- $('uep').innerHTML=`<div class="card" style="flex:0 0 auto;padding:0"><div class="pd-hdr" style="border-radius:var(--rad)"><div class="pd-cui">${NIV[U.nivel]}${U.dpto?' · '+U.dpto:''}</div><div class="pd-title">${U.nombre}</div><div class="pd-badges"><span class="pd-badge ${cls(av)}">avance ${av.toFixed(1)} %</span><span class="pd-badge">${N(cuis.length)} inversiones ${ANIO}</span>${nAlert?`<span class="pd-badge bad">${N(nAlert)} requieren decisión</span>`:''}</div></div></div>
+ $('uep').innerHTML=`<div class="card" style="flex:0 0 auto;padding:0"><div class="pd-hdr" style="border-radius:var(--rad)"><div class="pd-cui">${NIV[U.nivel]}${U.dpto?' · '+U.dpto:''}</div><div class="pd-title">${U.nombre}</div><div class="pd-badges"><span class="pd-badge ${cls(av)}">avance ${av.toFixed(1)} %</span><span class="pd-badge">${N(cuis.length)} inversiones ${ANIO}</span>${nAlert?`<span class="pd-badge bad">${N(nAlert)} requieren decisión</span>`:''}${U._corteVista?`<span class="pd-badge" style="background:var(--gold);color:#1C1917">CORTE ${U._corteVista.split('-').reverse().join('/')}</span>`:''}${window.CorteReporte?CorteReporte.html(ctxCR):''}</div></div></div>
  <div class="card" style="flex:1;min-height:0;padding:0"><div class="wrap" id="uep-wrap" style="padding:0"></div></div>`;
  // ponytail: mismo tablero (KPIs+cartera+mapa+"ir al detalle") que Mi entidad, pero con datos públicos de Transparencia/SEACE (sin clave) — window.ResumenInversion viene de entidad.js, ya cargado antes en el <head>
  function irDetalle(id){
@@ -433,14 +436,26 @@ async function paginaUE(ue){uepAb=null;$('uep').innerHTML='<div class="fxb mutx"
   const ftsPub=Object.values(U.fuentes||{}).filter(f=>f.pim>0).sort((a,b)=>b.pim-a.pim);
   const totBen=cuis.reduce((s,c)=>s+(c.beneficiarios||0),0),conBen=cuis.filter(c=>c.beneficiarios).length;
   window.ResumenInversion($('uep-wrap'),totT,invItems,{
-   fts:ftsPub,beneficiarios:cuis.length?{total:totBen,conDato:conBen}:null,nAlertas:nAlert,estSel:uepEstSel,
+   nivel:U.nivel,fts:ftsPub,beneficiarios:cuis.length?{total:totBen,conDato:conBen}:null,nAlertas:nAlert,estSel:uepEstSel,
    onEstSel:k=>{uepEstSel=k;pintar()},
    onCuiGoto:cui=>go({sec:'cui',cui}),
    onNav:irDetalle,
    onKpi:kpiDetalle
   });
  }
- pintar();starUI()}
+ pintar();starUI();
+ // ponytail: fecha de corte sobre los datos públicos: PIM/cert/comp/dev por CUI, fuentes y totales de U se llevan al corte (foto diaria: todo; cierre de mes: devengado exacto, PIM/cert/comp actuales)
+ if(window.CorteReporte)CorteReporte.wire(ctxCR,async fecha=>{
+  const cp=x=>JSON.parse(JSON.stringify(x));if(!U._orig)U._orig={cuis:cp(U.cuis||[]),fuentes:cp(U.fuentes||[]),tot:{pim:U.pim,cert:U.cert,comp:U.comp,dev:U.dev,gir:U.gir}};
+  U.cuis=cp(U._orig.cuis);U.fuentes=cp(U._orig.fuentes);Object.assign(U,U._orig.tot);U._corte=fecha;U._corteVista=null;
+  const r=CorteReporte.resolver(fecha,CRc.fechas);
+  if(r.corte){const {datos,k}=await CorteReporte.cargar(ue,r),{porCui,porFte}=CorteReporte.valores(datos,k);const K=['pim','cert','comp','dev','gir'];const d0={},d1={};K.forEach(x=>{d0[x]=0;d1[x]=0});
+   U.cuis.forEach(c=>{const v=porCui[c.cui];if(!v)return;K.forEach(x=>d0[x]+=c[x]||0);Object.assign(c,{pim:v.pim,cert:v.cert,comp:v.comp,dev:v.dev,gir:v.dev});K.forEach(x=>d1[x]+=c[x]||0)});
+   K.forEach(x=>U[x]=(U[x]||0)-d0[x]+d1[x]);
+   if(Object.keys(porFte).length)U.fuentes=Object.values(porFte).map(f=>({nombre:f.nombre,pia:f.pia,pim:f.pim,cert:f.cert,comp:f.comp,dev:f.dev,gir:f.dev,avance:f.pim?100*f.dev/f.pim:0}));
+   U._corteVista=k.fecha}
+  await paginaUE(ue)});
+ if(U._corte&&$('rep-nota'))$('rep-nota').textContent='· '+CorteReporte.resolver(U._corte,CRc.fechas).nota}
 $('fx').onclick=e=>{if(e.target===$('fx'))$('fx').close()};
 const SH={};async function ficha(cod){const k=(parseInt(cod,10)%64).toString().padStart(2,'0');SH[k]=SH[k]||await j(`data/ue/${k}.json`);return SH[k][cod]}
 const GRAFICOS=false; // ponytail: David pidió no mostrar por ahora las series mensual/anual; poner true para volver a verlas
