@@ -228,7 +228,7 @@ body.sala .lens a{background:#fff;color:#0F172A;border-left-color:#1E5AA8}body.s
 <script src="expediente.js?v=10d3f3a"></script>
 <script src="incentivos.js?v=4492226"></script>
 <script src="fed.js?v=fbbc718"></script>
-<script src="entidad.js?v=03120ae"></script>
+<script src="entidad.js?v=c6fb4c1"></script>
 <script>
 const M=n=>{const v=(n||0)/1e6;return v.toLocaleString('es-PE',{maximumFractionDigits:Math.abs(v)>=1000?0:1})};
 const N=n=>(n||0).toLocaleString('es-PE');
@@ -340,14 +340,12 @@ function contratacionMini(sp,f){const F=n=>n==null?'—':'S/ '+Number(n).toLocal
  const avFis=f?.av_fis;const brecha=pl!=null&&avFis!=null?pl-avFis:null;const col=brecha==null?'var(--ink)':brecha>20?'var(--bad)':brecha>10?'var(--warn)':'var(--ok)';
  return `<div class="row"><span>Contratista</span><b>${bp?.prov||'—'}</b></div><div class="row"><span>Plazo</span><b>${ct?.dias?ct.dias+' días':'—'}${ct?.ampliado?' · ampliado':''}</b></div><div class="row"><span>Fin programado</span><b>${fin||'—'}</b></div>${pl!=null?`<div class="row"><span>Plazo consumido</span><b style="color:${col}">${pl} %</b></div>`:''}`}
 async function fichaCUI(cui){const [f,sp]=await Promise.all([ssi(cui),seace(cui)]);const c=U?.cuis.find(x=>x.cui===cui)||{};$('fx').innerHTML=fichaHTML(cui,f,c,false,sp);$('fx').showModal()}
-// ponytail: mismo modelo de ficha (5 tiles con medidor) que "Mi entidad" — window.FichaInversion viene de entidad.js, ya cargado antes; ssi()/seace()/ficha() son las mismas fuentes públicas que usa el lado privado, así que el contenido es idéntico con y sin clave
+// ponytail: mismo modelo de ficha (Dashboard UE003 MINAM, pedido de David) que "Mi entidad" — window.FichaInversion
+// viene de entidad.js, ya cargado antes; ssi()/seace()/ficha() son las mismas fuentes públicas que usa el lado
+// privado, así que el contenido es idéntico con y sin clave.
 async function paginaCUI(cui){$('ficha').innerHTML='<div class="fxb mutx">Cargando ficha…</div>';const [f,sp]=await Promise.all([ssi(cui),seace(cui)]);let c=(U||ULT_U)?.cuis?.find(x=>x.cui===cui)||{};const uex=f?.uep&&UES.find(u=>f.uep[u.cod]);if(uex){const uf=await ficha(uex.cod).catch(()=>null);c=uf?.cuis.find(x=>x.cui===cui)||c}
  uepAb=null;
- const est=(f?.situacion||'').toUpperCase();const estC=/CULMIN|CERRAD/.test(est)?'ok':/SUSPEND|PARALIZ|DESACTIV/.test(est)?'bad':/EJECUCI/.test(est)?'ok':'p';
- const nombre=f?.nombre||c.nombre||'Inversión '+cui;
- $('ficha').innerHTML=`<div class="pd-hdr" style="padding:10px 18px 8px"><div class="pd-cui"><span>CUI ${cui}</span>${f?.tipo?`<span>· ${f.tipo}</span>`:''}${f?.f12b?`<span>· último F12-B ${f.f12b}</span>`:''}${f?.actualizado?`<span>· capturado ${f.actualizado}</span>`:''}${f?.beneficiarios?`<span>· 👥 ${N(f.beneficiarios)} beneficiarios</span>`:''}</div><div class="pd-title" style="font-size:15px;margin-bottom:6px">${nombre}</div><div class="pd-badges">${f&&est?`<span class="pd-badge ${estC}">${est}</span>`:c.situacion?`<span class="pd-badge p">${c.situacion}</span>`:''}${c.tipo&&!f?`<span class="pd-badge">${c.tipo}</span>`:''}${f?.modalidad?`<span class="pd-badge">${f.modalidad}</span>`:''}${uex?`<span class="pd-badge"><a href="#/ue/${uex.cod}">${uex.nombre}</a></span>`:f?.uei?`<span class="pd-badge">${f.uei}</span>`:''}${f?`<button class="pd-badge" style="cursor:pointer;border:0;font:inherit" onclick="fichaCUI('${cui}')">${ICO.detalle.replace('class="ic"','class="ic" style="stroke:#fff"')} Situación, contratación e histórico mensual</button>`:''}</div></div>
-  <div id="ficha-body" style="flex:1;min-height:0;overflow:auto;padding:14px 18px"></div>`;
- window.FichaInversion.render($('ficha-body'),cui,f,c,sp);
+ window.FichaInversion.render($('ficha'),cui,f,c,sp,atras);
  starUI()}
 let uepAb=null;
 async function paginaUE(ue){uepAb=null;$('uep').innerHTML='<div class="fxb mutx">Cargando…</div>';const av=U.pim?100*U.dev/U.pim:0;const cuis=U.cuis||[];

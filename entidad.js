@@ -369,64 +369,208 @@
   }
   window.ResumenInversion = resumenInversion;
   window.ResumenInversionUtil = { funnelGasto, verDetalleResumen, cerrarDetalleResumen, estadoInv };
-  // ponytail: ficha de inversión en overlay a pantalla completa — paneles resumen que se abren uno a la vez, mismo patrón que paneles()
-  let invPanel = null;
-  function pnlFicha(items) {
-    return `<div style="display:grid;gap:10px;grid-template-columns:repeat(auto-fit,minmax(250px,1fr))">${items.map(it => {
-      const on = invPanel === it.id;
-      return `<div class="card pnl fi-pnl" data-fp="${it.id}" style="cursor:pointer;padding:0;border-left:5px solid ${it.color};${on ? 'grid-column:1 / -1;box-shadow:0 6px 22px rgba(15,42,67,.14)' : ''};background:${on ? '#fff' : `linear-gradient(135deg,#fff 55%,${it.bg || '#F4F8FC'})`}">
-        <div style="display:flex;align-items:flex-start;gap:10px;padding:11px 13px">
-          <div style="font-size:19px;line-height:1.2">${it.icono || ''}</div>
-          <div style="flex:1;min-width:0"><div class="pd-lbl" style="margin:0;font-size:9.5px">${it.titulo}</div><div style="font-size:14.5px;font-weight:700;color:${it.color};margin:1px 0;line-height:1.25">${it.valor}</div><div class="mutx" style="font-size:10.5px;white-space:normal">${it.sub || ''}</div></div>
-          ${it.medidor != null ? `<div style="width:40px;height:40px;border-radius:50%;background:conic-gradient(${it.color} ${Math.min(100, Math.max(0, it.medidor))}%,var(--grid) 0);display:grid;place-items:center;flex:none"><div style="width:30px;height:30px;border-radius:50%;background:#fff;display:grid;place-items:center;font-size:9px;font-weight:700;color:${it.color}">${Math.round(it.medidor)}%</div></div>` : ''}
-          <div class="mutx" style="font-size:12px">${on ? '▲' : '▼'}</div>
-        </div>
-        ${on ? `<div style="border-top:1px solid var(--grid);padding:9px 13px 12px;cursor:default;font-size:11.5px">${it.detalle()}</div>` : ''}
+  // ponytail: ficha de inversión — mismo modelo visual del Dashboard Ejecutivo UE003 MINAM (pedido de David),
+  // reutilizable entre el overlay de "Mi entidad" y la ficha pública del CUI (paginaCUI en index.html).
+  // Queda fuera lo que en ese dashboard es específico de GICA/JICA y no tiene dato genérico equivalente
+  // a nivel nacional: desglose control concurrente/controversias/carta fianza, chip "programado en el
+  // PMI", hectáreas/vehículos/tipo de obra, y exportación a PPT (Descargar Ficha usa impresión del navegador).
+  function fichaInversionHTML(cui, f, c, sp) {
+    c = c || {};
+    const F = n => n == null ? '—' : 'S/ ' + Number(n).toLocaleString('es-PE', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    const nombre = f?.nombre || c.nombre || 'Inversión ' + cui;
+    const tipo = (f?.tipo || c.tipo || '').toUpperCase();
+    const tipoCol = { 'PROYECTO DE INVERSION': '#5E35B1', 'IOARR': '#E65100', 'PROGRAMA DE INVERSION': '#00838F' }[tipo] || '#546E7A';
+    const situ = (f?.situacion || c.situacion || '').toUpperCase();
+    const cerrado = /CULMIN|CERRAD/.test(situ);
+    // ponytail: "pim" acá es una señal de "hay presupuesto conocido" para el chip de estado — se toma
+    // de c (Consulta Amigable) o, si no está disponible en este contexto, de la ficha SSI (costo/viable),
+    // para no marcar "Obra suspendida" solo porque el contexto de la UE no cargó localmente.
+    const av = f?.av_fis, dev = c.dev || 0, pim = c.pim || f?.costo || f?.viable || 0;
+    let estObra = 'Obra en ejecución', colObra = '#1565C0';
+    if (cerrado || (av != null && av >= 99.95)) { estObra = 'Obra culminada'; colObra = '#2E7D32'; }
+    else if (dev <= 0 && (av == null || av <= 0)) { estObra = 'Obra por iniciar'; colObra = '#F57F17'; }
+    else if (pim <= 0) { estObra = 'Obra suspendida'; colObra = '#C62828'; }
+    const dpto = c.dpto || '';
+    // tacómetro de 40 marcas — mismo estilo del modelo (donutTick local; no pisa el donut() global de index.html)
+    function donutTick(pct, color, label) {
+      const N2 = 40, RI = 27, RO = 34;
+      const sd = (pct == null || isNaN(pct));
+      const filled = sd ? 0 : Math.min(N2, Math.floor(Math.max(pct, 0) / 100 * N2));
+      let segs = '';
+      for (let i = 0; i < N2; i++) {
+        const a = (-90 + i * (360 / N2)) * Math.PI / 180, on = i < filled;
+        const x0 = (40 + RI * Math.cos(a)).toFixed(1), y0 = (40 + RI * Math.sin(a)).toFixed(1);
+        const x1 = (40 + RO * Math.cos(a)).toFixed(1), y1 = (40 + RO * Math.sin(a)).toFixed(1);
+        segs += `<line x1="${x0}" y1="${y0}" x2="${x1}" y2="${y1}" stroke="${on ? color : 'rgba(128,128,128,.22)'}" stroke-width="${on ? 2.6 : 2}" stroke-linecap="round"/>`;
+      }
+      const num = sd ? 's/d' : (pct % 1 === 0 ? pct : +(+pct).toFixed(1));
+      const pctTs = sd ? '' : '<tspan font-size="9.5" font-weight="800" dx="1.5">%</tspan>';
+      return `<div style="background:#F8FAFF;border:1.5px solid ${color}55;border-radius:12px;padding:7px 8px;display:flex;flex-direction:column;align-items:center;gap:4px;width:94px;box-sizing:border-box">
+        <div style="font-size:10px;font-weight:800;color:${color};text-transform:uppercase;letter-spacing:.5px;text-align:center;line-height:1.2;min-height:24px;display:flex;align-items:center;justify-content:center">${label}</div>
+        <svg viewBox="0 0 80 80" width="58" height="58">${segs}<text x="40" y="45.5" text-anchor="middle" font-size="16.5" font-weight="900" fill="${color}" font-family="system-ui,sans-serif">${num}${pctTs}</text></svg>
       </div>`;
-    }).join('')}</div>`;
+    }
+    function tarjeta(lbl, val, dot, bg, br, txt) {
+      return `<div style="background:${bg};border:1.5px solid ${br};border-left:5px solid ${dot};border-radius:10px;padding:4px 10px">
+        <div style="display:flex;align-items:center;gap:4px;margin-bottom:2px"><svg viewBox="0 0 12 12" width="9" height="9"><circle cx="6" cy="6" r="6" fill="${dot}" opacity=".2"/><circle cx="6" cy="6" r="3.5" fill="${dot}"/></svg><div style="font-size:9.5px;color:${dot};font-weight:800;text-transform:uppercase;letter-spacing:.6px">${lbl}</div></div>
+        <div style="font-size:${val >= 1e7 ? '13px' : val >= 1e6 ? '14px' : '16px'};font-weight:900;color:${txt};letter-spacing:-.4px">${F(val)}</div>
+      </div>`;
+    }
+    const secHdrFi = (ic, bg, tit, sub) => `<div style="display:flex;align-items:center;gap:9px;margin-bottom:12px;padding-bottom:10px;border-bottom:1px solid #EEF1F4">
+      <div style="width:26px;height:26px;border-radius:8px;background:${bg};display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0">${ic}</div>
+      <div style="display:flex;flex-direction:column;gap:1px;min-width:0"><span style="font-size:12px;font-weight:800;color:#1E293B;text-transform:uppercase;letter-spacing:.5px;line-height:1.15">${tit}</span>${sub ? `<span style="font-size:9px;font-weight:600;color:#94A3B8">${sub}</span>` : ''}</div>
+    </div>`;
+    const situDet = [
+      f?.situ_act ? `<div style="font-size:10.5px;margin-bottom:6px">${f.situ_act}</div>` : '',
+      f?.problema ? `<div style="font-size:9.5px;color:#B71C1C;margin-bottom:6px"><b>Problemática:</b> ${f.problema}</div>` : '',
+      sp && sp.length ? contratacion(sp, c, f, true) : ''
+    ].join('') || '<p class="vacio" style="font-size:10.5px">Sin seguimiento adicional registrado.</p>';
+    const comp = f?.comp || [];
+    const compTot = comp.reduce((s, cp) => s + cp.a.reduce((t, a) => t + (+a.c || 0), 0), 0);
+    const PALETA = ['#2E7D32', '#E65100', '#1565C0', '#5E35B1', '#00838F', '#AD1457'];
+    const compAccHTML = comp.length ? comp.map(cp => {
+      const nAcc = cp.a.length;
+      return `<div style="margin-bottom:8px">
+        <div class="fi-comp-hdr" style="cursor:pointer;background:#3D8B85;color:#fff;border-radius:10px;padding:9px 13px;display:flex;align-items:center;justify-content:space-between;gap:8px">
+          <span style="font-size:11.5px;font-weight:700;display:flex;align-items:center;gap:6px"><span style="font-size:9px">►</span>${cp.n}</span>
+          <span style="background:rgba(255,255,255,.22);border-radius:9px;padding:2px 9px;font-size:10px;font-weight:800;white-space:nowrap">${nAcc} acci${nAcc === 1 ? 'ón' : 'ones'}</span>
+        </div>
+        <div style="display:none;padding:8px 6px 2px">${cp.a.map(a => `<div style="display:flex;justify-content:space-between;gap:8px;padding:3px 8px;font-size:10.5px;color:#37474F"><span>${a.n}${a.f ? ` <span class="mutx">· ${a.f}</span>` : ''}</span><b style="white-space:nowrap">${F(+a.c || null)}</b></div>`).join('')}</div>
+      </div>`;
+    }).join('') : '<p class="vacio" style="font-size:11px">Sin componentes registrados.</p>';
+    const actividadHTML = comp.length ? comp.map((cp, i) => {
+      const monto = cp.a.reduce((t, a) => t + (+a.c || 0), 0);
+      const pct = compTot ? (100 * monto / compTot) : 0;
+      const col = PALETA[i % PALETA.length];
+      return `<div style="margin-bottom:9px">
+        <div style="display:flex;justify-content:space-between;font-size:10.5px;margin-bottom:3px"><span style="font-weight:700;color:#37474F">${cp.n}</span><b style="color:${col}">${pct.toFixed(1)}%</b></div>
+        <div style="background:#EEF1F4;border-radius:6px;height:8px;overflow:hidden"><div style="width:${Math.max(2, pct)}%;height:100%;background:${col}"></div></div>
+        <div style="text-align:right;font-size:10px;font-weight:800;color:#37474F;margin-top:2px">${F(monto)}</div>
+      </div>`;
+    }).join('') : '<p class="vacio" style="font-size:11px">Sin desglose de actividad.</p>';
+    const footerHTML = `<div style="margin-top:6px;padding:8px 11px;background:rgba(27,94,32,.09);border:2px solid #2E7D32;border-radius:10px;display:flex;justify-content:space-between;align-items:center">
+      <span style="font-size:10px;font-weight:900;color:#1B5E20;text-transform:uppercase;letter-spacing:.4px">Total Devengado</span>
+      <span style="font-size:13px;font-weight:900;color:#0F2A43">${F(c.dev)}</span>
+    </div>`;
+    const benef = f?.beneficiarios || c.beneficiarios;
+    const impactoHTML = benef
+      ? `<div style="background:#F0FBF0;border:1.5px solid #A5D6A7;border-radius:14px;padding:10px 12px;display:flex;align-items:center;gap:10px">
+          <span style="font-size:30px">👥</span>
+          <div style="flex:1;text-align:center"><div style="font-size:23px;font-weight:900;color:#0F2A43;line-height:1">${N(benef)}</div><div style="font-size:10px;font-weight:800;color:#2E7D32;margin-top:3px">Beneficiarios</div></div>
+        </div>`
+      : '<p class="vacio" style="font-size:11px;text-align:center;padding:14px 0">Sin datos de impacto registrados a nivel nacional.</p>';
+    return `<div style="background:linear-gradient(135deg,#3D9A5C 0%,#4EAD6E 55%,#5BBD7A 100%);padding:10px 18px 9px;position:relative">
+      <button class="fi-regresar" style="position:absolute;top:12px;right:12px;height:28px;border-radius:14px;border:1.5px solid rgba(255,255,255,.32);background:rgba(255,255,255,.12);cursor:pointer;font-size:10.5px;color:#fff;font-weight:800;letter-spacing:.4px;display:flex;align-items:center;gap:6px;padding:0 14px;font-family:inherit">← Regresar</button>
+      <button class="fi-print" style="position:absolute;bottom:10px;right:12px;height:28px;border-radius:14px;border:none;background:#fff;cursor:pointer;font-size:10.5px;color:#0F2A43;font-weight:900;letter-spacing:.4px;display:flex;align-items:center;gap:5px;padding:0 14px;font-family:inherit;box-shadow:0 2px 8px rgba(0,20,0,.28)">⬇ Descargar Ficha</button>
+      <div style="font-size:13.5px;font-weight:800;color:#fff;letter-spacing:.8px;text-transform:uppercase;margin-bottom:4px">CUI ${cui}</div>
+      <div title="${nombre}" style="font-size:13.5px;font-weight:800;color:#fff;line-height:1.3;margin-bottom:8px;text-shadow:0 1px 3px rgba(0,20,0,.28);max-width:72%">${nombre}</div>
+      <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;padding-right:150px">
+        ${tipo ? `<span style="padding:3px 10px;border-radius:10px;font-size:10px;font-weight:800;background:#fff;color:${tipoCol};box-shadow:0 1px 3px rgba(0,0,0,.18);letter-spacing:.4px">${tipo}</span>` : ''}
+        <span style="padding:3px 10px;border-radius:10px;font-size:10px;font-weight:800;background:#fff;color:${cerrado ? '#C62828' : '#2E7D32'};box-shadow:0 1px 3px rgba(0,0,0,.18)">${cerrado ? '○ CERRADO' : '● ACTIVO'}</span>
+        ${dpto ? `<span style="padding:3px 10px;border-radius:10px;font-size:10px;font-weight:700;background:#fff;color:#0F2A43;box-shadow:0 1px 3px rgba(0,0,0,.18)">📍 ${dpto}</span>` : ''}
+        ${f?.modalidad ? `<span style="padding:3px 10px;border-radius:10px;font-size:10px;font-weight:600;background:rgba(255,255,255,.92);color:#455A64;box-shadow:0 1px 3px rgba(0,0,0,.15)">${f.modalidad}</span>` : ''}
+        <span style="padding:3px 12px;border-radius:10px;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.18);display:inline-flex;align-items:center;gap:6px">
+          <span style="width:8px;height:8px;border-radius:50%;background:${colObra};box-shadow:0 0 0 2.5px ${colObra}26"></span>
+          <span style="font-size:10px;font-weight:900;color:${colObra};letter-spacing:.4px">${estObra}</span>
+        </span>
+      </div>
+    </div>
+    <div style="display:grid;grid-template-columns:22% 17% 19% 24% 18%;background:#fff;border:1px solid #E5E9EF;border-top:none;overflow:hidden">
+      <div style="border-right:1px solid #E8F5E9;padding:8px 14px;display:flex;flex-direction:column;gap:6px;justify-content:center;background:linear-gradient(180deg,#F4FBF4 0%,#FAFFFE 100%)">
+        ${secHdrFi('💰', '#E8F5EC', 'Presupuesto de Inversión')}
+        <div style="display:flex;flex-direction:column;gap:3px">
+          <div style="display:flex;justify-content:space-between;align-items:baseline;gap:6px;background:#F8FFFE;border:1px solid #CFD8DC;border-radius:8px;padding:3px 8px">
+            <span style="font-size:8.5px;font-weight:800;color:#607D8B;text-transform:uppercase;letter-spacing:.4px">● Perfil Viable</span>
+            <span style="font-size:11px;font-weight:900;color:#37474F;white-space:nowrap">${F(f?.viable)}</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;align-items:baseline;gap:6px;padding:1.5px 2px">
+            <span style="font-size:8px;font-weight:800;color:#78909C;text-transform:uppercase;letter-spacing:.3px;white-space:nowrap">Costo inversión act. <span style="color:#B0BEC5">(a)</span></span>
+            <span style="font-size:9.5px;font-weight:800;color:#455A64;white-space:nowrap">${F(f?.costo)}</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;align-items:baseline;gap:6px;padding:1.5px 2px">
+            <span style="font-size:8px;font-weight:800;color:#78909C;text-transform:uppercase;letter-spacing:.3px;white-space:nowrap">Control concurrente <span style="color:#B0BEC5">(b)</span></span>
+            <span style="font-size:9.5px;font-weight:800;color:#455A64;white-space:nowrap">${F(f?.cc_eje)}</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;align-items:baseline;gap:6px;padding:1.5px 2px">
+            <span style="font-size:8px;font-weight:800;color:#78909C;text-transform:uppercase;letter-spacing:.3px;white-space:nowrap">Controversias <span style="color:#B0BEC5">(c)</span></span>
+            <span style="font-size:9.5px;font-weight:800;color:#455A64;white-space:nowrap">${F(f?.contro)}</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;align-items:baseline;gap:6px;padding:1.5px 2px">
+            <span style="font-size:8px;font-weight:800;color:#78909C;text-transform:uppercase;letter-spacing:.3px;white-space:nowrap">Carta fianza <span style="color:#B0BEC5">(d)</span></span>
+            <span style="font-size:9.5px;font-weight:800;color:#455A64;white-space:nowrap">${F(f?.carta)}</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;align-items:baseline;gap:6px;background:#F0FBF0;border:1.5px solid #A5D6A7;border-radius:8px;padding:4px 8px" title="Costo total de la inversión actualizado = (a)+(b)+(c)+(d)">
+            <span style="font-size:8.5px;font-weight:900;color:#2E7D32;text-transform:uppercase;letter-spacing:.4px">● Costo Total <span style="color:#81C784">(a+b+c+d)</span></span>
+            <span style="font-size:11px;font-weight:900;color:#0F2A43;white-space:nowrap">${F(f?.costo_total || f?.costo)}</span>
+          </div>
+        </div>
+      </div>
+      <div style="border-right:1px solid #E8F5E9;display:flex;flex-direction:column;gap:7px;align-items:center;justify-content:center;padding:6px;background:linear-gradient(180deg,#F4FBF4 0%,#FAFFFE 100%)">
+        <div style="width:100%;box-sizing:border-box;background:${f?.pmi === 'SI' ? '#F0FBF0' : f?.pmi === 'NO' ? '#FFF5F5' : '#F8FAFB'};border:1.5px solid ${f?.pmi === 'SI' ? '#A5D6A7' : f?.pmi === 'NO' ? '#FFCDD2' : '#E0E0E0'};border-radius:9px;padding:4px 8px;display:flex;align-items:center;justify-content:center;gap:6px">
+          <span style="width:16px;height:16px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:${f?.pmi === 'SI' ? 'rgba(16,80,0,.12)' : f?.pmi === 'NO' ? 'rgba(183,28,28,.1)' : 'rgba(120,120,120,.12)'};font-size:9px;flex-shrink:0">${f?.pmi === 'SI' ? '✓' : f?.pmi === 'NO' ? '✗' : '?'}</span>
+          <span style="font-size:9.5px;font-weight:900;color:${f?.pmi === 'SI' ? '#0F2A43' : f?.pmi === 'NO' ? '#B71C1C' : '#78909C'};letter-spacing:.2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${f?.pmi === 'SI' ? 'PROGRAMADO EN EL PMI' : f?.pmi === 'NO' ? 'NO PROGRAMADO EN EL PMI' : 'SIN DATO DE PMI'}</span>
+        </div>
+        <div style="display:flex;gap:5px;justify-content:center">
+          ${donutTick(f?.av_fis, '#0D47A1', 'Av. Físico')}
+          ${donutTick(f?.av_ejec, '#2E7D32', 'Av. Financiero')}
+        </div>
+      </div>
+      <div style="border-right:1px solid #E8F5E9;display:flex;flex-direction:column;justify-content:center;padding:6px 10px;gap:4px;background:linear-gradient(180deg,#F4FBF4 0%,#FAFFFE 100%)">
+        ${tarjeta('PIM ' + ANIO, c.pim, '#2E7D32', '#F0FBF0', '#A5D6A7', '#0F2A43')}
+        ${tarjeta('Certificación ' + ANIO, c.cert, '#6A1B9A', '#F7F0FB', '#CE93D8', '#4A148C')}
+        ${tarjeta('Devengado ' + ANIO, c.dev, '#E65100', '#FFF8F0', '#FFCC80', '#BF360C')}
+      </div>
+      <div style="border-right:1px solid #E8F5E9;display:flex;flex-direction:column;gap:7px;padding:8px 8px;background:linear-gradient(180deg,#F4FBF4 0%,#FAFFFE 100%)">
+        <div class="fi-seg-hdr" style="flex:1;background:#F6FDF6;border:1.5px solid #A5D6A7;border-radius:12px;padding:8px 11px;display:flex;flex-direction:column;justify-content:center;cursor:pointer">
+          <div style="font-size:12px;font-weight:900;color:#1B5E20;text-transform:uppercase;letter-spacing:.6px;display:flex;align-items:center;gap:8px"><span style="width:30px;height:30px;border-radius:9px;background:linear-gradient(135deg,#0A1B2E,#1E6BB8);display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0">📡</span>Seguimiento</div>
+          <div style="font-size:10px;color:#7CA87C;font-weight:700;margin-top:4px;padding-left:38px">Clic para ver · Formato 12-B</div>
+        </div>
+        <div style="display:none;background:#fff;border:1px solid #E5E9EF;border-radius:10px;padding:8px 10px;font-size:10px">${situDet}</div>
+        <div style="flex:1;background:#F6FDF6;border:1.5px solid #A5D6A7;border-radius:12px;padding:8px 11px;display:flex;flex-direction:column;justify-content:center">
+          <div style="font-size:12px;font-weight:900;color:#1B5E20;text-transform:uppercase;letter-spacing:.6px;display:flex;align-items:center;gap:8px"><span style="width:30px;height:30px;border-radius:9px;background:linear-gradient(135deg,#0D47A1,#1976D2);display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0">🚀</span>Puesta en Marcha</div>
+          <div style="font-size:10px;color:#A5B8A5;font-weight:600;margin-top:4px;padding-left:38px">Información en preparación</div>
+        </div>
+      </div>
+      <div style="padding:6px;display:flex;flex-direction:column;justify-content:center;background:linear-gradient(180deg,#FAFFFE 0%,#F4FBF4 100%)">
+        <div style="position:relative;width:100%;aspect-ratio:3/2;border-radius:8px;border:1.5px solid #C8E6C9;background:#EEF4EC;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;text-align:center;padding:4px">
+          <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="#A5C8A5" stroke-width="1.5"><rect x="3" y="5" width="18" height="14" rx="2"/><circle cx="8.5" cy="10" r="1.6"/><path d="M3 16l5-5 4 4 3-3 6 6"/></svg>
+          <div style="font-size:9px;font-weight:700;color:#8AA98A;text-transform:uppercase;letter-spacing:.3px;line-height:1.3">Fotografía de obra<br>en preparación</div>
+        </div>
+      </div>
+    </div>
+    <div style="display:grid;grid-template-columns:1.55fr 1.05fr 0.52fr;gap:10px;padding:10px 0 0">
+      <div style="background:#fff;border:1px solid #E5E9EF;border-radius:14px;padding:14px 16px;overflow-y:auto">
+        ${secHdrFi('🧩', '#E0F2F1', 'Componentes y Acciones Programados')}
+        <div>${compAccHTML}</div>
+      </div>
+      <div style="background:#fff;border:1px solid #E5E9EF;border-radius:14px;padding:14px 16px;overflow-y:auto">
+        ${secHdrFi('📊', '#E8F5EC', 'Ejecución por Actividad', 'Por componente de inversión')}
+        ${actividadHTML}${footerHTML}
+      </div>
+      <div style="background:#fff;border:1px solid #E5E9EF;border-radius:14px;padding:14px 16px;overflow-y:auto">
+        ${secHdrFi('💰', '#FEF3E0', 'Impacto de la Inversión', 'Entregables y población beneficiada')}
+        ${impactoHTML}
+      </div>
+    </div>`;
   }
-  function cerrarFicha() { const ov = $('inv-overlay'); if (ov) ov.remove(); abiertos.inv = null; invPanel = null; cuerpo(); }
+  function fichaInversionRender(el, cui, f, c, sp, onVolver) {
+    el.innerHTML = fichaInversionHTML(cui, f, c, sp);
+    if (onVolver) el.querySelectorAll('.fi-regresar').forEach(x => x.onclick = onVolver);
+    el.querySelectorAll('.fi-print').forEach(x => x.onclick = () => window.print());
+    el.querySelectorAll('.fi-comp-hdr, .fi-seg-hdr').forEach(x => x.onclick = () => { const d = x.nextElementSibling; d.style.display = d.style.display === 'none' ? 'block' : 'none'; });
+  }
+  window.FichaInversion = { render: fichaInversionRender, html: fichaInversionHTML };
+  function cerrarFicha() { const ov = $('inv-overlay'); if (ov) ov.remove(); abiertos.inv = null; cuerpo(); }
   function mostrarCargando(cui) {
     let ov = $('inv-overlay'); if (!ov) { ov = document.createElement('div'); ov.id = 'inv-overlay'; document.body.appendChild(ov); }
     ov.style.cssText = 'position:fixed;inset:0;z-index:9999;background:var(--bg);display:flex;align-items:center;justify-content:center';
     ov.innerHTML = `<p class="mutx">Cargando ficha de la inversión ${cui}…</p>`;
   }
-  // ponytail: ficha de una inversión (5 tiles con medidor, clic para expandir) — reutilizable entre el overlay de "Mi entidad" y la ficha pública del CUI, ambas alimentadas por las mismas ssi()/seace()/ficha() públicas. Expuesta en window.FichaInversion.
-  function fichaInversionHTML(cui, f, c, sp) {
-    c = c || {};
-    if (!f) return `<p class="mutx">Sin ficha del Banco de Inversiones capturada aún para este CUI.${c.pim ? ` PIM ${F(c.pim)} · devengado ${F(c.dev)}.` : ''}</p>`;
-    const items = [
-      { id: 'ppto', icono: '💰', titulo: 'PRESUPUESTO', valor: F(c.pim ?? f.pim), sub: `certificado ${F(c.cert)} · devengado ${F(c.dev)}${f.costo ? ` · costo actualizado ${F(f.costo)}` : ''}`, color: 'var(--p2)', bg: '#EAF3FC', medidor: c.pim ? 100 * (c.dev || 0) / c.pim : null,
-        detalle: () => `<table class="pd-tbl"><tr><th>PIM</th><th>Certificado</th><th>Comprometido</th><th>Devengado</th><th>Girado</th></tr><tr><td>${F(c.pim)}</td><td>${F(c.cert)}</td><td>${F(c.comp)}</td><td>${F(c.dev)}</td><td>${F(c.gir)}</td></tr></table>${bancoExtra(c, f) || ''}` },
-      { id: 'obra', icono: '🏗', titulo: 'AVANCE DE LA OBRA', valor: f.av_fis != null ? f.av_fis.toFixed(0) + '% físico' : 'sin avance físico', sub: `financiero ${f.av_ejec != null ? f.av_ejec.toFixed(0) + '%' : '—'} · ${f.inicio || '—'} → ${f.fin || '—'}`, color: f.av_fis != null ? `var(--${cls(f.av_fis)})` : 'var(--p)', bg: '#F1F8F2', medidor: f.av_fis,
-        detalle: () => `<div style="display:flex;gap:18px;margin-bottom:8px">${donut(f.av_ejec, `var(--${cls(f.av_ejec || 0)})`, 'Av. financiero')}${donut(f.av_fis, `var(--${cls(f.av_fis || 0)})`, 'Av. físico')}</div><div class="pd-row"><b>Ubicación</b><span>${[c.dist, c.prov, c.dpto].filter(Boolean).join(' / ') || '—'}</span></div><div class="pd-row"><b>Modalidad</b><span>${f.modalidad || '—'}</span></div>` },
-      { id: 'sit', icono: '📋', titulo: 'SITUACIÓN ACTUAL', valor: (f.situacion || c.situacion || 'sin estado'), sub: f.f12b ? `Formato 12-B · ${f.f12b}` : '', color: /CULMIN|CERRAD/.test((f.situacion || '').toUpperCase()) ? 'var(--ok)' : /SUSPEND|PARALIZ/.test((f.situacion || '').toUpperCase()) ? 'var(--bad)' : 'var(--p)', bg: '#FFF6E8',
-        detalle: () => `${f.situ_act ? `<div class="pd-txt">${f.situ_act}</div>` : '<p class="vacio">Sin situación declarada.</p>'}${f.problema ? `<div class="pd-lbl">Problemática</div><div class="pd-txt bad">${f.problema}</div>` : ''}` },
-      { id: 'sea', icono: '✍️', titulo: 'CONTRATACIÓN · SEACE', valor: sp && sp.length ? (sp[0].bp?.prov || sp[0].estado || 'con proceso') : 'sin procesos', sub: sp && sp.length ? `${sp.length} proceso(s) de obra` : '', color: 'var(--teal)', bg: '#E8F1FB',
-        detalle: () => contratacion(sp, c, f, true) },
-      { id: 'comp', icono: '🧩', titulo: 'COMPONENTES Y METAS', valor: f.comp ? `${f.comp.length} componente(s)` : 'sin datos', sub: f.formato || '', color: '#5E35B1', bg: '#F1EEFC',
-        detalle: () => f.comp ? `<table class="pd-tbl"><tr><th>Componente / acción</th><th>Meta</th><th>Costo</th></tr>${f.comp.map(cp => `<tr class="c"><td colspan="2">${cp.n}</td><td>${F(cp.a.reduce((t, a) => t + (+a.c || 0), 0) || null)}</td></tr>` + cp.a.map(a => `<tr><td style="padding-left:14px;font-weight:500">${a.n}${a.f ? ` <small class="mutx">· ${a.f}</small>` : ''}</td><td>${a.u || ''}</td><td>${F(+a.c || null)}</td></tr>`).join('')).join('')}</table>` : '<p class="vacio">Sin componentes registrados.</p>' }
-    ];
-    return pnlFicha(items);
-  }
-  function fichaInversionRender(el, cui, f, c, sp) {
-    el.innerHTML = fichaInversionHTML(cui, f, c, sp);
-    el.querySelectorAll('[data-fp]').forEach(x => x.onclick = () => { invPanel = invPanel === x.dataset.fp ? null : x.dataset.fp; fichaInversionRender(el, cui, f, c, sp); });
-  }
-  window.FichaInversion = { render: fichaInversionRender, html: fichaInversionHTML };
   function pintarFicha(cui, f, c, sp) {
     let ov = $('inv-overlay'); if (!ov) { ov = document.createElement('div'); ov.id = 'inv-overlay'; document.body.appendChild(ov); }
-    ov.style.cssText = 'position:fixed;inset:0;z-index:9999;background:var(--bg);display:flex;flex-direction:column;animation:fiIn .16s ease';
-    const nombre = f?.nombre || c.nombre || 'Inversión ' + cui;
-    ov.innerHTML = `<style>@keyframes fiIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}.fi-pnl{transition:transform .15s,box-shadow .15s}.fi-pnl:hover{transform:translateY(-2px)}</style>
-     <div class="pd-hdr" style="border-radius:0;flex:0 0 auto">
-      <div class="pd-cui"><span>${E._ue.nombre}</span><span>· CUI ${cui}</span>${f?.tipo ? `<span>· ${f.tipo}</span>` : ''}${f?.beneficiarios ? `<span>· 👥 ${N(f.beneficiarios)} beneficiarios</span>` : ''}${f?.actualizado ? `<span>· capturado ${f.actualizado}</span>` : ''}<span class="x" id="fi-cerrar" title="Cerrar">×</span></div>
-      <div class="pd-title" style="font-size:15px">${nombre}</div>
-      <div class="pd-badges"><button class="btn" id="fi-volver" style="background:#fff;color:var(--p2)">‹ Volver a inversiones</button></div>
-     </div>
-     <div id="fi-body" style="flex:1;min-height:0;overflow:auto;padding:12px 16px"></div>`;
-    ov.querySelector('#fi-cerrar').onclick = ov.querySelector('#fi-volver').onclick = cerrarFicha;
-    fichaInversionRender($('fi-body'), cui, f, c, sp);
+    if (!document.getElementById('fi-anim-css')) { const st = document.createElement('style'); st.id = 'fi-anim-css'; st.textContent = '@keyframes fiIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}'; document.head.appendChild(st); }
+    ov.style.cssText = 'position:fixed;inset:0;z-index:9999;background:#EEF1F4;overflow:auto;animation:fiIn .16s ease';
+    fichaInversionRender(ov, cui, f, c, sp, cerrarFicha);
   }
   function cuerpo() {
     const b = $('ent-body'), P_ = E.presupuesto, I = E.ingresos, T = modoInv ? P_.inversiones : P_.total, A = E.alertas;
@@ -496,7 +640,7 @@
         (async () => {
           const [f, sp] = await Promise.all([ssi(cui), seace(cui)]);
           if (abiertos.inv !== cui) return; // el usuario cerró o cambió de inversión mientras cargaba
-          invPanel = null; pintarFicha(cui, f, LAKE[cui] || {}, sp);
+          pintarFicha(cui, f, LAKE[cui] || {}, sp);
         })();
       } else if (abiertos.invLista) {
         const rows = metasSel().filter(m => hit(nombreMeta(m) + ' ' + m.act_proy + ' ' + m.sec_func)).sort((a, c) => (c.pim || c.comp) - (a.pim || a.comp));
