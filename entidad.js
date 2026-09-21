@@ -262,15 +262,15 @@
     ov.innerHTML = `<div class="pd-hdr" style="border-radius:0;flex:0 0 auto"><div class="pd-cui"><span>${icono} ${titulo}</span><span class="x" id="res-cerrar" title="Cerrar">×</span></div></div><div style="flex:1;min-height:0;overflow:auto;padding:16px 20px">${html}</div>`;
     ov.querySelector('#res-cerrar').onclick = cerrarDetalleResumen;
   }
-  // ponytail: resumen de "Inversión pública" al entrar — tablero fijo de dos columnas (KPIs + cartera a la izquierda, mapa a la derecha), sin scroll, como el dashboard MINAM; el detalle de cada KPI (embudo, fuentes) se abre en un overlay para no romper el layout fijo
-  function resumenInversion(b, T, P_) {
-    const items = inv().map(m => ({ ...m, c: LAKE[m.act_proy] || {} }));
-    const ftsInv = P_.fuentes_inv && Object.keys(P_.fuentes_inv).length ? Object.values(P_.fuentes_inv).filter(f => f.pim > 0).sort((a, c) => c.pim - a.pim) : null;
-    const fts = ftsInv || Object.values(P_.fuentes).filter(f => f.pim > 0).sort((a, c) => c.pim - a.pim);
+  // ponytail: resumen de "Inversión pública" — tablero fijo de dos columnas (KPIs + cartera a la izquierda, mapa a la derecha), sin scroll, como el dashboard MINAM; el detalle de cada KPI (embudo, fuentes) se abre en un overlay para no romper el layout fijo.
+  // Reutilizable: no depende de E/LAKE/abiertos — recibe T/items/opts ya armados por quien la llama, así sirve tanto para "Mi entidad" (datos privados del SIAF) como para la ficha pública de la UE (datos de Transparencia/SEACE, sin clave). Expuesta en window.ResumenInversion.
+  function resumenInversion(b, T, items, opts) {
+    opts = opts || {};
+    const fts = opts.fts || [];
     const est = { culminada: [], ejecucion: [], expediente: [], viable: [], paralizada: [] };
     items.forEach(it => est[estadoInv(it.c)].push(it));
-    const mapItems = items.map(it => ({ cui: it.act_proy, nombre: (it.c.nombre || nombreMeta(it)).slice(0, 70), lat: it.c.lat, lon: it.c.lon, est: estadoInv(it.c) }));
-    const ueKey = E._ue.cod, bc = benefCache[ueKey];
+    const mapItems = items.map(it => ({ cui: it.act_proy, nombre: (it.c.nombre || (opts.nombreFallback ? opts.nombreFallback(it) : it.act_proy)).slice(0, 70), lat: it.c.lat, lon: it.c.lon, est: estadoInv(it.c) }));
+    const bc = opts.beneficiarios || null;
     const estList = Object.entries(est).filter(([, v]) => v.length).map(([k, v]) => [ESTCHIP[k], v.length, ESTINV[k][1], k]);
     const pim1 = T.pim || 1;
     // ponytail: medidas calcadas del kpi()/chip()/barra() reales del dashboard MINAM (Dashboard_UE003_MINAM/index.html, función _renderImpacto) — la letra nunca va por debajo de esos tamaños; solo los paddings/gaps se ajustan un poco más apretados para no dejar aire de sobra
@@ -281,7 +281,7 @@
       <div style="font-size:10px;font-weight:800;color:#546E7A;margin-top:3px;line-height:1.25;text-transform:uppercase;letter-spacing:.3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis" title="${lbl}">${lbl}</div></div>
     </div>`;
     // ponytail: clic en un chip de estado reemplaza "Ejecución presupuestal" por la lista de CUIs de ese estado (mismo patrón que _estadoListaHTML del dashboard MINAM, con CUI en vez de nombre corto — acá no hay catálogo de nombres cortos)
-    const estSel = abiertos.invEstado && est[abiertos.invEstado] ? abiertos.invEstado : null;
+    const estSel = opts.estSel && est[opts.estSel] ? opts.estSel : null;
     // ponytail: chips no seleccionados se atenúan y el seleccionado crece un poco — igual que window._mapaFiltroToggle del dashboard MINAM
     const chipPill = (n, lbl, col, key) => { const on = !estSel || key === estSel; return `<div data-est="${key}" style="cursor:pointer;flex:1;min-width:0;background:${col};border-radius:13px;padding:6px 5px;text-align:center;color:#fff;box-shadow:0 2px 8px ${col}55;opacity:${on ? 1 : .35};transform:${estSel && key === estSel ? 'scale(1.04)' : 'scale(1)'};transition:opacity .15s,transform .15s">
       <div style="font-size:19px;font-weight:900;line-height:1">${n}</div>
@@ -330,26 +330,38 @@
         </div>
         <div id="inv-mapa" style="flex:1;min-height:0;border-radius:11px;background:var(--grid)"></div>
       </div>
-      <div class="card" style="flex:0 0 240px;min-width:0;border-radius:14px;display:flex;flex-direction:column;padding:10px 10px">
-        <div style="padding:0 2px 8px;border-bottom:2px solid #E8F5E9;margin-bottom:8px">
-          ${secHdr('🔔 Novedades', 0)}
-          <div style="font-size:8.5px;font-weight:700;color:#90A4AE;margin-top:2px;letter-spacing:.3px">NORMATIVA · PRENSA · DOCUMENTOS</div>
-        </div>
-        <div style="flex:1;min-height:0;overflow:auto">${novHTML()}</div>
+      <div class="card" style="flex:0 0 240px;min-width:0;border-radius:14px;display:flex;flex-direction:column;gap:8px;padding:10px">
+        ${secHdr('Ir al detalle', 6)}
+        ${(() => {
+          const nAl = opts.nAlertas || 0;
+          const GO = [
+            ['pi', '🏅', 'Plan de Incentivos', '#C9A227'],
+            ['sea', '📑', 'Contrataciones', '#00897B'],
+            ['al', '🚨', nAl ? `Alertas · ${nAl}` : 'Alertas', '#D64545']
+          ];
+          return GO.map(([id, ic, t, c]) => `<div class="pnl go-btn" data-go="${id}" style="cursor:pointer;flex:1;min-height:0;border-left:0;border-radius:12px;background:linear-gradient(160deg,#fff 55%,${c}14);border:1px solid ${c}33;display:flex;align-items:center;gap:11px;padding:0 13px;box-shadow:0 2px 8px rgba(15,42,67,.07)">
+            <span style="font-size:26px;flex:none;line-height:1">${ic}</span>
+            <span style="font-size:12.5px;font-weight:800;color:${c};line-height:1.25">${t}</span>
+          </div>`).join('');
+        })()}
       </div>
     </div>`;
+    if (!document.getElementById('nac-gobtn-css')) { const gc = document.createElement('style'); gc.id = 'nac-gobtn-css'; gc.textContent = '.go-btn{transition:transform .15s,box-shadow .15s}.go-btn:hover{transform:translateY(-2px);box-shadow:0 8px 18px rgba(15,42,67,.14)!important}'; document.head.appendChild(gc); }
+    b.querySelectorAll('[data-go]').forEach(x => x.onclick = () => opts.onNav && opts.onNav(x.dataset.go));
     pintarMapaInv(mapItems, estSel);
-    if (!bc) totalBeneficiarios(items, ueKey).then(() => { if (tabE === 'inv' && !abiertos.invLista && !abiertos.inv) cuerpo(); });
-    b.querySelector('[data-p="kpi"]').onclick = () => verDetalleResumen('💰', 'RESUMEN GENERAL', funnelGasto(T));
-    b.querySelector('[data-p="cert"]').onclick = () => verDetalleResumen('📋', 'CERTIFICACIÓN', funnelGasto(T));
-    b.querySelector('[data-p="comp"]').onclick = () => verDetalleResumen('🤝', 'COMPROMISO', funnelGasto(T));
-    b.querySelector('[data-p="dev"]').onclick = () => verDetalleResumen('💵', 'DEVENGADO', funnelGasto(T));
-    b.querySelector('[data-p="benef"]').onclick = () => verDetalleResumen('👥', 'BENEFICIARIOS DIRECTOS', bc ? `<p class="mutx">Suma del campo "beneficiarios (habitantes)" que cada inversión declara en su ficha del SSI (Banco de Inversiones).${items.length - bc.conDato ? ` ${items.length - bc.conDato} inversión(es) aún no tienen ese dato registrado en el MEF.` : ''}</p>` : '<p class="mutx">Cargando…</p>');
-    b.querySelector('[data-p="fuentes"]').onclick = () => verDetalleResumen('🏦', 'POR FUENTE DE FINANCIAMIENTO', fts.map(f => `<div style="margin-bottom:14px"><div style="font-weight:800;color:var(--p2);font-size:12.5px;margin-bottom:4px">${cap(f.nombre)}</div>${barras([['PIM', f.pim, fts[0].pim, 'var(--gold)', FM(f.pim)], ['Devengado', f.dev, fts[0].pim, 'var(--ok)', FM(f.dev)]])}</div>`).join(''));
-    b.querySelectorAll('[data-est]').forEach(x => x.onclick = () => { const k = x.dataset.est; abiertos.invEstado = abiertos.invEstado === k ? null : k; cuerpo(); });
-    if (b.querySelector('[data-est-clear]')) b.querySelector('[data-est-clear]').onclick = () => { abiertos.invEstado = null; cuerpo(); };
-    b.querySelectorAll('[data-inv-goto]').forEach(x => x.onclick = () => { abiertos.inv = x.dataset.invGoto; cuerpo(); });
+    const kpi = (id, cb) => { const el2 = b.querySelector(`[data-p="${id}"]`); if (el2) el2.onclick = cb; };
+    kpi('kpi', () => opts.onKpi && opts.onKpi('kpi', T));
+    kpi('cert', () => opts.onKpi && opts.onKpi('cert', T));
+    kpi('comp', () => opts.onKpi && opts.onKpi('comp', T));
+    kpi('dev', () => opts.onKpi && opts.onKpi('dev', T));
+    kpi('benef', () => opts.onKpi && opts.onKpi('benef', T, bc));
+    kpi('fuentes', () => opts.onKpi && opts.onKpi('fuentes', T, fts));
+    b.querySelectorAll('[data-est]').forEach(x => x.onclick = () => { const k = x.dataset.est; opts.onEstSel && opts.onEstSel(estSel === k ? null : k); });
+    if (b.querySelector('[data-est-clear]')) b.querySelector('[data-est-clear]').onclick = () => opts.onEstSel && opts.onEstSel(null);
+    b.querySelectorAll('[data-inv-goto]').forEach(x => x.onclick = () => opts.onCuiGoto && opts.onCuiGoto(x.dataset.invGoto));
   }
+  window.ResumenInversion = resumenInversion;
+  window.ResumenInversionUtil = { funnelGasto, verDetalleResumen, cerrarDetalleResumen, estadoInv };
   // ponytail: ficha de inversión en overlay a pantalla completa — paneles resumen que se abren uno a la vez, mismo patrón que paneles()
   let invPanel = null;
   function pnlFicha(items) {
@@ -480,7 +492,26 @@
         b.querySelector('[data-atras-resumen]').onclick = () => { abiertos.invLista = false; render(); };
         b.querySelectorAll('[data-inv]').forEach(x => x.onclick = () => { abiertos.inv = x.dataset.inv; cuerpo(); });
       } else {
-        resumenInversion(b, T, P_);
+        const items = inv().map(m => ({ ...m, c: LAKE[m.act_proy] || {} }));
+        const ftsInv = P_.fuentes_inv && Object.keys(P_.fuentes_inv).length ? Object.values(P_.fuentes_inv).filter(f => f.pim > 0).sort((a, c) => c.pim - a.pim) : null;
+        const fts = ftsInv || Object.values(P_.fuentes).filter(f => f.pim > 0).sort((a, c) => c.pim - a.pim);
+        const ueKey = E._ue.cod, bc = benefCache[ueKey];
+        const nAl = (E.alertas?.dev_sin_girar?.length || 0) + (E.alertas?.comp_sin_devengar?.length || 0) + (E.alertas?.cert_sin_comp?.length || 0);
+        resumenInversion(b, T, items, {
+          fts, beneficiarios: bc, nAlertas: nAl, estSel: abiertos.invEstado, nombreFallback: nombreMeta,
+          onNav: id => { tabE = id; render(); },
+          onEstSel: k => { abiertos.invEstado = k; cuerpo(); },
+          onCuiGoto: cui => { abiertos.inv = cui; cuerpo(); },
+          onKpi: (id, T2, extra) => {
+            if (id === 'kpi') verDetalleResumen('💰', 'RESUMEN GENERAL', funnelGasto(T2));
+            else if (id === 'cert') verDetalleResumen('📋', 'CERTIFICACIÓN', funnelGasto(T2));
+            else if (id === 'comp') verDetalleResumen('🤝', 'COMPROMISO', funnelGasto(T2));
+            else if (id === 'dev') verDetalleResumen('💵', 'DEVENGADO', funnelGasto(T2));
+            else if (id === 'benef') verDetalleResumen('👥', 'BENEFICIARIOS DIRECTOS', extra ? `<p class="mutx">Suma del campo "beneficiarios (habitantes)" que cada inversión declara en su ficha del SSI (Banco de Inversiones).${items.length - extra.conDato ? ` ${items.length - extra.conDato} inversión(es) aún no tienen ese dato registrado en el MEF.` : ''}</p>` : '<p class="mutx">Cargando…</p>');
+            else if (id === 'fuentes') verDetalleResumen('🏦', 'POR FUENTE DE FINANCIAMIENTO', extra.map(f => `<div style="margin-bottom:14px"><div style="font-weight:800;color:var(--p2);font-size:12.5px;margin-bottom:4px">${cap(f.nombre)}</div>${barras([['PIM', f.pim, extra[0].pim, 'var(--gold)', FM(f.pim)], ['Devengado', f.dev, extra[0].pim, 'var(--ok)', FM(f.dev)]])}</div>`).join(''));
+          }
+        });
+        if (!bc) totalBeneficiarios(items, ueKey).then(() => { if (tabE === 'inv' && !abiertos.invLista && !abiertos.inv) cuerpo(); });
       }
     } else if (tabE === 'exp') {
       const rows = E.expedientes.filter(e => (!filtroMeta || e.metas.includes(filtroMeta)) && (modoInv ? e.metas.some(s => META[s]?.es_inv) : true) && hit(e.glosa + ' ' + e.proveedor + ' ' + e.exp + ' ' + e.fases.map(f => f.num).join(' ')));

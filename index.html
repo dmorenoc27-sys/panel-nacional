@@ -228,7 +228,7 @@ body.sala .lens a{background:#fff;color:#0F172A;border-left-color:#1E5AA8}body.s
 <script src="expediente.js?v=10d3f3a"></script>
 <script src="incentivos.js?v=4492226"></script>
 <script src="fed.js?v=fbbc718"></script>
-<script src="entidad.js?v=00292bb"></script>
+<script src="entidad.js?v=2dbb301"></script>
 <script>
 const M=n=>{const v=(n||0)/1e6;return v.toLocaleString('es-PE',{maximumFractionDigits:Math.abs(v)>=1000?0:1})};
 const N=n=>(n||0).toLocaleString('es-PE');
@@ -433,16 +433,37 @@ async function paginaUE(ue){uepAb=null;$('uep').innerHTML='<div class="fxb mutx"
  }
  $('uep').innerHTML=`<div class="card" style="flex:0 0 auto;padding:0"><div class="pd-hdr" style="border-radius:var(--rad)"><div class="pd-cui">${NIV[U.nivel]}${U.dpto?' · '+U.dpto:''}</div><div class="pd-title">${U.nombre}</div><div class="pd-badges"><span class="pd-badge ${cls(av)}">avance ${av.toFixed(1)} %</span><span class="pd-badge">${N(cuis.length)} inversiones ${ANIO}</span>${nAlert?`<span class="pd-badge bad">${N(nAlert)} requieren decisión</span>`:''}</div></div></div>
  <div class="card" style="flex:1;min-height:0;padding:0"><div class="wrap" id="uep-wrap" style="padding:0"></div></div>`;
+ // ponytail: mismo tablero (KPIs+cartera+mapa+"ir al detalle") que Mi entidad, pero con datos públicos de Transparencia/SEACE (sin clave) — window.ResumenInversion viene de entidad.js, ya cargado antes en el <head>
+ function irDetalle(id){
+  const RU=window.ResumenInversionUtil;
+  if(!RU)return;
+  if(id==='sea')RU.verDetalleResumen('📑','CONTRATACIONES',`<p class="mutx" style="margin-bottom:10px">${p2info}</p>${p2det()}`);
+  else if(id==='al')RU.verDetalleResumen('🎯','METAS Y SEGUIMIENTO',`<p class="mutx" style="margin-bottom:10px">${p3sub}</p>${p3det()}`);
+  else if(id==='pi'){RU.verDetalleResumen(P4.ic,P4.n4.toUpperCase(),P4.info+P4.det());if(U.nivel==='R'&&typeof FED!=='undefined'){const slot=document.getElementById('fed-slot');if(slot)FED.ui(slot,U)}}
+ }
+ function kpiDetalle(id,T,extra){
+  const RU=window.ResumenInversionUtil;if(!RU)return;
+  const F=n=>n==null?'—':'S/ '+Number(n).toLocaleString('es-PE',{maximumFractionDigits:0});
+  const bar=(l,v,pct,c)=>`<div style="margin-bottom:10px"><div style="display:flex;justify-content:space-between;font-size:12px;font-weight:700;color:#37474F;margin-bottom:3px"><span>${l}</span><span style="color:${c}">${F(v)}${pct!=null?' · '+Math.round(pct)+'%':''}</span></div><div style="height:8px;background:#ECEFF3;border-radius:6px;overflow:hidden"><div style="height:100%;width:${pct!=null?Math.min(pct,100):100}%;background:${c}"></div></div></div>`;
+  if(id==='fuentes')return RU.verDetalleResumen('🏦','POR FUENTE DE FINANCIAMIENTO',(extra&&extra.length?extra:[]).map(f=>`<div style="margin-bottom:14px"><div style="font-weight:800;color:var(--p2);font-size:12.5px;margin-bottom:4px">${f.nombre}</div>${bar('PIM',f.pim,null,'#C9A227')}${bar('Devengado',f.dev,f.pim?100*f.dev/f.pim:null,'#1B9E5A')}</div>`).join('')||'<p class="mutx">Sin fuentes con presupuesto.</p>');
+  if(id==='benef')return RU.verDetalleResumen('👥','BENEFICIARIOS DIRECTOS',extra&&extra.total?`<p class="mutx">Suma del campo "beneficiarios (habitantes)" que cada inversión declara en el MEF · ${extra.conDato} de ${cuis.length} con dato registrado.</p>`:'<p class="mutx">Ninguna inversión de esta unidad ejecutora tiene el dato de beneficiarios registrado en el MEF.</p>');
+  const pim1=T.pim||1,ICO={kpi:['💰','RESUMEN GENERAL'],cert:['📋','CERTIFICACIÓN'],comp:['🤝','COMPROMISO'],dev:['💵','DEVENGADO']}[id]||['📊','EJECUCIÓN PRESUPUESTAL'];
+  RU.verDetalleResumen(ICO[0],ICO[1],bar('PIM',T.pim,null,'#37474F')+bar('Certificación',T.cert,100*(T.cert||0)/pim1,'#6A1B9A')+bar('Comprometido',T.comp,100*(T.comp||0)/pim1,'#00838F')+bar('Devengado',T.dev,100*(T.dev||0)/pim1,'#E65100')+(T.gir!=null?bar('Girado',T.gir,100*(T.gir||0)/pim1,'#0d366b'):'')+'<p class="mutx" style="font-size:10.5px;margin-top:6px">Fuente: Transparencia Económica — MEF</p>');
+ }
+ let uepEstSel=null;
  function pintar(){
-  $('uep-wrap').innerHTML=`<div class="uep-grid" style="${uepAb?'':'grid-template-rows:1fr 1fr'}">
-   ${pnl('🏗',1,'Inversiones',`${N(cuis.length)} proyectos en cartera`,`certificado S/ ${M(U.cert)} M · devengado S/ ${M(U.dev)} M`,`var(--${cls(av)})`,av,p1info,p1det)}
-   ${pnl('📑',2,'Contrataciones',`${nK('firmado')+nK('vencido')} contratadas de ${muestra.length} en la muestra`,`${nK('proceso')} en convocatoria · ${nK('vencido')} con plazo vencido${sinProc?` · ${sinProc} sin proceso`:''}`,colC,p2med,p2info,p2det)}
-   ${pnl('🎯',3,'Metas',nAlert?`${N(nAlert)} señales de seguimiento`:'Sin alertas de seguimiento',p3sub,p3col,null,p3info,p3det)}
-   ${pnl(P4.ic,4,P4.n4,P4.val,P4.sub,P4.col,P4.med,P4.info,P4.det)}
-  </div>`;
-  $('uep-wrap').querySelectorAll('.pnl').forEach(c=>c.onclick=e=>{if(e.target.closest('.pnl-det'))return;const n=+c.dataset.p;uepAb=uepAb===n?null:n;pintar()});
-  $('uep-wrap').querySelectorAll('tr.l[data-k]').forEach(tr=>tr.onclick=()=>{const [k,v]=tr.dataset.k.split(':');if(k==='cui')go({sec:'cui',cui:v})});
-  if(uepAb===4&&U.nivel==='R'&&typeof FED!=='undefined'){const slot=$('fed-slot');if(slot)FED.ui(slot,U)}
+  if(typeof window.ResumenInversion!=='function'){$('uep-wrap').innerHTML='<p class="mutx" style="padding:16px">No se pudo cargar el tablero de inversión pública.</p>';return}
+  const invItems=cuis.map(c=>({act_proy:c.cui,c}));
+  const totT={pim:U.pim,cert:U.cert,comp_anual:U.comp,comp:U.comp,dev:U.dev,gir:U.gir};
+  const ftsPub=Object.values(U.fuentes||{}).filter(f=>f.pim>0).sort((a,b)=>b.pim-a.pim);
+  const totBen=cuis.reduce((s,c)=>s+(c.beneficiarios||0),0),conBen=cuis.filter(c=>c.beneficiarios).length;
+  window.ResumenInversion($('uep-wrap'),totT,invItems,{
+   fts:ftsPub,beneficiarios:cuis.length?{total:totBen,conDato:conBen}:null,nAlertas:nAlert,estSel:uepEstSel,
+   onEstSel:k=>{uepEstSel=k;pintar()},
+   onCuiGoto:cui=>go({sec:'cui',cui}),
+   onNav:irDetalle,
+   onKpi:kpiDetalle
+  });
  }
  pintar();starUI()}
 $('fx').onclick=e=>{if(e.target===$('fx'))$('fx').close()};
