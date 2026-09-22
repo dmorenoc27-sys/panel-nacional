@@ -15,6 +15,9 @@
     return JSON.parse(txt);
   }
 
+  // ponytail: sesion recordada = {ue, clave} en localStorage de este navegador; el x (cerrar sesion) la borra. Si la clave cambio, el descifrado falla y se vuelve al formulario.
+  const SES = { get() { try { return JSON.parse(localStorage.getItem('ent_sesion') || 'null'); } catch (e) { return null; } }, set(ue, clave) { try { localStorage.setItem('ent_sesion', JSON.stringify({ ue, clave })); } catch (e) { } }, clear() { try { localStorage.removeItem('ent_sesion'); } catch (e) { } } };
+  function salir() { E = null; SES.clear(); login(); }
   async function login() {
     const el = $('ent'); let lista = [];
     try { lista = await j('data/entidad/index.json'); } catch (e) { }
@@ -22,9 +25,10 @@
      <div style="padding:16px 18px"><p style="margin:0 0 10px;font-size:12.5px;color:var(--ink2)">Aquí la entidad ve lo que Transparencia no muestra: expediente por expediente, proveedor, documento, glosa y la fase en que está cada pago. La información es de la entidad: se publica cifrada y solo se abre con su clave.</p>
      ${lista.length ? `<label class="mutx" style="font-size:11px">Entidad</label><select id="ent-ue" style="width:100%;margin:4px 0 10px">${lista.map(x => `<option value="${x.ue}">${x.nombre || 'UE ' + x.ue} · ${x.publico ? 'datos MEF' : 'SIAF'} al ${x.corte || ''}</option>`).join('')}</select>` : '<p class="mutx">Aún no hay entidades publicadas.</p>'}
      <label class="mutx" style="font-size:11px">Clave de acceso</label><input type="password" id="ent-clave" style="width:100%;padding:8px 10px;border:1.5px solid var(--line);border-radius:8px;font:inherit;margin:4px 0 12px" placeholder="••••••••" autocomplete="current-password">
+     <label style="display:flex;gap:6px;align-items:center;font-size:12px;color:var(--ink2);margin:-4px 0 12px"><input type="checkbox" id="ent-rec" checked> Mantener la sesión abierta en este equipo</label>
      <div style="display:flex;gap:8px;align-items:center"><button class="btn p" id="ent-ir">Entrar</button><span class="mutx" id="ent-msg" style="font-size:12px"></span></div></div></div>`;
-    const ir = async () => { const ue = $('ent-ue')?.value, clave = $('ent-clave').value; if (!ue || !clave) return; $('ent-msg').textContent = 'Descifrando…';
-      try { E = await descifrar(ue, clave); await preparar(ue); tabE = 'inv'; abiertos.invLista = false; render(); } catch (e) { console.warn(e); $('ent-msg').textContent = 'Clave incorrecta o archivo no disponible.'; } };
+    const ir = async () => { const ue = $('ent-ue')?.value, clave = $('ent-clave').value, rec = $('ent-rec')?.checked; if (!ue || !clave) return; $('ent-msg').textContent = 'Descifrando…';
+      try { E = await descifrar(ue, clave); if (rec) SES.set(ue, clave); await preparar(ue); tabE = 'inv'; abiertos.invLista = false; render(); } catch (e) { console.warn(e); $('ent-msg').textContent = 'Clave incorrecta o archivo no disponible.'; } };
     $('ent-ir').onclick = ir; $('ent-clave').onkeydown = e => { if (e.key === 'Enter') ir(); }; $('ent-clave').focus();
   }
 
@@ -208,10 +212,10 @@
     const cab = `<div class="pd-cui"><span>MI ENTIDAD · UE ${u.cod}</span><span>· ${E.publico ? 'Datos MEF' : 'SIAF'} al ${E.corte}</span>${E._corteVista ? `<span style="background:var(--gold);color:#1C1917;border-radius:6px;padding:1px 8px;margin-left:6px">CORTE ${fDMY(E._corteVista)}</span>` : ''}<span>· Transparencia al ${R.corte}</span><span class="x" id="ent-salir" title="Cerrar sesión">×</span></div><div class="pd-title">${u.nombre}</div>`;
     // ponytail: Plan de Incentivos también entra sin la cabecera técnica (KPIs, barra HOY, pestañas) — solo cabecera + volver
     if (tabE === 'pi') { el.innerHTML = `<div class="card" style="flex:0 0 auto;padding:0"><div class="pd-hdr" style="border-radius:var(--rad)">${cab}<div class="pd-badges"><span class="pd-badge">${E._ue.nivel === 'R' ? '🏅 FED · Fondo de Estímulo al Desempeño' : E._ue.nivel === 'E' ? '🎯 Metas' : '🏅 Plan de Incentivos ' + ANIO}</span><button class="btn" id="ent-volver-pi" style="margin-left:auto;background:#fff;color:var(--p2)">‹ Volver</button></div></div></div><div class="card" style="flex:1;min-height:0;padding:0"><div class="wrap" id="ent-body" style="padding:0"></div></div>`;
-      $('ent-volver-pi').onclick = () => { tabE = 'inv'; render(); }; $('ent-salir').onclick = () => { E = null; login(); }; cuerpo(); return; }
+      $('ent-volver-pi').onclick = () => { tabE = 'inv'; render(); }; $('ent-salir').onclick = salir; cuerpo(); return; }
     // ponytail: Inversión pública también entra sin cabecera técnica — lista simple de obras; la ficha de cada una se abre debajo
     if (tabE === 'inv') { el.innerHTML = `<div class="card" style="flex:0 0 auto;padding:0"><div class="pd-hdr" style="border-radius:var(--rad)">${cab}<div class="pd-badges"><span class="pd-badge">🏗 Inversión pública</span>${repCorteHTML()}${abiertos.invLista ? `<input type="search" id="ent-invq" placeholder="Buscar por CUI o nombre…" value="${q}" style="padding:6px 10px;border:1.5px solid var(--line);border-radius:8px;font:inherit;font-size:12px;width:240px"><button class="btn" id="ent-volver-inv" style="background:#fff;color:var(--p2)">‹ Volver</button>` : `<button class="btn" id="ent-ver-lista" style="background:#fff;color:var(--p2)">📋 Ver lista completa</button>`}<button class="btn" id="ent-tec" style="background:#fff;color:var(--p2)">Ver detalle técnico ▸</button></div></div></div><div class="card" style="flex:1;min-height:0;padding:0"><div class="wrap" id="ent-body" style="padding:0"></div></div>`;
-      $('ent-tec').onclick = () => { tabE = 'res'; render(); }; $('ent-salir').onclick = () => { E = null; login(); };
+      $('ent-tec').onclick = () => { tabE = 'res'; render(); }; $('ent-salir').onclick = salir;
       if ($('ent-volver-inv')) $('ent-volver-inv').onclick = () => { abiertos.invLista = false; render(); };
       if ($('ent-invq')) $('ent-invq').oninput = e => { q = e.target.value.trim().toLowerCase(); cuerpo(); };
       if ($('ent-ver-lista')) $('ent-ver-lista').onclick = () => { abiertos.invLista = true; render(); };
@@ -225,7 +229,7 @@
       <div class="filt" ${['res', 'ppto', 'ing', 'pi'].includes(tabE) ? 'hidden' : ''}><input type="search" id="ent-q" placeholder="Buscar en glosas, proveedores, documentos, CUI…" value="${q}"></div><div class="wrap" id="ent-body"></div></div>`;
     el.querySelectorAll('.ptabs button[data-t]').forEach(b => b.onclick = () => { tabE = b.dataset.t; if (tabE !== 'exp') filtroMeta = ''; render(); });
     el.querySelectorAll('.sw button').forEach(b => b.onclick = () => { modoInv = b.dataset.m === '1'; filtroMeta = ''; render(); });
-    if ($('ent-q')) $('ent-q').oninput = e => { q = e.target.value.trim().toLowerCase(); cuerpo(); }; $('ent-salir').onclick = () => { E = null; login(); };
+    if ($('ent-q')) $('ent-q').oninput = e => { q = e.target.value.trim().toLowerCase(); cuerpo(); }; $('ent-salir').onclick = salir;
     $('ent-xls').onclick = () => CR.exportar(E._ue.cod, E._ue.nombre, () => { const rows = [...$('ent-body').querySelectorAll('tr:not(.det)')].map(tr => [...tr.children].map(td => td.innerText.replace(/\n/g, ' ').trim())); const ws = XLSX.utils.aoa_to_sheet(rows); const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, 'MiEntidad'); XLSX.writeFile(wb, `mi_entidad_${u.cod}_${tabE}.xlsx`); });
     cuerpo();
   }
@@ -941,5 +945,9 @@
     if (pila.length < 2) return false;
     pila.pop(); [tabE, filtroMeta, modoInv, q] = pila[pila.length - 1].split('|'); modoInv = modoInv === 'true'; restaurando = true; render(); return true;
   }
-  window.Entidad = { atras, abrir: async (ue) => { if (E && (!ue || E.ue === ue)) { render(); return; } await login(); if (ue && $('ent-ue')) $('ent-ue').value = ue; } };
+  window.Entidad = { atras, abrir: async (ue) => {
+    if (E && (!ue || E.ue === ue)) { render(); return; }
+    const s = SES.get();
+    if (s && (!ue || s.ue === ue)) { try { E = await descifrar(s.ue, s.clave); await preparar(s.ue); tabE = 'inv'; abiertos.invLista = false; render(); return; } catch (e) { console.warn('sesion guardada invalida', e); SES.clear(); } }
+    await login(); if (ue && $('ent-ue')) $('ent-ue').value = ue; } };
 })();
