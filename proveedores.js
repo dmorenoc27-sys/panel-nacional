@@ -80,9 +80,13 @@
 
   function ui(el, opts) {
     opts = opts || {};
-    el.innerHTML = opts.compacto ? `<div class="card" style="padding:10px 14px;background:linear-gradient(135deg,#0F2A43,#1E5AA8);color:#fff;border-radius:10px;display:flex;gap:10px;flex-wrap:wrap;align-items:center">
-      <div style="flex:1;min-width:220px;font-size:11.5px"><b>¿Con quién está contratando?</b> <span style="opacity:.85">Sanciones desde 1998, penalidades, contratos resueltos, arbitrajes y socios · OECE, Poder Judicial y SUNAT</span><div id="prov-meta" style="font-size:10px;opacity:.75;margin-top:2px"></div></div>
-      <form id="prov-form" style="display:flex;gap:6px;flex:0 0 auto;align-items:center"><input id="prov-ruc" inputmode="numeric" pattern="[0-9]{11}" maxlength="11" placeholder="RUC (11 dígitos)" autocomplete="off" style="width:170px;padding:7px 10px;border:0;border-radius:8px;font:inherit;font-size:13px;font-weight:700;letter-spacing:1px;color:var(--ink)"><button class="btn" style="background:var(--gold);color:#1C1917;border:0;font-weight:800;padding:7px 14px;border-radius:8px">Verificar</button></form></div><div id="prov-res"></div>` : `<div class="card" style="padding:18px 20px;background:linear-gradient(135deg,#0F2A43,#1E5AA8);color:#fff;border-radius:12px">
+    const sug = (opts.sugerencias || []).filter(x => x[0] && /^\d{11}$/.test(x[0]));
+    const dl = sug.length ? `<datalist id="prov-dl">${sug.map(([r, n]) => `<option value="${r}">${esc(n || '')}</option>`).join('')}</datalist>` : '';
+    el.innerHTML = opts.compacto ? `<div class="ct-hero" style="display:flex;gap:16px;flex-wrap:wrap;align-items:center">
+      <div style="width:46px;height:46px;border-radius:12px;background:rgba(255,255,255,.12);display:grid;place-items:center;font-size:24px;flex:0 0 auto;box-shadow:inset 0 0 0 1px rgba(255,255,255,.18)">🛰️</div>
+      <div style="flex:1;min-width:240px"><div style="font-size:10px;font-weight:800;letter-spacing:1.2px;opacity:.75">RADAR DE PROVEEDORES</div><div style="font-size:16px;font-weight:800;line-height:1.2">Verificación integral por RUC en un clic</div>
+        <div style="font-size:11px;opacity:.85;margin-top:2px">Sanciones desde 1993, inhabilitaciones, penalidades, contratos resueltos, obras paralizadas, arbitrajes, socios y vínculos · 9 fuentes oficiales cruzadas cada día</div><div id="prov-meta" style="font-size:10px;opacity:.7;margin-top:3px"></div></div>
+      <form id="prov-form" style="display:flex;gap:6px;flex:0 0 auto;align-items:center"><input id="prov-ruc" ${sug.length ? 'list="prov-dl"' : ''} inputmode="numeric" maxlength="11" placeholder="${sug.length ? 'RUC o nombre del proveedor' : 'RUC (11 dígitos)'}" autocomplete="off" style="width:${sug.length ? 250 : 190}px;padding:9px 12px;border:0;border-radius:10px;font:inherit;font-size:13.5px;font-weight:700;letter-spacing:.5px;color:var(--ink)"><button class="btn" style="background:var(--gold);color:#1C1917;border:0;font-weight:800;padding:9px 16px;border-radius:10px;box-shadow:0 4px 12px -4px rgba(0,0,0,.5)">Verificar</button></form>${dl}</div><div id="prov-res"></div>` : `<div class="card" style="padding:18px 20px;background:linear-gradient(135deg,#0F2A43,#1E5AA8);color:#fff;border-radius:12px">
       <div style="display:flex;gap:16px;flex-wrap:wrap;align-items:center"><div style="flex:1;min-width:260px">
         <div style="font-size:10px;font-weight:800;letter-spacing:1px;opacity:.8">VERIFICACIÓN DE PROVEEDORES DEL ESTADO</div>
         <div style="font-size:17px;font-weight:800;line-height:1.2;margin:3px 0 4px">¿Con quién está contratando?</div>
@@ -92,8 +96,10 @@
     idx().then(i => { $q(el, '#prov-meta').textContent = i.rucs ? `${i.rucs.toLocaleString('es-PE')} proveedores con historial · ${i.sancionados.toLocaleString('es-PE')} sancionados (${i.vigentes.toLocaleString('es-PE')} vigentes) · sanciones desde ${i.desde || 1998} · corte ${D(i.corte)}` : 'La base de proveedores aún no se ha cargado en este portal (Scripts/proveedores.py).'; });
     const res = $q(el, '#prov-res');
     const ir = async ruc => {
+      const txt = String(ruc || '').trim();
+      if (!/^\d{11}$/.test(txt.replace(/\D/g, '')) && sug.length) { const t = txt.toLowerCase(); const m = sug.find(x => (x[1] || '').toLowerCase().includes(t)); if (m && t.length >= 3) ruc = m[0]; }
       ruc = String(ruc || '').replace(/\D/g, '');
-      if (ruc.length !== 11) { res.innerHTML = '<p class="mutx" style="padding:10px 4px">Ingrese los 11 dígitos del RUC.</p>'; return; }
+      if (ruc.length !== 11) { res.innerHTML = `<p class="mutx" style="padding:10px 4px">Ingrese los 11 dígitos del RUC${sug.length ? ' o el nombre de un proveedor de esta entidad' : ''}.</p>`; return; }
       $q(el, '#prov-ruc').value = ruc; res.innerHTML = '<p class="mutx" style="padding:10px 4px">Consultando…</p>';
       try { res.innerHTML = ficha(ruc, await buscar(ruc)); } catch (e) { res.innerHTML = `<p class="mutx" style="padding:10px 4px">No se pudo consultar (${esc(e.message)}).</p>`; }
       res.querySelectorAll('[data-ruc]').forEach(a => a.onclick = () => ir(a.dataset.ruc));
