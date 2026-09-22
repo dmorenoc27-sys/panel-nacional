@@ -107,6 +107,11 @@
       return { porCui, porFte };
     },
     async generarPPT(cfg, ue, r) {
+      if (!cfg.plantilla) {   // ponytail: contrato sin plantilla propia -> Expediente PPT generico de la ficha publica (mismos datos con y sin clave); el corte elegido no aplica ahi
+        if (typeof exportarPPT === 'function' && window.estado && estado.ue === ue) return exportarPPT(8);
+        toast('Generando el Expediente PPT desde la ficha de la entidad…'); location.hash = '#/ue/' + ue;
+        setTimeout(() => { const b = $('ppt'); if (b && !b.hidden) b.click(); }, 1800); return;
+      }
       if (!window.JSZip) await new Promise((ok, err) => { const s = document.createElement('script'); s.src = 'https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js'; s.onload = ok; s.onerror = err; document.head.appendChild(s); });
       const datos = await fetch(`data/reportes/${ue}.json?v=${Date.now()}`).then(x => x.json());
       if (r.corte && r.corte.foto) r.corte.datos = await fetch(`data/reportes/${ue}/${r.corte.fecha}.json`).then(x => x.json());
