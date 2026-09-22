@@ -54,7 +54,7 @@
     };
     el.querySelectorAll('#ct-seg button').forEach(b => b.onclick = () => { filtro = b.dataset.f; pintar(); });
     el.querySelector('#ct-q').oninput = e => { q = e.target.value.trim().toLowerCase(); el.querySelector('#ct-tabla').innerHTML = tabla(); wire(); };
-    if (window.Proveedores) Proveedores.ui(el.querySelector('#ct-prov'), { compacto: true });
+    if (window.Proveedores) Proveedores.ui(el.querySelector('#ct-prov'), { compacto: true, onCui: opts.onCui });
     pintar();
   }
   async function ui(el, u, opts) {
@@ -66,7 +66,7 @@
       el.innerHTML = `<div style="padding:8px"><div class="card" style="padding:18px;text-align:center"><div style="font-size:28px">📑</div><b style="color:var(--p2)">Sin procesos de selección registrados en el SEACE desde 2018 para esta unidad ejecutora</b><p class="mutx" style="font-size:11.5px;margin:6px 0 0">Puede que contrate solo por órdenes de compra (menores a 8 UIT) o que sus procesos los lleve otra unidad (sede central del pliego).</p></div>
         ${opts.obras ? lbl('Obras vinculadas a las inversiones de la entidad', 'SEACE · por CUI') + opts.obras : ''}${lbl('Verificar un proveedor', 'sanciones, inhabilitaciones, penalidades y contratos resueltos por RUC')}<div id="ct-prov"></div></div>`;
       el.querySelectorAll('[data-cui]').forEach(a => a.onclick = () => opts.onCui && opts.onCui(a.dataset.cui));
-      if (window.Proveedores) Proveedores.ui(el.querySelector('#ct-prov'), { compacto: true });
+      if (window.Proveedores) Proveedores.ui(el.querySelector('#ct-prov'), { compacto: true, onCui: opts.onCui });
       return;
     }
     vista(el, u, d, opts);
