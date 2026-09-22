@@ -218,8 +218,9 @@ body.sala .lens a{background:#fff;color:#0F172A;border-left-color:#1E5AA8}body.s
 <script src="expediente.js?v=10d3f3a"></script>
 <script src="incentivos.js?v=4492226"></script>
 <script src="fed.js?v=6e049bd"></script>
-<script src="entidad.js?v=4336dab"></script>
-<script src="proveedores.js?v=e26888d"></script>
+<script src="entidad.js?v=4db81b8"></script>
+<script src="proveedores.js?v=8f9d9e4"></script>
+<script src="contrataciones.js?v=17b5552"></script>
 <script src="reporte_ue.js?v=1c58747"></script>
 <script>
 const M=n=>{const v=(n||0)/1e6;return v.toLocaleString('es-PE',{maximumFractionDigits:Math.abs(v)>=1000?0:1})};
@@ -406,7 +407,7 @@ async function paginaUE(ue){uepAb=null;$('uep').innerHTML='<div class="fxb mutx"
  function irDetalle(id){
   const RU=window.ResumenInversionUtil;
   if(!RU)return;
-  if(id==='sea'){RU.verDetalleResumen('📑','CONTRATACIONES',`<div id="prov-slot" style="margin-bottom:14px"></div><p class="mutx" style="margin-bottom:10px">${p2info}</p>${p2det()}`);if(window.Proveedores)Proveedores.ui(document.getElementById('prov-slot'))}
+  if(id==='sea'){RU.verDetalleResumen('📑','CONTRATACIONES',`<div id="ct-slot"></div>`);const obras=`<p class="mutx" style="margin-bottom:10px">${p2info}</p>${p2det()}`;const verCui=cui=>{RU.cerrarDetalleResumen();fichaCUI(cui)};const wireL=el=>el.querySelectorAll('tr.l[data-k^="cui:"]').forEach(tr=>tr.onclick=()=>verCui(tr.dataset.k.slice(4)));if(window.Contrataciones)Contrataciones.ui(document.getElementById('ct-slot'),U,{obras,onCui:verCui}).then(()=>wireL(document.getElementById('ct-slot')));else{document.getElementById('ct-slot').innerHTML=obras;wireL(document.getElementById('ct-slot'))}}
   else if(id==='al')RU.verDetalleResumen('🎯','METAS Y SEGUIMIENTO',`<p class="mutx" style="margin-bottom:10px">${p3sub}</p>${p3det()}`);
   else if(id==='pi'){RU.verDetalleResumen(P4.ic,P4.n4.toUpperCase(),P4.info+P4.det());if(U.nivel==='R'&&typeof FED!=='undefined'){const slot=document.getElementById('fed-slot');if(slot)FED.ui(slot,U)}}
  }

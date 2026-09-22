@@ -77,8 +77,11 @@
   }
   const portales = ruc => `<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:8px;margin-top:8px">${PORTALES.map(([t, s, u]) => `<a href="${u}" target="_blank" rel="noopener" class="card" style="padding:10px 12px;text-decoration:none;color:inherit;border-left:3px solid var(--p2)"><div style="font-size:12px;font-weight:800;color:var(--p2)">${t} ↗</div><div style="font-size:10.5px;color:var(--ink2);margin-top:2px">${s}</div></a>`).join('')}</div><p class="mutx" style="font-size:10.5px;margin:6px 0 0">Copie el RUC <b>${ruc}</b> en el portal; estos sistemas no permiten enlazar la consulta directa.</p>`;
 
-  function ui(el) {
-    el.innerHTML = `<div class="card" style="padding:18px 20px;background:linear-gradient(135deg,#0F2A43,#1E5AA8);color:#fff;border-radius:12px">
+  function ui(el, opts) {
+    opts = opts || {};
+    el.innerHTML = opts.compacto ? `<div class="card" style="padding:10px 14px;background:linear-gradient(135deg,#0F2A43,#1E5AA8);color:#fff;border-radius:10px;display:flex;gap:10px;flex-wrap:wrap;align-items:center">
+      <div style="flex:1;min-width:220px;font-size:11.5px"><b>¿Con quién está contratando?</b> <span style="opacity:.85">Sanciones desde 1998, penalidades, contratos resueltos, arbitrajes y socios · OECE, Poder Judicial y SUNAT</span><div id="prov-meta" style="font-size:10px;opacity:.75;margin-top:2px"></div></div>
+      <form id="prov-form" style="display:flex;gap:6px;flex:0 0 auto;align-items:center"><input id="prov-ruc" inputmode="numeric" pattern="[0-9]{11}" maxlength="11" placeholder="RUC (11 dígitos)" autocomplete="off" style="width:170px;padding:7px 10px;border:0;border-radius:8px;font:inherit;font-size:13px;font-weight:700;letter-spacing:1px;color:var(--ink)"><button class="btn" style="background:var(--gold);color:#1C1917;border:0;font-weight:800;padding:7px 14px;border-radius:8px">Verificar</button></form></div><div id="prov-res"></div>` : `<div class="card" style="padding:18px 20px;background:linear-gradient(135deg,#0F2A43,#1E5AA8);color:#fff;border-radius:12px">
       <div style="display:flex;gap:16px;flex-wrap:wrap;align-items:center"><div style="flex:1;min-width:260px">
         <div style="font-size:10px;font-weight:800;letter-spacing:1px;opacity:.8">VERIFICACIÓN DE PROVEEDORES DEL ESTADO</div>
         <div style="font-size:17px;font-weight:800;line-height:1.2;margin:3px 0 4px">¿Con quién está contratando?</div>
@@ -96,7 +99,7 @@
       res.scrollIntoView({ block: 'start', behavior: 'smooth' });
     };
     $q(el, '#prov-form').onsubmit = e => { e.preventDefault(); ir($q(el, '#prov-ruc').value); };
-    $q(el, '#prov-ruc').focus();
+    if (!opts.compacto) $q(el, '#prov-ruc').focus();
   }
   window.Proveedores = { ui, buscar, ficha };
 })();
