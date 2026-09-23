@@ -115,7 +115,7 @@
     opts = opts || {};
     el.innerHTML = '<p class="mutx" style="padding:12px">Cargando contrataciones…</p>';
     let d = null;
-    try { const r = await fetch(`data/contrat/${u.cod}.json`); if (r.ok) d = await r.json(); } catch (e) { }
+    try { const [r, ri] = await Promise.all([fetch(`data/contrat/${u.cod}.json`), fetch('data/contrat/index.json')]); if (r.ok) d = await r.json(); if (d && ri.ok) d.corte = (await ri.json()).corte || d.corte; } catch (e) { }
     if (!d) {
       el.innerHTML = `<div style="padding:8px"><div class="card" style="padding:18px;text-align:center"><div style="font-size:28px">📑</div><b style="color:var(--p2)">Sin procesos de selección registrados en el SEACE desde 2018 para esta unidad ejecutora</b><p class="mutx" style="font-size:11.5px;margin:6px 0 0">Puede que contrate solo por órdenes de compra (menores a 8 UIT) o que sus procesos los lleve otra unidad (sede central del pliego).</p></div>
         ${opts.obras ? lbl('Obras vinculadas a las inversiones de la entidad', 'SEACE · por CUI') + opts.obras : ''}${lbl('Verificar un proveedor', 'sanciones, inhabilitaciones, penalidades y contratos resueltos por RUC')}<div id="ct-prov"></div></div>`;
