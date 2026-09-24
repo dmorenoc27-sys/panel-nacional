@@ -7,7 +7,9 @@
 #cn *{box-sizing:border-box}
 #cn .cn-x{position:fixed;top:14px;right:18px;z-index:2;background:#0F2A43;border:1px solid rgba(255,255,255,.35);color:#fff;box-shadow:0 4px 14px rgba(0,0,0,.25);border-radius:999px;padding:8px 16px;font:inherit;font-weight:700;cursor:pointer;backdrop-filter:blur(6px)}
 #cn .cn-x:hover{background:#1E5AA8}
-#cn .cn-hero{position:relative;min-height:100vh;display:grid;place-items:center;text-align:center;padding:70px 20px 40px;overflow:hidden;isolation:isolate}
+#cn .cn-hero{position:relative;height:100vh;min-height:520px;overflow:hidden;isolation:isolate}
+#cn .cn-step.w{background:#fff;border-color:#E6EAF0;color:#1C1917;box-shadow:0 8px 24px rgba(15,42,67,.08)}#cn .cn-step.w p{color:#44546A}#cn .cn-step.w:not(:last-child):after{border-color:#1E5AA8}
+#cn .cn-s.w .cn-num{background:#fff;border-color:#E6EAF0;color:#0F2A43;box-shadow:0 8px 24px rgba(15,42,67,.08)}#cn .cn-s.w .cn-num small{color:#5D677A}
 #cn .cn-bl{position:absolute;border-radius:50%;filter:blur(70px);opacity:.55;z-index:-1;animation:cnFloat 14s ease-in-out infinite}
 #cn .cn-bl.a{width:520px;height:520px;left:-120px;top:-80px;background:#1E5AA8}
 #cn .cn-bl.b{width:460px;height:460px;right:-100px;top:20%;background:#00897B;animation-delay:-5s}
@@ -26,7 +28,7 @@
 #cn .cn-btn:hover{transform:translateY(-2px);box-shadow:0 12px 30px rgba(0,0,0,.35)}
 #cn .cn-btn.p{background:#F9A825;color:#1C1917}
 #cn .cn-btn.g{background:rgba(255,255,255,.1);color:#fff;border:1px solid rgba(255,255,255,.3)}
-#cn .cn-cue{position:absolute;bottom:22px;left:50%;transform:translateX(-50%);font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:rgba(255,255,255,.6);animation:cnBounce 2s infinite}
+#cn .cn-cue{position:absolute;top:calc(100vh - 34px);left:50%;z-index:3;transform:translateX(-50%);font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:rgba(255,255,255,.6);animation:cnBounce 2s infinite}
 @keyframes cnBounce{0%,100%{transform:translate(-50%,0)}50%{transform:translate(-50%,8px)}}
 #cn section.cn-s{padding:80px 20px;max-width:1240px;margin:0 auto}
 #cn section.cn-s.w{background:#EEF1F5;color:#1C1917;max-width:none}
@@ -148,26 +150,29 @@
     const mini = (t, desc, scr) => `<div class="cn-mini cn-rv"><div class="cn-t">${t}</div><div class="cn-d">${desc}</div><div class="cn-scr">${scr}</div></div>`;
     const av = d.pim ? 100 * d.dev / d.pim : 55;
     return `
-<button class="cn-x" id="cn-x">Entrar al panel →</button>
-<div class="cn-hero"><div class="cn-bl a"></div><div class="cn-bl b"></div><div class="cn-bl c"></div>
- <div>
-  <span class="cn-kick">Panel de Inversiones · Perú</span>
-  <h1>El pulso diario de la inversión pública, <em>en un solo lugar</em></h1>
-  <p class="cn-sub">Gobierno nacional, regional y local · cada inversión, cada contrato, cada proveedor · con alertas tempranas y reportes listos para exponer. Actualizado cada mañana con datos abiertos del MEF.</p>
-  <div class="cn-nums">
+<button class="cn-x" id="cn-x">Entrar a DIANA →</button>
+<div class="cn-hero" id="cn-intro"></div>
+<div class="cn-cue">Desliza para conocer DIANA</div>
+<section class="cn-s w" id="cn-hoy"><div>
+ <div class="cn-nums cn-rv" style="margin:0">
    <div class="cn-num"><b data-cu="${d.pim / 1e6}" data-pre="S/ " data-suf=" M">0</b><small>Presupuesto ${new Date().getFullYear()}</small></div>
    <div class="cn-num"><b data-cu="${av}" data-dec="1" data-suf=" %">0</b><small>Avance país</small></div>
    <div class="cn-num"><b data-cu="${d.cui}">0</b><small>Inversiones</small></div>
    <div class="cn-num"><b data-cu="${d.ue}">0</b><small>Unidades ejecutoras</small></div>
-  </div>
-  <div class="cn-cta"><button class="cn-btn p" id="cn-go">Entrar al panel</button><a class="cn-btn g" href="#cn-que">Ver qué hay dentro ↓</a></div>
+   <div class="cn-num"><b data-cu="133194">0</b><small>Proveedores con historial</small></div>
  </div>
- <div class="cn-cue">Desliza para conocerlo</div>
-</div>
+ <h2 class="cn-rv" style="margin-top:34px">En tres pasos</h2>
+ <p class="cn-lead cn-rv">Cualquiera lo usa sin manual. Así se entra a la información de una entidad.</p>
+ <div class="cn-flow">
+  <div class="cn-step cn-rv w"><div class="n">1</div><h3>Busca tu entidad</h3><p>Escribe el nombre de la municipalidad, el gobierno regional o la unidad ejecutora en el buscador. También un CUI o una función.</p></div>
+  <div class="cn-step cn-rv w"><div class="n">2</div><h3>Elige el módulo</h3><p>Inversiones, Contrataciones, Presupuesto o Planeamiento. Cada uno abre con sus paneles; un clic en cualquier cifra despliega el detalle.</p></div>
+  <div class="cn-step cn-rv w"><div class="n">3</div><h3>Exporta y comparte</h3><p>Excel del detalle, Expediente PPT y PDF, a la fecha de corte que elijas. O guarda la entidad en Mi cartera para volver mañana.</p></div>
+ </div>
+</div></section>
 
 <section class="cn-s w" id="cn-que"><div>
  <h2 class="cn-rv">Lo que verás dentro</h2>
- <p class="cn-lead cn-rv">Cada módulo vive y se mueve con los datos del día. Así se ve el panel por dentro.</p>
+ <p class="cn-lead cn-rv">Cada módulo vive y se mueve con los datos del día. Así se ve DIANA por dentro.</p>
  <div class="cn-grid">
  ${mini('Resumen ejecutivo', 'PIM, certificado, comprometido, devengado, girado y saldo. Avance en vivo, por nivel, sector, pliego y territorio.', `
   <div class="cn-tiles"><div class="cn-tile"><small>PIM</small><b>S/ ${M(d.pim)} M</b><div class="cn-bar"><i style="--c:#1C1917"></i></div></div>
@@ -188,7 +193,7 @@
   <div class="cn-inp">🔍 <span>20512345678</span></div>
   <div class="cn-src"><span style="--i:0">SUNAT ✓</span><span style="--i:1">RNP ✓</span><span style="--i:2">OECE sanciones ✓</span><span style="--i:3">Penalidades ✓</span><span style="--i:4">INFOBRAS ✓</span><span style="--i:5">Arbitrajes ✓</span></div>
   <div class="cn-ver">✔ Habilitado · sin sanciones vigentes · 2 penalidades · 1 obra paralizada</div>`)}
- ${mini('Mi entidad · SIAF', 'Con clave: la cadena completa del gasto de tu entidad, expediente por expediente. Cifrado, solo tú lo abres.', `
+ ${mini('Mi entidad · SIAF', 'Con clave: la cadena completa del gasto de tu entidad, expediente por expediente. Cifrado, solo tú lo abres. Arkia te lo explica.', `
   <div class="cn-lock">🔓</div>
   <div class="cn-chain">
    <div class="cn-st" style="--i:0"><span>Certificado</span><div class="cn-bar"><i style="--c:#1E5AA8;--w:.92"></i></div><b>S/ 41.3 M</b></div>
@@ -207,20 +212,20 @@
 
 <section class="cn-s">
  <h2 class="cn-rv">Cómo funciona</h2>
- <p class="cn-lead cn-rv">Sin instalar nada, sin cargar datos a mano. El panel se alimenta solo.</p>
+ <p class="cn-lead cn-rv">Sin instalar nada, sin cargar datos a mano. DIANA se alimenta sola cada mañana.</p>
  <div class="cn-flow">
   <div class="cn-step cn-rv"><div class="n">1</div><h3>Cada mañana, datos abiertos</h3><p>Consulta Amigable, Banco de Inversiones, Formato 12-B, expedientes técnicos, ingresos y transferencias del MEF.</p></div>
   <div class="cn-step cn-rv"><div class="n">2</div><h3>Cruces automáticos</h3><p>SEACE, sanciones y penalidades de la OECE, padrón SUNAT, obras INFOBRAS de la Contraloría y el SSI de cada inversión.</p></div>
-  <div class="cn-step cn-rv"><div class="n">3</div><h3>Tu panel privado</h3><p>Con tu respaldo SIAF entras con clave y ves lo que Transparencia no muestra: expediente, proveedor, documento y fase de cada pago.</p></div>
+  <div class="cn-step cn-rv"><div class="n">3</div><h3>Tu entidad, con clave</h3><p>Con tu respaldo SIAF entras con clave y ves lo que Transparencia no muestra: expediente, proveedor, documento y fase de cada pago. Arkia, la IA de ARKA, te lo explica.</p></div>
   <div class="cn-step cn-rv"><div class="n">4</div><h3>Reportes listos</h3><p>Expediente PPT con tu plantilla, Excel y PDF, a cualquier fecha de corte. Para el titular, el consejo o la Contraloría.</p></div>
  </div>
  <div class="cn-src2 cn-rv"><span>MEF · Consulta Amigable</span><span>Banco de Inversiones</span><span>SEACE</span><span>OECE · CONOSCE</span><span>SUNAT</span><span>INFOBRAS · Contraloría</span><span>SSI</span><span>SIAF de la entidad</span></div>
 </section>
 
 <div class="cn-fin cn-rv">
- <h2>¿Tu entidad quiere su panel?</h2>
- <p>Activamos tu unidad ejecutora en un día: acceso con clave, reportes a medida con tu plantilla y seguimiento diario. Un producto de ARKA PROYECTOS.</p>
- <div class="cn-cta"><a class="cn-btn p" href="https://www.arkaproyectos.com.pe" target="_blank" rel="noopener">Solicitar el panel para mi entidad</a><button class="cn-btn g" id="cn-go2">Entrar al panel público</button></div>
+ <h2>¿Tu entidad quiere DIANA?</h2>
+ <p>Activamos tu unidad ejecutora en un día: acceso con clave, reportes a medida con tu plantilla y seguimiento diario. Un sistema de ARKA PROYECTOS.</p>
+ <div class="cn-cta"><a class="cn-btn p" href="https://www.arkaproyectos.com.pe" target="_blank" rel="noopener">Solicitar DIANA para mi entidad</a><button class="cn-btn g" id="cn-go2">Entrar a DIANA</button></div>
 </div>`;
   }
   function cuenta(el) {   // contador animado
@@ -233,8 +238,9 @@
     if (!document.getElementById('cn-css')) { const st = document.createElement('style'); st.id = 'cn-css'; st.textContent = CSS; document.head.appendChild(st); }
     const el = document.createElement('div'); el.id = 'cn'; el.innerHTML = html(datos()); document.body.appendChild(el);
     document.body.style.overflow = 'hidden';
+    if (window.DIANA) DIANA.intro(el.querySelector('#cn-intro'), { botones: '<button class="dn-btn" id="cn-go">Entrar a DIANA</button><a class="dn-btn g" href="#cn-que">Ver qué hay dentro ↓</a>' });
     el.querySelectorAll('#cn-x,#cn-go,#cn-go2').forEach(b => b.onclick = cerrar);
-    el.querySelectorAll('a[href="#cn-que"]').forEach(a => a.onclick = e => { e.preventDefault(); el.querySelector('#cn-que').scrollIntoView({ behavior: 'smooth' }); });
+    el.addEventListener('click', e => { const a = e.target.closest('a[href="#cn-que"]'); if (a) { e.preventDefault(); el.querySelector('#cn-hoy').scrollIntoView({ behavior: 'smooth' }); } });
     el.querySelectorAll('[data-cu]').forEach(cuenta);
     const io = new IntersectionObserver(es => es.forEach(x => { if (x.isIntersecting) { x.target.classList.add('on'); io.unobserve(x.target); } }), { root: el, threshold: .15 });
     el.querySelectorAll('.cn-rv').forEach(x => io.observe(x));
