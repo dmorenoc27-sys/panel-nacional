@@ -2,22 +2,22 @@
    window.DIANA = { iso, wordmark, lockup, favicon, intro }. Sirve en navegador y en node (solo las funciones de texto).
    Geometría de la flecha: la del preloader de arkaproyectos.com.pe (astil 12 px con punta redondeada, punta con muesca). */
 (function (root) {
-  const G = {"D": "M7.2 -70V0H27.3V-70ZM33.4 0Q45.3 0 53.8 -4.2Q62.4 -8.5 67 -16.3Q71.7 -24.2 71.7 -35Q71.7 -45.9 67 -53.7Q62.4 -61.5 53.8 -65.8Q45.3 -70 33.4 -70H20.4V-53H32.6Q36.1 -53 39.5 -52.3Q42.8 -51.5 45.5 -49.5Q48.2 -47.6 49.8 -44.1Q51.5 -40.5 51.5 -35Q51.5 -29.5 49.8 -25.9Q48.2 -22.4 45.5 -20.5Q42.8 -18.5 39.5 -17.7Q36.1 -17 32.6 -17H20.4V0Z", "I": "M7.2 -70V0H27V-70Z", "A": "M19.5 -11.3H56.5L56 -25.6H20.1ZM37.8 -41.3 47.1 -20.3 46 -15.3 54 0H76L37.8 -74.7L-0.3 0H21.7L29.8 -16L28.6 -20.3Z", "N": "M54.1 -70V-34.4L7.2 -73.5V0H25.8V-35.6L72.7 3.5V-70Z"};   // Jost 800, caja 100, línea base y=0, altura de caps 70
-  const W = {"D": 74.9, "I": 34.2, "A": 75.7, "N": 79.9};
-  // la "I" es la flecha de ARKA en vertical: la firma de la marca
-  const I_ARROW = (gold, pl) => `<g class="dn-i"><rect x="11" y="-50" width="12" height="46" rx="2" fill="${gold}"/><polygon points="17,-72 33,-44 17,-49 1,-44" fill="${gold}"/><path d="M17 -12 l-9 8 M17 -12 l9 8 M17 -4 l-9 8 M17 -4 l9 8" stroke="${pl}" stroke-width="3.6" stroke-linecap="round" fill="none"/></g>`;
+  const G = {"D": "M8 -70V0H16.5V-70ZM29 0Q39.2 0 47.1 -4.4Q55 -8.8 59.5 -16.6Q64 -24.5 64 -35Q64 -45.5 59.5 -53.4Q55 -61.2 47.1 -65.6Q39.2 -70 29 -70H12.7V-61.5H29Q34.9 -61.5 39.8 -59.7Q44.7 -57.8 48.2 -54.4Q51.7 -50.9 53.6 -46Q55.5 -41.1 55.5 -35Q55.5 -28.9 53.6 -24Q51.7 -19.1 48.2 -15.7Q44.7 -12.2 39.8 -10.4Q34.9 -8.5 29 -8.5H12.7V0Z", "I": "M8 -70V0H16.5V-70Z", "N": "M61 -70V-17.9L8 -73.5V0H16.5V-52.1L69.5 3.5V-70Z", "A": "M0 0L40.15 -72.3L80.3 0L71.1 0L40.15 -56.6L9.2 0Z", "a": "M14.7 -21H51.7L48.7 -29H17.7ZM33 -54.2 45 -26 45.8 -24 56 0H65.5L33 -73.5L0.5 0H10L20.4 -24.6L21.2 -26.4Z"};   // D, I, N, a: Jost 400 (mismo grosor de trazo que el logo ARKA, 12 % de la altura de caps); A: la A del logo maestro de ARKA (calco vectorial) normalizada a caps 70
+  const W = {"D": 68.0, "I": 24.5, "N": 77.5, "A": 80.3, "a": 66.0};
   let uid = 0;
   function wordmark(o) {
-    o = o || {}; const ink = o.ink || '#F5F2EA', gold = o.gold || 'url(#dn-gold)', pl = o.plumas || ink, tr = o.tracking == null ? 13 : o.tracking;
-    let x = 0, parts = [];
-    for (const ch of 'DIANA') {
-      const body = ch === 'I' ? I_ARROW(gold, pl) : `<path d="${G[ch]}" fill="${ch === 'A' && o.aGold ? gold : ink}"/>`;
-      parts.push(`<g class="dn-l" transform="translate(${x.toFixed(1)},0)">${body}</g>`); x += W[ch] + tr;
+    o = o || {}; const ink = o.ink || '#F5F2EA', gold = o.gold || 'url(#dn-gold)', tr = o.tracking == null ? 30 : o.tracking;
+    let x = 0, parts = [], i = 0;
+    for (const ch of 'DIANa') {   // solo la A central es el isotipo de ARKA: la A sin travesaño con su triángulo dorado dentro; la última A es normal
+      const cuerpo = `<path d="${G[ch]}" fill="${ink}"/>` + (i === 2 ? `<polygon class="dn-tri" points="19.35,0 60.95,0 40.15,-38" fill="url(#dn-tri)"/>` : '');   // triángulo semejante a la A (lados paralelos al interior), centrado en su eje
+      parts.push(`<g class="dn-l" transform="translate(${x.toFixed(1)},0)">${cuerpo}</g>`); x += W[ch] + tr; i++;
     }
     return { svg: parts.join(''), w: x - tr };
   }
   // isotipo: diana + flecha. Gradientes en userSpaceOnUse para que funcionen también sobre líneas.
-  const DEFS = `<linearGradient id="dn-gold" gradientUnits="userSpaceOnUse" x1="0" y1="-80" x2="80" y2="10"><stop offset="0" stop-color="#E9CF7A"/><stop offset=".55" stop-color="#C9A552"/><stop offset="1" stop-color="#9E8038"/></linearGradient>
+  const DEFS = `<linearGradient id="dn-gold" gradientUnits="userSpaceOnUse" x1="0" y1="-75" x2="90" y2="5"><stop offset="0" stop-color="#E9CF7A"/><stop offset=".55" stop-color="#C9A552"/><stop offset="1" stop-color="#9E8038"/></linearGradient>
+<linearGradient id="dn-tri" gradientUnits="userSpaceOnUse" x1="0" y1="-38" x2="0" y2="0"><stop offset="0" stop-color="#E3C978"/><stop offset="1" stop-color="#B8953F"/></linearGradient>
+<linearGradient id="dn-head" gradientUnits="userSpaceOnUse" x1="140" y1="177" x2="200" y2="222"><stop offset="0" stop-color="#F0D98A"/><stop offset="1" stop-color="#A8883A"/></linearGradient>
 <linearGradient id="dn-shaft" gradientUnits="userSpaceOnUse" x1="-60" y1="190" x2="200" y2="210"><stop offset="0" stop-color="#9E8038"/><stop offset=".6" stop-color="#D4B25E"/><stop offset="1" stop-color="#F0D98A"/></linearGradient>
 <radialGradient id="dn-core" cx="42%" cy="38%" r="65%"><stop offset="0" stop-color="#F3DC8E"/><stop offset=".55" stop-color="#C9A552"/><stop offset="1" stop-color="#8F7330"/></radialGradient>
 <radialGradient id="dn-shadow" cx="50%" cy="50%" r="50%"><stop offset="0" stop-color="#000" stop-opacity=".35"/><stop offset="1" stop-color="#000" stop-opacity="0"/></radialGradient>
@@ -39,7 +39,7 @@
  <line x1="-46" y1="200" x2="150" y2="200" stroke="#0F2A43" stroke-width="18" stroke-linecap="round" opacity=".85"/>
  <line x1="-46" y1="200" x2="150" y2="200" stroke="url(#dn-shaft)" stroke-width="12" stroke-linecap="round"/>
  <line x1="-40" y1="196" x2="140" y2="196" stroke="#fff" stroke-width="2" stroke-linecap="round" opacity=".35"/>
- <polygon points="140,177.5 200,200 140,222.5 151,200" fill="url(#dn-gold)" stroke="#0F2A43" stroke-width="2.5" stroke-linejoin="round"/>
+ <polygon points="140,177.5 200,200 140,222.5 151,200" fill="url(#dn-head)" stroke="#0F2A43" stroke-width="2.5" stroke-linejoin="round"/>
  <path d="M-46 200 l-24 -17 M-46 200 l-24 17 M-30 200 l-24 -17 M-30 200 l-24 17" stroke="${pl}" stroke-width="6.5" stroke-linecap="round" fill="none"/>
  <path d="M-46 200 l-24 -17 M-46 200 l-24 17 M-30 200 l-24 -17 M-30 200 l-24 17" stroke="#C9A552" stroke-width="2" stroke-linecap="round" fill="none" opacity=".6"/>
 </g></g>`;
@@ -47,14 +47,15 @@
   function isoSVG(o) { o = o || {}; const s = o.size || 40; return `<svg viewBox="-30 -20 460 440" width="${s}" height="${s}" aria-label="DIANA"><defs>${DEFS}</defs>${iso(o)}</svg>`; }
   function lockup(o) {
     o = o || {}; const bg = o.bg, ink = o.ink || '#F5F2EA', mut = o.mut || '#8FB4E0', mod = o.mod || '#C6CCD6', gold = o.goldText || '#D4B25E';
-    const wm = wordmark({ ink, plumas: ink });
-    const W = 1500, H = 460;
+    const wm = wordmark({ ink });
+    const W = 1500, H = 480;
     return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" font-family="Jost,Inter,system-ui,sans-serif">${bg ? `<rect width="100%" height="100%" fill="${bg}"/>` : ''}<defs>${DEFS}</defs>
 <g transform="translate(70,30)">${iso({ ring: ink, sombra: !!bg })}</g>
-<g transform="translate(560,238) scale(2.3)">${wm.svg}</g>
-<text x="562" y="300" font-size="27" font-weight="500" letter-spacing="6" fill="${mut}">SISTEMA INTELIGENTE DE GESTIÓN PÚBLICA</text>
-<text x="562" y="340" font-size="18" font-weight="500" letter-spacing="2.4" fill="${mod}">INVERSIONES · CONTRATACIONES · PRESUPUESTO · PLANEAMIENTO · SIAF</text>
-<text x="562" y="382" font-size="21" font-weight="600" letter-spacing="3.5" fill="${gold}">CON ARKIA, LA IA DE ARKA PROYECTOS</text></svg>`;
+<g transform="translate(560,236) scale(1.95)">${wm.svg}</g>
+<rect x="562" y="286" width="44" height="3" rx="1.5" fill="${gold}"/><text x="620" y="296" font-size="20" font-weight="600" letter-spacing="5.5" fill="${mut}">SISTEMA INTELIGENTE DE GESTIÓN PÚBLICA</text>
+<text x="562" y="352" font-size="42" font-family="Fraunces,Georgia,serif" font-style="italic" font-weight="500" fill="${ink}">Toda la gestión de tu entidad, <tspan fill="${gold}">en el blanco.</tspan></text>
+${['INVERSIONES', 'CONTRATACIONES', 'PRESUPUESTO', 'PLANEAMIENTO', 'SIAF'].reduce((a, t) => { const w = t.length * 12.2 + 40; a.s += `<rect x="${a.x}" y="378" width="${w}" height="34" rx="17" fill="${bg ? 'rgba(255,255,255,.06)' : 'rgba(15,42,67,.05)'}" stroke="${gold}" stroke-opacity=".45"/><circle cx="${a.x + 17}" cy="395" r="3.5" fill="${gold}"/><text x="${a.x + 28}" y="400" font-size="15" font-weight="600" letter-spacing="1.6" fill="${mod}">${t}</text>`; a.x += w + 10; return a; }, { s: '', x: 562 }).s}
+<text x="562" y="446" font-size="18" font-weight="500" letter-spacing="1.2" fill="${gold}">✦ con <tspan font-family="Fraunces,Georgia,serif" font-style="italic" fill="${ink}" font-size="20">Arkia</tspan>, la inteligencia artificial de <tspan font-weight="700" letter-spacing="2" fill="${ink}">ARKA PROYECTOS</tspan></text></svg>`;
   }
   function favicon() {
     if (typeof document === 'undefined') return;
@@ -71,16 +72,23 @@
 .dn-iso{width:min(56vh,460px);height:auto;overflow:visible;transform-style:preserve-3d}
 .dn-word{display:flex;flex-direction:column;gap:12px;min-width:0}
 .dn-word svg{width:min(44vw,560px);height:auto;overflow:visible}
-.dn-word .t{font-weight:500;font-size:min(2.7vh,22px);letter-spacing:.6em;text-transform:uppercase;color:#8FB4E0;opacity:0;white-space:nowrap}
-.dn-word .m{font-weight:500;font-size:min(1.9vh,14.5px);letter-spacing:.16em;text-transform:uppercase;color:rgba(245,242,234,.72);opacity:0;white-space:nowrap}
-.dn-word .r{height:1.5px;width:0;background:linear-gradient(90deg,#D4B25E,transparent);margin:2px 0}
-.dn-word .a{font-size:min(2.2vh,17px);letter-spacing:.1em;color:#D4B25E;opacity:0;white-space:nowrap}
-.dn-word .a i{font-family:Fraunces,Georgia,serif;font-style:italic;color:#F5F2EA}
+.dn-word .k{display:flex;align-items:center;gap:12px;font-weight:600;font-size:min(2vh,15px);letter-spacing:.6em;text-transform:uppercase;color:#8FB4E0;opacity:0;white-space:nowrap}
+.dn-word .k:before{content:"";width:var(--w,0px);height:2px;background:linear-gradient(90deg,#D4B25E,#F3DC8E);border-radius:2px;flex:none}
+.dn-word .f{font-family:Fraunces,Georgia,serif;font-style:italic;font-weight:500;font-size:min(4.6vh,38px);line-height:1.15;color:#F5F2EA;letter-spacing:-.005em;max-width:640px}
+.dn-word .f span{display:inline-block;opacity:0;transform:translateY(18px)}
+.dn-word .f em{font-style:italic;color:#F3DC8E}
+.dn-word .c{display:flex;flex-wrap:wrap;gap:8px;margin-top:4px}
+.dn-word .c span{display:inline-flex;align-items:center;gap:8px;padding:7px 13px;border-radius:999px;border:1px solid rgba(212,178,94,.35);background:rgba(255,255,255,.05);font-weight:600;font-size:min(1.9vh,14px);letter-spacing:.06em;color:#F5F2EA;opacity:0;transform:scale(.7);backdrop-filter:blur(4px)}
+.dn-word .c span:before{content:"";width:7px;height:7px;border-radius:50%;background:linear-gradient(135deg,#F3DC8E,#B08D3E);box-shadow:0 0 8px rgba(243,220,142,.7)}
+.dn-word .a{display:flex;align-items:center;gap:10px;font-size:min(2.2vh,17px);letter-spacing:.06em;color:#D4B25E;opacity:0;white-space:nowrap;margin-top:6px}
+.dn-word .a i{font-family:Fraunces,Georgia,serif;font-style:italic;color:#F5F2EA;font-size:1.15em}
+.dn-word .a b{font-weight:700;color:#F5F2EA;letter-spacing:.1em}
+.dn-word .a .ai{width:22px;height:22px;flex:none}
 .dn-cta{position:absolute;left:0;right:0;bottom:6vh;z-index:2;display:flex;justify-content:center;gap:12px;opacity:0}
 .dn-btn{border:0;border-radius:12px;padding:13px 26px;font:inherit;font-weight:700;font-size:15px;cursor:pointer;background:#F9A825;color:#1C1917;box-shadow:0 10px 30px rgba(0,0,0,.35);transition:transform .15s}
 .dn-btn:hover{transform:translateY(-2px)}
 .dn-btn.g{background:rgba(255,255,255,.1);color:#fff;border:1px solid rgba(255,255,255,.3)}
-@media (max-width:760px){.dn-lock{flex-direction:column;gap:18px}.dn-word{align-items:center;text-align:center}.dn-word svg{width:min(80vw,420px)}.dn-word .t,.dn-word .m,.dn-word .a{white-space:normal}}`;
+@media (max-width:760px){.dn-lock{flex-direction:column;gap:18px}.dn-word{align-items:center;text-align:center}.dn-word>svg{width:min(80vw,420px)}.dn-word .k,.dn-word .a{white-space:normal;justify-content:center}.dn-word .c{justify-content:center}.dn-word .f{font-size:min(3.6vh,26px)}}`;
   function cargarGsap() {
     return new Promise(res => {
       if (root.gsap) return res(true);
@@ -100,7 +108,7 @@
   async function intro(el, o) {
     o = o || {};
     if (!document.getElementById('dn-css')) { const st = document.createElement('style'); st.id = 'dn-css'; st.textContent = CSS; document.head.appendChild(st); }
-    const wm = wordmark({ ink: '#F5F2EA', plumas: '#F5F2EA' });
+    const wm = wordmark({ ink: '#F5F2EA' });
     el.classList.add('dn-stage');
     el.innerHTML = `<canvas></canvas><div class="dn-grid"></div>
 <div class="dn-lock">
@@ -112,11 +120,11 @@
   <g class="dn-sparks"></g>
  </svg>
  <div class="dn-word">
-  <svg viewBox="-4 -80 ${wm.w + 8} 92"><defs>${DEFS}<clipPath id="dn-clip">${wm.svg.replace(/class="dn-l"/g, '')}</clipPath></defs>${wm.svg}<rect class="dn-sheen" x="-200" y="-90" width="120" height="110" fill="url(#dn-sheen-g)" clip-path="url(#dn-clip)" transform="skewX(-20)"/><defs><linearGradient id="dn-sheen-g" x1="0" x2="1"><stop offset="0" stop-color="#fff" stop-opacity="0"/><stop offset=".5" stop-color="#fff" stop-opacity=".75"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></linearGradient></defs></svg>
-  <div class="t">Sistema inteligente de gestión pública</div>
-  <div class="r"></div>
-  <div class="m">Inversiones · Contrataciones · Presupuesto · Planeamiento · SIAF</div>
-  <div class="a">con <i>Arkia</i>, la IA de ARKA PROYECTOS</div>
+  <svg viewBox="-4 -78 ${wm.w + 8} 86"><defs>${DEFS}<clipPath id="dn-clip">${wm.svg.replace(/class="dn-l"/g, '')}</clipPath></defs>${wm.svg}<rect class="dn-sheen" x="-200" y="-90" width="120" height="110" fill="url(#dn-sheen-g)" clip-path="url(#dn-clip)" transform="skewX(-20)"/><defs><linearGradient id="dn-sheen-g" x1="0" x2="1"><stop offset="0" stop-color="#fff" stop-opacity="0"/><stop offset=".5" stop-color="#fff" stop-opacity=".75"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></linearGradient></defs></svg>
+  <div class="k">Sistema inteligente de gestión pública</div>
+  <div class="f">${(o.frase || 'Toda la gestión de tu entidad, <em>en el blanco.</em>').split(' ').map(w => `<span>${w}</span>`).join(' ')}</div>
+  <div class="c"><span>Inversiones</span><span>Contrataciones</span><span>Presupuesto</span><span>Planeamiento</span><span>SIAF</span></div>
+  <div class="a"><svg class="ai" viewBox="0 0 24 24" fill="none"><path d="M12 2l1.8 5.2L19 9l-5.2 1.8L12 16l-1.8-5.2L5 9l5.2-1.8z" fill="#F3DC8E"/><path d="M19 15l.9 2.1L22 18l-2.1.9L19 21l-.9-2.1L16 18l2.1-.9z" fill="#D4B25E"/></svg><span>con <i>Arkia</i>, la inteligencia artificial de <b>ARKA PROYECTOS</b></span></div>
  </div>
 </div>
 ${o.botones ? `<div class="dn-cta">${o.botones}</div>` : ''}`;
@@ -124,7 +132,7 @@ ${o.botones ? `<div class="dn-cta">${o.botones}</div>` : ''}`;
     const ok = await cargarGsap();
     const $ = s => el.querySelector(s), $$ = s => [...el.querySelectorAll(s)];
     const isoEl = $('.dn-iso'), rings = $$('.dn-ring'), letters = $$('.dn-l');
-    if (!ok) { $$('.dn-word .t,.dn-word .m,.dn-word .a').forEach(x => x.style.opacity = 1); $('.dn-word .r').style.width = '100%'; if ($('.dn-cta')) $('.dn-cta').style.opacity = 1; o.onDone && o.onDone(); return; }
+    if (!ok) { $$('.dn-word .k,.dn-word .a,.dn-word .f span,.dn-word .c span').forEach(x => { x.style.opacity = 1; x.style.transform = 'none'; }); $('.dn-word .k').style.setProperty('--w', '44px'); if ($('.dn-cta')) $('.dn-cta').style.opacity = 1; o.onDone && o.onDone(); return; }
     const g = root.gsap;
     rings.forEach(r => { const L = 2 * Math.PI * r.r.baseVal.value; r.style.strokeDasharray = L; r.style.strokeDashoffset = L; });
     g.set($$('.dn-hl,.dn-core'), { opacity: 0 }); g.set($('.dn-fly'), { x: -760, scaleX: 2.2, transformOrigin: '200px 200px' }); g.set(letters, { y: 46, opacity: 0, filter: 'blur(8px)' });
@@ -150,11 +158,13 @@ ${o.botones ? `<div class="dn-cta">${o.botones}</div>` : ''}`;
       // letras: desenfoque -> nitidez, luego brillo metálico
       .to(letters, { y: 0, opacity: 1, filter: 'blur(0px)', duration: .7, stagger: .09, ease: 'expo.out' }, 1.95)
       .fromTo($('.dn-sheen'), { x: -220 }, { x: wm.w + 260, duration: 1.1, ease: 'power2.inOut' }, 2.7)
-      .to($('.dn-word .t'), { opacity: 1, letterSpacing: '.32em', duration: 1.1, ease: 'power3.out' }, 2.6)
-      .to($('.dn-word .r'), { width: '100%', duration: .9, ease: 'power3.out' }, 2.9)
-      .to($('.dn-word .m'), { opacity: 1, duration: .8 }, 3.1)
-      .to($('.dn-word .a'), { opacity: 1, duration: .8 }, 3.4);
-    if ($('.dn-cta')) tl.to($('.dn-cta'), { opacity: 1, duration: .8 }, 3.7);
+      .to($('.dn-word .k'), { opacity: 1, letterSpacing: '.3em', duration: 1, ease: 'power3.out' }, 2.55)
+      .to($$('.dn-word .f span'), { opacity: 1, y: 0, duration: .6, stagger: .06, ease: 'power3.out' }, 2.8)
+      .to($$('.dn-word .c span'), { opacity: 1, scale: 1, duration: .5, stagger: .09, ease: 'back.out(2)' }, 3.3)
+      .to($('.dn-word .a'), { opacity: 1, duration: .8 }, 3.8)
+      .fromTo($('.dn-word .a .ai'), { rotate: -40, scale: .4, transformOrigin: '50% 50%' }, { rotate: 0, scale: 1, duration: .7, ease: 'back.out(2.5)' }, 3.8);
+    if ($('.dn-cta')) tl.to($('.dn-cta'), { opacity: 1, duration: .8 }, 4.1);
+    g.to($('.dn-word .k'), { duration: .8, ease: 'power3.out', delay: 2.55, onUpdate: function () { $('.dn-word .k').style.setProperty('--w', (this.progress() * 44) + 'px'); } });
     // chispas doradas del impacto
     const sp = $('.dn-sparks'); const NS = 'http://www.w3.org/2000/svg';
     tl.call(() => { for (let i = 0; i < 26; i++) { const a = Math.random() * 6.283, d = 60 + Math.random() * 130, l = document.createElementNS(NS, 'line');
