@@ -12,7 +12,10 @@
     const key = await crypto.subtle.deriveKey({ name: 'PBKDF2', salt: b64(p.salt), iterations: p.iter, hash: 'SHA-256' }, km, { name: 'AES-GCM', length: 256 }, false, ['decrypt']);
     const pt = await crypto.subtle.decrypt({ name: 'AES-GCM', iv: b64(p.iv) }, key, b64(p.data));
     const txt = await new Response(new Blob([pt]).stream().pipeThrough(new DecompressionStream('deflate'))).text();
-    return JSON.parse(txt);
+    const E0 = JSON.parse(txt);
+    // ponytail: paquete publico (sin SIAF) -> el .enc es solo la puerta; los datos vienen del .pub.json que la corrida diaria refresca
+    if (E0.publico) { try { const f = await j(`data/entidad/${ue}.pub.json`); if (f && f.ue === String(ue)) return f; } catch (e) { } }
+    return E0;
   }
 
   // ponytail: sesion recordada = {ue, clave} en localStorage de este navegador; el x (cerrar sesion) la borra. Si la clave cambio, el descifrado falla y se vuelve al formulario.
