@@ -220,7 +220,7 @@ body.sala .lens a{background:#fff;color:#0F172A;border-left-color:#1E5AA8}body.s
 <script src="fed.js?v=6e049bd"></script>
 <script src="entidad.js?v=df691be"></script>
 <script src="proveedores.js?v=1a11bf3"></script>
-<script src="contrataciones.js?v=5f80dc4"></script>
+<script src="contrataciones.js?v=44fce95"></script>
 <script src="reporte_ue.js?v=1c58747"></script>
 <script src="conoce.js?v=b7d0093"></script>
 <script>
@@ -408,7 +408,7 @@ async function paginaUE(ue){uepAb=null;$('uep').innerHTML='<div class="fxb mutx"
  function irDetalle(id){
   const RU=window.ResumenInversionUtil;
   if(!RU)return;
-  if(id==='sea'){RU.verDetalleResumen('📑','CONTRATACIONES',`<div id="ct-slot"></div>`);const obras=`<p class="mutx" style="margin-bottom:10px">${p2info}</p>${p2det()}`;const verCui=cui=>{RU.cerrarDetalleResumen();fichaCUI(cui)};const wireL=el=>el.querySelectorAll('tr.l[data-k^="cui:"]').forEach(tr=>tr.onclick=()=>verCui(tr.dataset.k.slice(4)));if(window.Contrataciones)Contrataciones.ui(document.getElementById('ct-slot'),U,{obras,onCui:verCui}).then(()=>wireL(document.getElementById('ct-slot')));else{document.getElementById('ct-slot').innerHTML=obras;wireL(document.getElementById('ct-slot'))}}
+  if(id==='sea'){RU.verDetalleResumen('📑',`CONTRATACIONES · ${String(U.nombre||'').replace(/</g,'&lt;')} · UE ${U.cod}`,`<div id="ct-slot"></div>`);const obras=`<p class="mutx" style="margin-bottom:10px">${p2info}</p>${p2det()}`;const verCui=cui=>{RU.cerrarDetalleResumen();fichaCUI(cui)};const wireL=el=>el.querySelectorAll('tr.l[data-k^="cui:"]').forEach(tr=>tr.onclick=()=>verCui(tr.dataset.k.slice(4)));if(window.Contrataciones)Contrataciones.ui(document.getElementById('ct-slot'),U,{obras,onCui:verCui,onAtras:RU.cerrarDetalleResumen}).then(()=>wireL(document.getElementById('ct-slot')));else{document.getElementById('ct-slot').innerHTML=obras;wireL(document.getElementById('ct-slot'))}}
   else if(id==='al')RU.verDetalleResumen('🎯','METAS Y SEGUIMIENTO',`<p class="mutx" style="margin-bottom:10px">${p3sub}</p>${p3det()}`);
   else if(id==='pi'){RU.verDetalleResumen(P4.ic,P4.n4.toUpperCase(),P4.info+P4.det());if(U.nivel==='R'&&typeof FED!=='undefined'){const slot=document.getElementById('fed-slot');if(slot)FED.ui(slot,U)}}
  }

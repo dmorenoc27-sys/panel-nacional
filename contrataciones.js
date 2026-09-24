@@ -35,6 +35,10 @@
       @keyframes ctIn{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:none}}
       .ct-hero{position:relative;overflow:hidden;border-radius:16px;background:radial-gradient(900px 300px at 10% -20%,rgba(255,255,255,.14),transparent 60%),linear-gradient(135deg,#0A1B2E 0%,#123E7A 55%,#1E6BB8 100%);color:#fff;padding:18px 20px;box-shadow:0 14px 34px -14px rgba(10,27,46,.6)}
       .ct-hero input{transition:box-shadow .2s ease,transform .2s ease}.ct-hero input:focus{outline:0;box-shadow:0 0 0 4px rgba(255,205,68,.45);transform:scale(1.01)}
+      .ct-top{display:flex;gap:12px;align-items:center;margin:0 0 12px;padding:10px 14px;background:linear-gradient(135deg,#fff 60%,#EDF3FC);border:1px solid var(--line);border-left:5px solid var(--p);border-radius:12px;box-shadow:var(--sh)}
+      .ct-top .ct-mod{font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;font-weight:800;color:var(--p)}
+      .ct-top .ct-nom{font-size:17px;font-weight:800;color:var(--p2);line-height:1.15;margin:2px 0}
+      .ct-top .btn{white-space:nowrap}
       .ct-strip{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:0 0 12px}
       .ct-strip .tag{font-size:11px;padding:3px 9px;box-shadow:0 1px 2px rgba(15,42,67,.08)}
       .ct-bars{display:flex;gap:6px;align-items:flex-end;height:96px;padding:8px 4px 0}.ct-bars>div{flex:1;text-align:center;font-size:10px;color:var(--ink2)}.ct-bars i{display:block;border-radius:5px 5px 0 0;margin:2px 5px 0;background:var(--c,var(--p2));transform-origin:bottom;animation:ctGrow .5s ease both}
@@ -48,6 +52,9 @@
   }
   const barras = (pares, col) => { const mx = Math.max(...pares.map(p => p[1])) || 1; return `<div class="ct-bars" style="--c:${col}">${pares.map(([k, v, n]) => `<div title="${k}: ${n} proceso${n === 1 ? '' : 's'} · ${S(v)}"><div style="font-size:9.5px;font-weight:700;color:var(--ink)">${v >= 1e6 ? (v / 1e6).toFixed(1) + 'M' : v >= 1e3 ? Math.round(v / 1e3) + 'k' : v || ''}</div><i style="height:${Math.max(3, Math.round(56 * v / mx))}px"></i>${k}</div>`).join('')}</div>`; };
 
+  const NIV = { E: 'Gobierno Nacional', R: 'Gobierno Regional', M: 'Gobierno Local', L: 'Gobierno Local' };
+  // cabecera fija del modulo: siempre se ve que entidad se analiza y en que modulo estamos; Atras cierra, Limpiar deja todo como al entrar
+  const cabecera = (u, sub, opts) => `<div class="ct-top">${opts.onAtras ? '<button class="btn" id="ct-atras" title="Volver a la ficha de la entidad">← Atrás</button>' : ''}<div style="flex:1;min-width:0"><div class="ct-mod">📑 Módulo de Contrataciones · SEACE</div><div class="ct-nom">${esc(u.nombre || ('UE ' + u.cod))}</div><div class="mutx" style="font-size:11.5px">Unidad ejecutora ${esc(u.cod)}${NIV[u.nivel] ? ' · ' + NIV[u.nivel] : ''}${sub ? ' · ' + sub : ''}</div></div><button class="btn" id="ct-limpiar" title="Cerrar paneles y borrar la búsqueda de proveedor">🧹 Limpiar</button></div>`;
   function vista(el, u, d, opts) {
     css();
     const anios = Object.keys(d.anios || {}).sort(), act = (d.anios || {})[String(ANIO)] || {};
@@ -66,12 +73,13 @@
       ${panel('OB', '#37474F', '🛣️', 'Obras por inversión (CUI)', nObras ? `${nObras} obra${nObras > 1 ? 's' : ''}` : '—', 'contratista, firma y plazo por CUI · SEACE', nObras ? 'clic para ver el detalle por inversión' : 'sin procesos de obra vinculados')}
     </div>`;
     // ---- detalles ----
-    let filtro = 'T', q = '';
-    const filas = () => d.proc.filter(p => (filtro === 'T' || p[1] === filtro) && (!q || (p[4] + ' ' + p[6] + ' ' + p[3] + ' ' + p[5]).toLowerCase().includes(q)));
+    let filtro = 'T', q = '', anioF = '';
+    const filas = () => d.proc.filter(p => (filtro === 'T' || p[1] === filtro) && (!anioF || String(p[0] || '').slice(0, 4) === anioF) && (!q || (p[4] + ' ' + p[6] + ' ' + p[3] + ' ' + p[5]).toLowerCase().includes(q)));
     const filaP = p => `<tr${p[10] ? ' style="background:#FDF2F2"' : ''}><td>${D(p[0])}</td><td><span class="tag" style="background:${OBJ[p[1]][2]}1F;color:${OBJ[p[1]][2]}">${OBJ[p[1]][0]}</span></td><td style="white-space:normal;font-size:10.5px"><b>${esc(p[2])}</b><br><small class="mutx">${esc(p[3])}</small></td><td style="white-space:normal;font-size:10.5px">${esc(p[4])}${p[9] ? ` <a class="fc" data-cui="${esc(p[9])}" style="cursor:pointer;font-weight:700">CUI ${esc(p[9])}</a>` : ''}</td><td style="white-space:normal">${prov(p[5], p[6])}</td><td>${S(p[7])}</td><td>${p[10] ? tag('RESUELTO', 'bad') : tag(p[8] || '—', /Contratado|Consentido/.test(p[8]) ? 'ok' : 'warn')}</td></tr>`;
-    const tabla = () => { const L = filas(); return L.length ? `<div style="overflow-x:auto"><table class="pd-tbl"><tr><th>Buena pro</th><th>Objeto</th><th>Proceso</th><th>Descripción</th><th>Proveedor</th><th>Monto</th><th>Estado</th></tr>${L.map(filaP).join('')}</table></div>${d.proc.length >= 150 ? '<p class="mutx" style="font-size:10.5px">Se muestran los 150 procesos más recientes.</p>' : ''}` : '<p class="mutx" style="font-size:12px;padding:8px 4px">Ningún proceso con ese filtro.</p>'; };
+    const tabla = () => { const L = filas(); return L.length ? `<div style="overflow-x:auto"><table class="pd-tbl"><tr><th>Buena pro</th><th>Objeto</th><th>Proceso</th><th>Descripción</th><th>Proveedor</th><th>Monto</th><th>Estado</th></tr>${L.map(filaP).join('')}</table></div><p class="mutx" style="font-size:10.5px">${L.length} proceso${L.length === 1 ? '' : 's'}${L.length !== d.proc.length ? ` de ${d.proc.length}` : ''} · ordenados por fecha de buena pro, del más reciente al más antiguo${d.proc.length >= 2000 ? ' · se muestran los 2,000 más recientes' : ''}</p>` : '<p class="mutx" style="font-size:12px;padding:8px 4px">Ningún proceso con ese filtro.</p>'; };
     const listado = k => `${lbl(k === 'T' ? 'Procesos adjudicados' : `Procesos de ${OBJ[k][0].toLowerCase()}`, 'buena pro · SEACE 2018 en adelante')}
       <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-bottom:8px"><div class="ct-seg" style="display:flex;gap:4px;flex-wrap:wrap">${[['T', 'Todos'], ...ORDEN.slice(0, 4).map(x => [x, OBJ[x][0]])].map(([x, t]) => `<button class="btn${x === k ? ' on' : ''}" data-f="${x}">${t}</button>`).join('')}</div>
+        <select id="ct-y" title="Año de la buena pro" style="padding:6px 10px;border:1.5px solid var(--line);border-radius:999px;font:inherit;font-size:12px;background:#fff"><option value="">Todos los años</option>${[...anios].reverse().map(y => { const r = d.anios[y] || {}, n = (k === 'T' ? ORDEN : [k]).reduce((a, x) => a + (r[x] ? r[x][0] : 0), 0); return n ? `<option value="${y}"${y === anioF ? ' selected' : ''}>${y} (${n})</option>` : ''; }).join('')}</select>
         <input type="search" id="ct-q" placeholder="Buscar por descripción, proveedor, RUC o nomenclatura…" style="flex:1;min-width:220px;padding:6px 10px;border:1.5px solid var(--line);border-radius:999px;font:inherit;font-size:12px"></div><div id="ct-tabla"></div>`;
     const detObj = k => { const r = d.res[k]; const pares = anios.map(y => [y, (d.anios[y][k] || [0, 0])[1], (d.anios[y][k] || [0, 0])[0]]); return `<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;align-items:start"><div><div class="pd-lbl">${OBJ[k][1]} ${OBJ[k][0]} por año<small>monto adjudicado</small></div>${r ? barras(pares, OBJ[k][2]) : '<p class="mutx">Sin procesos.</p>'}</div>
       <div><div class="pd-lbl">Resumen<small>2018–${ANIO}</small></div><div class="pd-row"><b>Procesos</b><span>${r ? r[0] : 0}</span></div><div class="pd-row"><b>Adjudicado</b><span>${r ? S(r[1]) : '—'}</span></div><div class="pd-row"><b>Promedio</b><span>${r && r[0] ? S(r[1] / r[0]) : '—'}</span></div><div class="pd-row"><b>${ANIO}</b><span>${act[k] ? `${act[k][0]} · ${S(act[k][1])}` : 'ninguno'}</span></div><div class="pd-row"><b>Resueltos</b><span>${resueltos.filter(p => p[1] === k).length}</span></div></div></div>` + listado(k); };
@@ -87,6 +95,7 @@
     const DET = { AL: detAL, PR: detPR, EV: detEV, OB: detOB };
     // ---- armado ----
     el.innerHTML = `<div style="padding:8px">
+      ${cabecera(u, `${totN} procesos 2018–${ANIO}`, opts)}
       <div class="ct-strip"><span class="tag" style="background:#EDF3FC;color:var(--p2)">${totN} procesos · ${S(totM)} adjudicados 2018–${ANIO}</span><span class="tag ${d.n_res ? 'bad' : 'ok'}">${d.n_res || 0} contrato${d.n_res === 1 ? '' : 's'} resuelto${d.n_res === 1 ? '' : 's'}</span><span class="tag ${d.pen_tot ? 'warn' : 'ok'}">${d.pen_tot ? `${d.pen_tot[0]} penalidad${d.pen_tot[0] > 1 ? 'es' : ''}` : 'sin penalidades'}</span><span class="mutx" style="margin-left:auto;font-size:11px">Clic en un panel para desplegar su detalle · SEACE · corte ${D(d.corte)}</span></div>
       ${grid}<div id="ct-det"></div>
       <div id="ct-prov" style="margin-top:14px"></div>
@@ -105,10 +114,16 @@
       abierto = k; filtro = ORDEN.includes(k) ? k : 'T'; q = '';
       det.innerHTML = `<div class="ct-det">${DET[k] ? DET[k]() : detObj(k)}</div>`;
       const qi = det.querySelector('#ct-q'); if (qi) qi.oninput = e => { q = e.target.value.trim().toLowerCase(); pintarTabla(); };
+      const ys = det.querySelector('#ct-y'); if (ys) ys.onchange = e => { anioF = e.target.value; pintarTabla(); };
       det.querySelectorAll('.ct-seg button').forEach(b => b.onclick = () => { filtro = b.dataset.f; pintarTabla(); });
       pintarTabla(); wire(); det.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
     };
     el.querySelectorAll('.ct-p').forEach(p => p.onclick = () => abrir(p.dataset.p));
+    const radar = () => { if (window.Proveedores) Proveedores.ui(el.querySelector('#ct-prov'), { compacto: true, onCui: opts.onCui, sugerencias: [...new Map([...(d.prov || []).map(p => [p[0], p[1]]), ...d.proc.map(p => [p[5], p[6]])]).entries()] }); };
+    const limpiar = () => { abierto = null; filtro = 'T'; q = ''; anioF = ''; det.innerHTML = ''; el.querySelectorAll('.ct-p').forEach(p => p.classList.remove('on')); radar(); el.scrollIntoView({ block: 'start' }); };
+    const ba = el.querySelector('#ct-atras'); if (ba) ba.onclick = () => opts.onAtras();
+    el.querySelector('#ct-limpiar').onclick = limpiar;
+    radar(); return;
     if (window.Proveedores) Proveedores.ui(el.querySelector('#ct-prov'), { compacto: true, onCui: opts.onCui, sugerencias: [...new Map([...(d.prov || []).map(p => [p[0], p[1]]), ...d.proc.map(p => [p[5], p[6]])]).entries()] });
   }
   async function ui(el, u, opts) {
@@ -117,10 +132,11 @@
     let d = null;
     try { const [r, ri] = await Promise.all([fetch(`data/contrat/${u.cod}.json`), fetch('data/contrat/index.json')]); if (r.ok) d = await r.json(); if (d && ri.ok) d.corte = (await ri.json()).corte || d.corte; } catch (e) { }
     if (!d) {
-      el.innerHTML = `<div style="padding:8px"><div class="card" style="padding:18px;text-align:center"><div style="font-size:28px">📑</div><b style="color:var(--p2)">Sin procesos de selección registrados en el SEACE desde 2018 para esta unidad ejecutora</b><p class="mutx" style="font-size:11.5px;margin:6px 0 0">Puede que contrate solo por órdenes de compra (menores a 8 UIT) o que sus procesos los lleve otra unidad (sede central del pliego).</p></div>
+      css(); el.innerHTML = `<div style="padding:8px">${cabecera(u, '', opts)}<div class="card" style="padding:18px;text-align:center"><div style="font-size:28px">📑</div><b style="color:var(--p2)">Sin procesos de selección registrados en el SEACE desde 2018 para esta unidad ejecutora</b><p class="mutx" style="font-size:11.5px;margin:6px 0 0">Puede que contrate solo por órdenes de compra (menores a 8 UIT) o que sus procesos los lleve otra unidad (sede central del pliego).</p></div>
         ${opts.obras ? lbl('Obras vinculadas a las inversiones de la entidad', 'SEACE · por CUI') + opts.obras : ''}${lbl('Verificar un proveedor', 'sanciones, inhabilitaciones, penalidades y contratos resueltos por RUC')}<div id="ct-prov"></div></div>`;
       el.querySelectorAll('[data-cui]').forEach(a => a.onclick = () => opts.onCui && opts.onCui(a.dataset.cui));
-      css(); if (window.Proveedores) Proveedores.ui(el.querySelector('#ct-prov'), { compacto: true, onCui: opts.onCui });
+      const radar0 = () => { if (window.Proveedores) Proveedores.ui(el.querySelector('#ct-prov'), { compacto: true, onCui: opts.onCui }); }; radar0();
+      const ba = el.querySelector('#ct-atras'); if (ba) ba.onclick = () => opts.onAtras(); el.querySelector('#ct-limpiar').onclick = radar0;
       return;
     }
     vista(el, u, d, opts);
