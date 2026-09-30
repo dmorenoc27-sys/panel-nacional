@@ -21,7 +21,8 @@
   function css() {
     if (document.getElementById('ct-css')) return;
     const st = document.createElement('style'); st.id = 'ct-css'; st.textContent = `
-      .ct-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}@media(max-width:1100px){.ct-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}@media(max-width:560px){.ct-grid{grid-template-columns:1fr}}
+      .ct-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+      .ct-bars i{position:relative}.ct-bars i em{position:absolute;left:0;right:0;bottom:0;background:#1B9E5A;border-radius:inherit}@media(max-width:1100px){.ct-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}@media(max-width:560px){.ct-grid{grid-template-columns:1fr}}
       .ct-p{position:relative;overflow:hidden;background:#fff;border-radius:14px;padding:14px 16px 12px;border:1px solid rgba(15,42,67,.08);border-left:5px solid var(--c);box-shadow:0 1px 2px rgba(15,42,67,.06),0 6px 16px -8px rgba(15,42,67,.18);cursor:pointer;transition:transform .18s ease,box-shadow .18s ease,background .18s ease;user-select:none}
       .ct-p:hover{transform:translateY(-3px);box-shadow:0 2px 4px rgba(15,42,67,.08),0 14px 28px -10px rgba(15,42,67,.32)}
       .ct-p:active{transform:translateY(-1px) scale(.995)}
@@ -53,6 +54,9 @@
   }
   const barras = (pares, col, sel) => { const mx = Math.max(...pares.map(p => p[1])) || 1; return `<div class="ct-bars" style="--c:${col}">${pares.map(([k, v, n]) => `<div title="${k}: ${n} proceso${n === 1 ? '' : 's'} · ${S(v)}" style="${sel && k !== sel ? 'opacity:.35' : ''}"><div style="font-size:9.5px;font-weight:700;color:var(--ink)">${v >= 1e6 ? (v / 1e6).toFixed(1) + 'M' : v >= 1e3 ? Math.round(v / 1e3) + 'k' : v || ''}</div><i style="height:${Math.max(3, Math.round(56 * v / mx))}px"></i>${k}</div>`).join('')}</div>`; };
 
+  // PAC: barras por mes; la parte verde son los procesos que ya tienen buena pro
+  const MESN = ['', 'Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Set', 'Oct', 'Nov', 'Dic'];
+  const barsPA = pares => { const mx = Math.max(...pares.map(p => p[1])) || 1; return `<div class="ct-bars" style="--c:#5C6BC0">${pares.map(([m, n, a]) => `<div title="${m}: ${n} programado${n === 1 ? '' : 's'}${a != null ? ` · ${a} con buena pro` : ''}"><div style="font-size:9.5px;font-weight:700;color:var(--ink)">${n || ''}</div><i style="height:${Math.max(3, Math.round(56 * n / mx))}px">${a ? `<em style="height:${Math.round(100 * a / n)}%"></em>` : ''}</i>${m}</div>`).join('')}</div>`; };
   const NIV = { E: 'Gobierno Nacional', R: 'Gobierno Regional', M: 'Gobierno Local', L: 'Gobierno Local' };
   // cabecera fija del modulo: siempre se ve que entidad se analiza y en que modulo estamos; Atras cierra, Limpiar deja todo como al entrar
   const cabecera = (u, sub, opts, sel) => `<div class="ct-top">${opts.onAtras ? '<button class="btn" id="ct-atras" title="Volver a la ficha de la entidad">← Atrás</button>' : ''}<div style="flex:1;min-width:0"><div class="ct-mod">📑 Módulo de Contrataciones · SEACE</div><div class="ct-nom">${esc(u.nombre || ('UE ' + u.cod))}</div><div class="mutx" style="font-size:11.5px">Unidad ejecutora ${esc(u.cod)}${NIV[u.nivel] ? ' · ' + NIV[u.nivel] : ''}${sub ? ' · ' + sub : ''}</div></div>${sel || ''}<button class="btn" id="ct-limpiar" title="Cerrar paneles y borrar la búsqueda de proveedor">🧹 Limpiar</button></div>`;
@@ -72,6 +76,12 @@
     const sanc = provs.filter(p => p[4]).length;
     const nAl = n_res + (pen_tot ? pen_tot[0] : 0) + arb.length;
     const desde = Y ? `en ${Y}` : 'desde 2018', rango = Y || `2018–${ANIO}`;
+    // PAC del anio elegido (o el ultimo publicado hasta el actual)
+    const pacAnios = Object.keys(d.pac || {}).sort(); let pacSel = '';
+    const pacDe = () => Y || pacSel || pacAnios.filter(y => +y <= ANIO).pop() || pacAnios[pacAnios.length - 1] || '';
+    const hoyM = new Date().getMonth() + 1;
+    const estPA = (y, it) => it[6] ? ['Adjudicado', 'ok'] : !it[1] ? ['Sin mes', 'warn'] : +y > ANIO || (+y === ANIO && it[1] >= hoyM) ? ['Programado', 'warn'] : +y === ANIO ? ['Atrasado', 'bad'] : ['Sin buena pro', 'warn'];
+    const pac0 = d.pac && d.pac[pacDe()];
     // ---- paneles ----
     const panel = (k, col, ico, titulo, valor, sub, anio) => `<div class="ct-p" data-p="${k}" style="--c:${col}"><div class="ct-k">${ico} ${titulo}</div><div class="ct-v">${valor}</div><div class="ct-s">${sub}</div>${anio != null ? `<div class="ct-y">${anio}</div>` : ''}</div>`;
     const grid = `<div class="ct-grid">
@@ -79,6 +89,7 @@
       ${panel('AL', nAl ? '#D64545' : '#1B9E5A', '⚠️', 'Alertas contractuales', nAl ? `${n_res} resuelto${n_res === 1 ? '' : 's'}` : 'Sin alertas', `${pen_tot ? `${pen_tot[0]} penalidad${pen_tot[0] > 1 ? 'es' : ''} · ${S(pen_tot[1])}` : 'sin penalidades'} · ${arb.length ? `${arb.length} arbitraje${arb.length > 1 ? 's' : ''}` : 'sin arbitrajes'}${Y ? ` · ${Y}` : ''}`, m_res ? `Monto de contratos resueltos: ${S(m_res)}` : null)}
       ${panel('PR', sanc ? '#E39B1E' : '#00838F', '🏢', 'Proveedores', `${provs.length} principal${provs.length === 1 ? '' : 'es'}`, `por monto adjudicado ${Y || `2018→${ANIO}`}`, sanc ? `<b style="color:inherit">${sanc} con sanción</b> del Tribunal` : 'ninguno sancionado')}
       ${panel('EV', '#1E5AA8', '📈', 'Evolución y procedimientos', `<span data-n="${totM}">${S(totM)}</span>`, `${totN} proceso${totN === 1 ? '' : 's'} · ${Y || `${anios[0] || 2018}–${anios[anios.length - 1] || ANIO}`}`, `${tipos.length} tipo${tipos.length === 1 ? '' : 's'} de procedimiento · corte ${D(d.corte)}`)}
+      ${panel('PA', '#5C6BC0', '📅', `Plan Anual (PAC)${pac0 ? ' ' + pacDe() : ''}`, pac0 ? `${pac0.n} proceso${pac0.n === 1 ? '' : 's'}` : '—', pac0 ? `programados · <b style="color:inherit">${pac0.adj}</b> con buena pro` : `sin PAC registrado${Y ? ' en ' + Y : ''}`, pac0 ? `versión ${pac0.ver} · publicado ${D(pac0.fpub)}` : (d.pacF && !d.pacF['pac_' + ANIO] ? `<b style="color:#D64545">PAC ${ANIO} aún no descargado del OECE</b>` : null))}
       ${panel('OB', '#37474F', '🛣️', 'Obras por inversión (CUI)', nObras ? `${nObras} obra${nObras > 1 ? 's' : ''}` : '—', 'contratista, firma y plazo por CUI · SEACE', nObras ? 'clic para ver el detalle por inversión' : 'sin procesos de obra vinculados')}
     </div>`;
     // ---- detalles ----
@@ -101,14 +112,26 @@
         lbl('Por año y objeto', 'procesos · monto adjudicado') + `<div style="overflow-x:auto"><table class="pd-tbl"><tr><th>Año</th>${ORDEN.slice(0, 4).map(k => `<th>${OBJ[k][0]}</th>`).join('')}<th>Total</th></tr>${[...anios].reverse().map(y => { const r = d.anios[y]; const t = ORDEN.reduce((a, k) => [a[0] + (r[k] ? r[k][0] : 0), a[1] + (r[k] ? r[k][1] : 0)], [0, 0]); return `<tr${(Y ? y === Y : +y === ANIO) ? ' class="y"' : ''}><td>${y}</td>${ORDEN.slice(0, 4).map(k => `<td>${r[k] ? `${r[k][0]} · ${S(r[k][1])}` : '—'}</td>`).join('')}<td><b>${t[0]} · ${S(t[1])}</b></td></tr>`; }).join('')}</table></div>` +
         lbl('Por tipo de procedimiento', 'Ley 30225 / Ley 32069') + `<div style="overflow-x:auto"><table class="pd-tbl"><tr><th>Procedimiento</th><th>Procesos</th><th>Adjudicado</th><th>Participación</th></tr>${tipos.map(([t, r]) => `<tr><td>${esc(t)}</td><td>${r[0]}</td><td>${S(r[1])}</td><td><span style="display:inline-block;width:${Math.round(90 * r[1] / (tipos[0][1][1] || 1))}px;height:6px;background:var(--p2);border-radius:3px;vertical-align:middle"></span> ${totM ? (100 * r[1] / totM).toFixed(1) : 0} %</td></tr>`).join('')}</table></div>`; };
     const detOB = () => opts.obras ? lbl('Obras vinculadas a las inversiones de la entidad', 'SEACE · proceso, contratista, firma y plazo por CUI') + opts.obras : '<p class="mutx">Sin procesos de obra vinculados a inversiones.</p>';
-    const DET = { AL: detAL, PR: detPR, EV: detEV, OB: detOB };
+    const detPA = () => { const y = pacDe(), pac = d.pac && d.pac[y]; const selY = Y || pacAnios.length < 2 ? '' : `<select id="pa-y" style="padding:5px 10px;border:1.5px solid var(--line);border-radius:999px;font:inherit;font-size:12px;background:#fff">${pacAnios.map(a => `<option value="${a}"${a === y ? ' selected' : ''}>PAC ${a}</option>`).join('')}</select>`;
+      if (!pac) return `<div style="display:flex;gap:8px;align-items:center">${selY}<p class="mutx" style="margin:0">Sin Plan Anual de Contrataciones registrado en el SEACE para esta entidad${Y ? ` en ${Y}` : ''}.</p></div>`;
+      const its = pac.items || [], est = its.map(it => estPA(y, it)[0]), cnt = e => est.filter(x => x === e).length;
+      const pares = MESN.slice(1).map((m, i) => [m, pac.mes[i + 1], its.length ? its.filter(it => it[1] === i + 1 && it[6]).length : null]);
+      const objs = Object.entries(pac.obj || {}).sort((a, b) => b[1] - a[1]);
+      return `<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;align-items:start"><div><div class="pd-lbl" style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">Procesos programados por mes ${selY}<small>versión ${pac.ver} publicada el ${D(pac.fpub)}${(d.pacF || {})['pac_' + y] ? ` · archivo OECE verificado el ${D(d.pacF['pac_' + y].visto)}` : ''}${its.length ? ' · en verde los que ya tienen buena pro' : ''}</small></div>${barsPA(pares)}${pac.mes[0] ? `<p class="mutx" style="font-size:10.5px">${pac.mes[0]} sin mes previsto</p>` : ''}</div>
+        <div><div class="pd-lbl">Resumen<small>PAC ${y}</small></div><div class="pd-row"><b>Programados</b><span>${pac.n}</span></div><div class="pd-row"><b>Con buena pro</b><span>${pac.adj} · ${pac.n ? Math.round(100 * pac.adj / pac.n) : 0} %</span></div>${its.length ? `<div class="pd-row"><b>Pendientes</b><span>${cnt('Programado') + cnt('Sin mes')}</span></div><div class="pd-row"><b>${+y === ANIO ? 'Atrasados' : 'Sin buena pro'}</b><span>${cnt('Atrasado') + cnt('Sin buena pro')}</span></div>` : ''}${objs.map(([k, n]) => `<div class="pd-row"><b>${OBJ[k] ? OBJ[k][1] + ' ' + OBJ[k][0] : k}</b><span>${n}</span></div>`).join('')}</div></div>` +
+        (its.length ? lbl('Detalle del PAC', `${its.length} proceso${its.length === 1 ? '' : 's'}${its.length >= 600 ? ' (se muestran los 600 primeros por mes)' : ''} · buena pro = adjudicación del mismo año con la misma descripción`) + `<div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-bottom:8px"><select id="pa-e" style="padding:6px 10px;border:1.5px solid var(--line);border-radius:999px;font:inherit;font-size:12px;background:#fff"><option value="">Todos los estados</option>${[...new Set(est)].map(e => `<option>${e}</option>`).join('')}</select><input type="search" id="pa-q" placeholder="Buscar por descripción, referencia o procedimiento…" style="flex:1;min-width:220px;padding:6px 10px;border:1.5px solid var(--line);border-radius:999px;font:inherit;font-size:12px"></div><div id="pa-tabla"></div>` : `<p class="mutx" style="font-size:11px">El detalle por proceso se conserva para ${ANIO - 2}–${ANIO + 1}; de los años anteriores solo el resumen.</p>`); };
+    const tablaPA = () => { const y = pacDe(), its = ((d.pac || {})[y] || {}).items || [], e = (det.querySelector('#pa-e') || {}).value || '', q = ((det.querySelector('#pa-q') || {}).value || '').trim().toLowerCase();
+      const L = its.filter(it => (!e || estPA(y, it)[0] === e) && (!q || (it[4] + ' ' + it[0] + ' ' + it[3]).toLowerCase().includes(q)));
+      return L.length ? `<div style="overflow-x:auto"><table class="pd-tbl"><tr><th>Ref.</th><th>Mes</th><th>Objeto</th><th>Procedimiento</th><th>Descripción</th><th>Ítems</th><th>Estado</th></tr>${L.map(it => { const [t, c] = estPA(y, it); return `<tr><td>${esc(it[0])}</td><td>${MESN[it[1]] || '—'}</td><td><span class="tag" style="background:${(OBJ[it[2]] || OBJ.X)[2]}1F;color:${(OBJ[it[2]] || OBJ.X)[2]}">${(OBJ[it[2]] || OBJ.X)[0]}</span></td><td style="white-space:normal;font-size:10.5px">${esc(it[3])}</td><td style="white-space:normal;font-size:10.5px">${esc(it[4])}</td><td>${it[5]}</td><td>${tag(t, c)}</td></tr>`; }).join('')}</table></div>` : '<p class="mutx" style="font-size:12px;padding:8px 4px">Ningún proceso con ese filtro.</p>'; };
+    const wirePA = () => { const t = det.querySelector('#pa-tabla'); if (t) t.innerHTML = tablaPA(); ['#pa-e', '#pa-q'].forEach(id => { const x = det.querySelector(id); if (x) x.oninput = x.onchange = () => { t.innerHTML = tablaPA(); }; }); const ys = det.querySelector('#pa-y'); if (ys) ys.onchange = e => { pacSel = e.target.value; det.innerHTML = `<div class="ct-det">${detPA()}</div>`; wirePA(); }; };
+    const DET = { AL: detAL, PR: detPR, EV: detEV, OB: detOB, PA: detPA };
     // ---- armado ----
     el.innerHTML = `<div style="padding:8px">
       ${cabecera(u, `${totN} proceso${totN === 1 ? '' : 's'} ${rango}`, opts, `<select id="ct-anio" title="Año: todo el módulo se recalcula"><option value="">Todos los años · 2018–${ANIO}</option>${[...anios].reverse().map(y => { const r = d.anios[y] || {}, n = ORDEN.reduce((a, x) => a + (r[x] ? r[x][0] : 0), 0); return `<option value="${y}"${y === Y ? ' selected' : ''}>${y} · ${n} proceso${n === 1 ? '' : 's'}</option>`; }).join('')}</select>`)}
       <div class="ct-strip"><span class="tag" style="background:#EDF3FC;color:var(--p2)">${totN} proceso${totN === 1 ? '' : 's'} · ${S(totM)} adjudicados ${rango}</span><span class="tag ${n_res ? 'bad' : 'ok'}">${n_res} contrato${n_res === 1 ? '' : 's'} resuelto${n_res === 1 ? '' : 's'}</span><span class="tag ${pen_tot ? 'warn' : 'ok'}">${pen_tot ? `${pen_tot[0]} penalidad${pen_tot[0] > 1 ? 'es' : ''}` : 'sin penalidades'}</span><span class="mutx" style="margin-left:auto;font-size:11px">Clic en un panel para desplegar su detalle · SEACE · corte ${D(d.corte)}</span></div>
       ${grid}<div id="ct-det"></div>
       <div id="ct-prov" style="margin-top:14px"></div>
-      <p class="mutx" style="font-size:10px;margin-top:10px">Fuente: OECE · CONOSCE datos abiertos (adjudicaciones, contratos, penalidades y arbitrajes del SEACE, 2018 en adelante). Las órdenes de compra y servicio (compras menores a 8 UIT) no forman parte de la descarga masiva del OECE.</p></div>`;
+      <p class="mutx" style="font-size:10px;margin-top:10px">Fuente: OECE · CONOSCE datos abiertos (Plan Anual de Contrataciones, adjudicaciones, contratos, penalidades y arbitrajes del SEACE, 2018 en adelante). El PAC abierto no incluye montos. Las órdenes de compra y servicio (compras menores a 8 UIT) no forman parte de la descarga masiva del OECE.${(d.alertas || []).length ? ` <b style="color:#D64545" title="${esc(d.alertas.join('\n'))}">⚠ ${d.alertas.length} fuente${d.alertas.length === 1 ? '' : 's'} del OECE sin actualizar (ver Logs/fuentes_pendientes.txt)</b>` : ' Fuentes verificadas al día.'}</p></div>`;
     countUp(el);
     const det = el.querySelector('#ct-det'); let abierto = null;
     const wire = () => {
@@ -125,7 +148,7 @@
       const qi = det.querySelector('#ct-q'); if (qi) qi.oninput = e => { q = e.target.value.trim().toLowerCase(); pintarTabla(); };
       const ys = det.querySelector('#ct-y'); if (ys) ys.onchange = e => { anioF = e.target.value; pintarTabla(); };
       det.querySelectorAll('.ct-seg button').forEach(b => b.onclick = () => { filtro = b.dataset.f; pintarTabla(); });
-      pintarTabla(); wire(); det.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+      pintarTabla(); wire(); if (k === 'PA') wirePA(); det.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
     };
     el.querySelectorAll('.ct-p').forEach(p => p.onclick = () => abrir(p.dataset.p));
     const radar = () => { if (window.Proveedores) Proveedores.ui(el.querySelector('#ct-prov'), { compacto: true, onCui: opts.onCui, sugerencias: [...new Map([...(d.prov || []).map(p => [p[0], p[1]]), ...d.proc.map(p => [p[5], p[6]])]).entries()] }); };
@@ -140,7 +163,7 @@
     opts = opts || {};
     el.innerHTML = '<p class="mutx" style="padding:12px">Cargando contrataciones…</p>';
     let d = null;
-    try { const [r, ri] = await Promise.all([fetch(`data/contrat/${u.cod}.json`), fetch('data/contrat/index.json')]); if (r.ok) d = await r.json(); if (d && ri.ok) d.corte = (await ri.json()).corte || d.corte; } catch (e) { }
+    try { const [r, ri] = await Promise.all([fetch(`data/contrat/${u.cod}.json`), fetch('data/contrat/index.json')]); if (r.ok) d = await r.json(); if (d && ri.ok) { const ix = await ri.json(); d.corte = ix.corte || d.corte; d.pacF = ix.pac || {}; d.alertas = ix.alertas || []; } } catch (e) { }
     if (!d) {
       css(); el.innerHTML = `<div style="padding:8px">${cabecera(u, '', opts)}<div class="card" style="padding:18px;text-align:center"><div style="font-size:28px">📑</div><b style="color:var(--p2)">Sin procesos de selección registrados en el SEACE desde 2018 para esta unidad ejecutora</b><p class="mutx" style="font-size:11.5px;margin:6px 0 0">Puede que contrate solo por órdenes de compra (menores a 8 UIT) o que sus procesos los lleve otra unidad (sede central del pliego).</p></div>
         ${opts.obras ? lbl('Obras vinculadas a las inversiones de la entidad', 'SEACE · por CUI') + opts.obras : ''}${lbl('Verificar un proveedor', 'sanciones, inhabilitaciones, penalidades y contratos resueltos por RUC')}<div id="ct-prov"></div></div>`;

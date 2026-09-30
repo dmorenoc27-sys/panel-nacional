@@ -231,7 +231,7 @@ body{overflow-x:hidden}.nav{overflow:hidden;flex-wrap:nowrap}.top{overflow-x:aut
 <script src="fed.js?v=6e049bd"></script>
 <script src="entidad.js?v=df691be"></script>
 <script src="proveedores.js?v=1a11bf3"></script>
-<script src="contrataciones.js?v=6582b9c"></script>
+<script src="contrataciones.js?v=42b1dbc"></script>
 <script src="reporte_ue.js?v=1c58747"></script>
 <script src="diana.js?v=a526a55"></script>
 <script src="conoce.js?v=d32e227"></script>
@@ -466,7 +466,7 @@ $('fx').onclick=e=>{if(e.target===$('fx'))$('fx').close()};
 const SH={};async function ficha(cod){const k=(parseInt(cod,10)%64).toString().padStart(2,'0');SH[k]=SH[k]||await j(`data/ue/${k}.json`);return SH[k][cod]}
 const GRAFICOS=false; // ponytail: David pidió no mostrar por ahora las series mensual/anual; poner true para volver a verlas
 const SECS={inicio:'Inicio',explorar:'Inversiones',vigilancia:'Alertas',comparar:'Comparar',cartera:'Mi cartera',entidad:'Mi entidad',modulo:'Módulo',presupuesto:'Presupuesto'};
-const MODULOS={contrataciones:{ic:'📑',t:'Contrataciones',det:'sea',d:'Obras, bienes, servicios y consultorías de la entidad desde 2018, ordenados por año y objeto; sus proveedores, contratos resueltos, penalidades y arbitrajes; y el Radar de Proveedores para verificar cualquier RUC en un clic.'},planeamiento:{ic:'🎯',t:'Planeamiento',det:'pi',d:'Plan de Incentivos municipal (metas, plazos y qué falta cumplir), Fondo de Estímulo al Desempeño (FED) para regiones y el seguimiento de metas y compromisos de la entidad.'}};
+const MODULOS={contrataciones:{ic:'📑',t:'Contrataciones',det:'sea',d:'Plan Anual de Contrataciones (programado vs. con buena pro, mes a mes); obras, bienes, servicios y consultorías desde 2018 por año y objeto; proveedores, contratos resueltos, penalidades y arbitrajes; y el Radar de Proveedores para verificar cualquier RUC en un clic. Para municipalidades, gobiernos regionales y entidades nacionales.'},planeamiento:{ic:'🎯',t:'Planeamiento',det:'pi',d:'Plan de Incentivos municipal (metas, plazos y qué falta cumplir), Fondo de Estímulo al Desempeño (FED) para regiones y el seguimiento de metas y compromisos de la entidad.'}};
 function guia(v){if(v===false){try{localStorage.setItem('guia_ok','1')}catch(e){}}if(v===true){try{localStorage.removeItem('guia_ok')}catch(e){}}let ok='';try{ok=localStorage.getItem('guia_ok')}catch(e){}$('guia').hidden=!!ok||!(seccion()==='inicio'&&!drill(estado));if(v===true)scrollTo({top:0,behavior:'smooth'})}
 const fCorte=c=>{const m=/^(\d{4})-(\d{2})-(\d{2})(?:[ T](\d{2}:\d{2}))?/.exec(c||'');return m?`${+m[3]} ${['ene','feb','mar','abr','may','jun','jul','ago','set','oct','nov','dic'][+m[2]-1]} ${m[1]}${m[4]?' · '+m[4]:''}`:c};
 const drill=e=>!!(e.nivel||e.dpto||e.prov||e.dist||e.ue||e.pliego);
