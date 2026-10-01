@@ -6,10 +6,15 @@
   let E = null, META = {}, LAKE = {}, tabE = 'inv', filtroMeta = '', q = '', modoInv = true, abierto = null;
   const b64 = s => Uint8Array.from(atob(s), c => c.charCodeAt(0));
 
-  async function descifrar(ue, clave) {
+  // ponytail: la clave solo se usa para derivar la llave AES (PBKDF2); en el navegador se guarda la llave derivada (kb), nunca la clave
+  let ultimaLlave = null;
+  async function descifrar(ue, clave, kb) {
     const p = await j(`data/entidad/${ue}.enc`);
-    const km = await crypto.subtle.importKey('raw', new TextEncoder().encode(clave), 'PBKDF2', false, ['deriveKey']);
-    const key = await crypto.subtle.deriveKey({ name: 'PBKDF2', salt: b64(p.salt), iterations: p.iter, hash: 'SHA-256' }, km, { name: 'AES-GCM', length: 256 }, false, ['decrypt']);
+    let raw;
+    if (kb) raw = b64(kb);
+    else { const km = await crypto.subtle.importKey('raw', new TextEncoder().encode(clave), 'PBKDF2', false, ['deriveBits']); raw = new Uint8Array(await crypto.subtle.deriveBits({ name: 'PBKDF2', salt: b64(p.salt), iterations: p.iter, hash: 'SHA-256' }, km, 256)); }
+    const key = await crypto.subtle.importKey('raw', raw, 'AES-GCM', false, ['decrypt']);
+    ultimaLlave = btoa(String.fromCharCode(...raw));
     const pt = await crypto.subtle.decrypt({ name: 'AES-GCM', iv: b64(p.iv) }, key, b64(p.data));
     const txt = await new Response(new Blob([pt]).stream().pipeThrough(new DecompressionStream('deflate'))).text();
     const E0 = JSON.parse(txt);
@@ -18,8 +23,8 @@
     return E0;
   }
 
-  // ponytail: sesion recordada = {ue, clave} en localStorage de este navegador; el x (cerrar sesion) la borra. Si la clave cambio, el descifrado falla y se vuelve al formulario.
-  const SES = { get() { try { return JSON.parse(localStorage.getItem('ent_sesion') || 'null'); } catch (e) { return null; } }, set(ue, clave) { try { localStorage.setItem('ent_sesion', JSON.stringify({ ue, clave })); } catch (e) { } }, clear() { try { localStorage.removeItem('ent_sesion'); } catch (e) { } } };
+  // ponytail: sesion recordada = {ue, k: llave derivada} en localStorage; nunca la clave. Una sesion vieja con clave en claro se borra. Si cambia la clave o el salt, el descifrado falla y se vuelve al formulario.
+  const SES = { get() { try { const s = JSON.parse(localStorage.getItem('ent_sesion') || 'null'); if (s && !s.k) { localStorage.removeItem('ent_sesion'); return null; } return s; } catch (e) { return null; } }, set(ue, k) { try { localStorage.setItem('ent_sesion', JSON.stringify({ ue, k })); } catch (e) { } }, clear() { try { localStorage.removeItem('ent_sesion'); } catch (e) { } } };
   function salir() { E = null; SES.clear(); login(); }
   async function login() {
     const el = $('ent'); let lista = [];
@@ -31,7 +36,7 @@
      <label style="display:flex;gap:6px;align-items:center;font-size:12px;color:var(--ink2);margin:-4px 0 12px"><input type="checkbox" id="ent-rec" checked> Mantener la sesión abierta en este equipo</label>
      <div style="display:flex;gap:8px;align-items:center"><button class="btn p" id="ent-ir">Entrar</button><span class="mutx" id="ent-msg" style="font-size:12px"></span></div></div></div>`;
     const ir = async () => { const ue = $('ent-ue')?.value, clave = $('ent-clave').value, rec = $('ent-rec')?.checked; if (!ue || !clave) return; $('ent-msg').textContent = 'Descifrando…';
-      try { E = await descifrar(ue, clave); if (rec) SES.set(ue, clave); await preparar(ue); tabE = 'inv'; abiertos.invLista = false; render(); } catch (e) { console.warn(e); $('ent-msg').textContent = 'Clave incorrecta o archivo no disponible.'; } };
+      try { E = await descifrar(ue, clave); if (rec) SES.set(ue, ultimaLlave); await preparar(ue); tabE = 'inv'; abiertos.invLista = false; render(); } catch (e) { console.warn(e); $('ent-msg').textContent = 'Clave incorrecta o archivo no disponible.'; } };
     $('ent-ir').onclick = ir; $('ent-clave').onkeydown = e => { if (e.key === 'Enter') ir(); }; $('ent-clave').focus();
   }
 
@@ -952,6 +957,6 @@
   window.Entidad = { atras, abrir: async (ue) => {
     if (E && (!ue || E.ue === ue)) { render(); return; }
     const s = SES.get();
-    if (s && (!ue || s.ue === ue)) { try { E = await descifrar(s.ue, s.clave); await preparar(s.ue); tabE = 'inv'; abiertos.invLista = false; render(); return; } catch (e) { console.warn('sesion guardada invalida', e); SES.clear(); } }
+    if (s && (!ue || s.ue === ue)) { try { E = await descifrar(s.ue, null, s.k); await preparar(s.ue); tabE = 'inv'; abiertos.invLista = false; render(); return; } catch (e) { console.warn('sesion guardada invalida', e); SES.clear(); } }
     await login(); if (ue && $('ent-ue')) $('ent-ue').value = ue; } };
 })();
