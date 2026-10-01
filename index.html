@@ -229,9 +229,9 @@ body{overflow-x:hidden}.nav{overflow:hidden;flex-wrap:nowrap}.top{overflow-x:aut
 <script src="expediente.js?v=10d3f3a"></script>
 <script src="incentivos.js?v=4492226"></script>
 <script src="fed.js?v=6e049bd"></script>
-<script src="entidad.js?v=c5d7c64"></script>
+<script src="entidad.js?v=4634628"></script>
 <script src="proveedores.js?v=1a11bf3"></script>
-<script src="contrataciones.js?v=42b1dbc"></script>
+<script src="contrataciones.js?v=622aece"></script>
 <script src="reporte_ue.js?v=1c58747"></script>
 <script src="diana.js?v=a526a55"></script>
 <script src="conoce.js?v=d32e227"></script>
@@ -292,7 +292,7 @@ function contratacion(sp,c,f,noHdr){const F=n=>n==null?'—':'S/ '+Number(n).toL
   const hitos=[['Convocatoria',o.conv],['Buena pro',bp?.fecha],['Contrato',ct?.firma],['Inicio',ct?.ini],['Fin '+(ct?.ampliado?'ampliado':'de plazo'),ct?(ct.fin_act||ct.fin):null]].filter(h=>h[1]);
   return `<div class="sea ${i?'':'first'}"><div class="sea-h"><span class="pd-badge ${EST(o.estado||'')}">${o.estado||'—'}</span><b>${o.proceso||''}</b><small class="mutx">${o.tipo||''}${o.postores?` · ${o.postores} postor${o.postores>1?'es':''}`:''}</small></div>
    <div class="sea-tl">${hitos.map(([n,d],k)=>`<div class="${k===hitos.length-1?'on':''}"><i></i><b>${n}</b><span>${d}</span></div>`).join('')}</div>
-   <div class="sea-g">${bp?`<div><small>Contratista</small><b>${bp.prov||'—'}</b>${bp.ruc?`<span class="mutx">RUC ${bp.ruc}</span>`:''}</div>`:''}<div><small>Valor referencial</small><b>${F(o.vr)}</b></div>${bp?`<div><small>Adjudicado</small><b>${F(bp.monto)}</b></div>`:''}${ct?`<div><small>Contrato ${ct.num||''}</small><b>${F(ct.monto)}</b>${ct.monto_final&&ct.monto_final!==ct.monto?`<span class="mutx">final ${F(ct.monto_final)}</span>`:''}</div><div><small>Plazo</small><b>${ct.dias?ct.dias+' días':'—'}</b>${ct.ampliado?`<span style="color:var(--warn)">ampliado al ${ct.fin_act}</span>`:''}</div>`:''}</div>
+   <div class="sea-g">${bp?`<div><small>Contratista</small><b>${bp.prov||'—'}</b>${bp.ruc?`<span class="mutx">RUC ${bp.ruc}</span>`:''}</div>`:''}<div><small>Valor referencial</small><b>${F(o.vr)}</b>${o.vr_ref?`<small class="mutx" style="display:block">${o.vr_ref}</small>`:''}</div>${bp?`<div><small>Adjudicado</small><b>${F(bp.monto)}</b></div>`:''}${ct?`<div><small>Contrato ${ct.num||''}</small><b>${F(ct.monto)}</b>${ct.monto_final&&ct.monto_final!==ct.monto?`<span class="mutx">final ${F(ct.monto_final)}</span>`:''}</div><div><small>Plazo</small><b>${ct.dias?ct.dias+' días':'—'}</b>${ct.ampliado?`<span style="color:var(--warn)">ampliado al ${ct.fin_act}</span>`:''}</div>`:''}</div>
    ${rel.length?`<div class="sea-rel">${rel.map(([k,n,v,s])=>`<span class="${k}">${n}: <b>${typeof v==='number'?v+' d':v}</b>${s?' · '+s:''}</span>`).join('')}</div>`:''}
    ${al.map(([k,t,n])=>`<div class="pd-txt ${k}" style="margin-top:6px">${k==='bad'?'⛔':k==='warn'?'⚠':'ℹ'} ${t}${n&&NORMA[n]?`<span class="nrm">§ ${NORMA[n]}</span>`:''}</div>`).join('')}
    <div class="mutx" style="font-size:10.5px;margin-top:4px">${(o.desc||'').slice(0,160)}</div></div>`}).join('')}
@@ -360,7 +360,7 @@ async function paginaUE(ue){uepAb=null;$('uep').innerHTML='<div class="fxb mutx"
  const hoy=new Date().toISOString().slice(0,10);const SEA={};muestra.forEach((c,i)=>SEA[c.cui]=sp[i]||[]);
  const estSea=c=>{const p=SEA[c.cui];if(!p.length)return null;const ct=p.find(x=>x.contrato),e=(p[0].estado||'').toUpperCase();
   if(ct){const fin=ct.contrato.fin_act||ct.contrato.fin;return fin&&fin<hoy&&(c.avance_fisico??0)<100?'vencido':'firmado'}
-  if(/DESIERT/.test(e))return'desierto';if(/NULO|CANCEL/.test(e))return'nulo';if(/ADJUDIC|CONSENTID|OTORGAD/.test(e)||p[0].bp)return'bpro';return'proceso'};
+  if(/SIN ACTUALIZAR|SIN ESTADO/.test(e))return'viejo';if(/DESIERT/.test(e))return'desierto';if(/NULO|CANCEL/.test(e))return'nulo';if(/ADJUDIC|CONSENTID|OTORGAD/.test(e)||p[0].bp)return'bpro';return'proceso'};
  const K={};muestra.forEach(c=>{const s=estSea(c);if(s)(K[s]=K[s]||[]).push(c)});const nK=k=>(K[k]||[]).length;
  const sinProc=muestra.filter(c=>!SEA[c.cui].length&&!(c.dev>0)).length;
  const chips=Object.keys(CHIPF).map(k=>[k,cuis.filter(CHIPF[k])]).filter(([,l])=>l.length);const nAlert=chips.reduce((s,[,l])=>s+l.length,0);
@@ -378,7 +378,7 @@ async function paginaUE(ue){uepAb=null;$('uep').innerHTML='<div class="fxb mutx"
  const invList=[...cuis].sort((a,b)=>(b.pim||0)-(a.pim||0));
  const p1info=`<div style="font-size:11px;color:#64748B">${nDpto||1} departamento${nDpto!==1?'s':''} intervenido${nDpto!==1?'s':''} · lista ordenada por PIM, clic en una fila para ver su ficha</div>`;
  const p1det=()=>tblCui(invList);
- const NK={proceso:'en convocatoria',bpro:'con buena pro, sin contrato',firmado:'contratos vigentes',vencido:'con plazo vencido',desierto:'desiertos',nulo:'nulos / cancelados'};const colNK={proceso:COL.p,bpro:COL.teal,firmado:COL.ok,vencido:COL.bad,desierto:COL.warn,nulo:COL.gris};
+ const NK={proceso:'en convocatoria',bpro:'con buena pro, sin contrato',firmado:'contratos vigentes',vencido:'con plazo vencido',desierto:'desiertos',nulo:'nulos / cancelados',viejo:'sin actualizar en SEACE (+18 meses)'};const colNK={proceso:COL.p,bpro:COL.teal,firmado:COL.ok,vencido:COL.bad,desierto:COL.warn,nulo:COL.gris,viejo:'#CFD8DC'};
  const p2info=seg(Object.keys(NK).map(k=>[NK[k],nK(k),colNK[k]]))+legend(Object.keys(NK).map(k=>[NK[k],nK(k),colNK[k]]));
  const colC=nK('vencido')?'var(--bad)':(sinProc||nK('desierto'))?'var(--warn)':'var(--ok)';const p2med=muestra.length?100*(nK('firmado')+nK('vencido'))/muestra.length:null;
  const p2det=()=>Object.keys(NK).filter(k=>nK(k)).map(k=>`<div class="pd-lbl" style="margin-top:12px">${NK[k]} <small>${nK(k)}</small></div>${tblSea(K[k]||[])}`).join('')
@@ -429,7 +429,7 @@ async function paginaUE(ue){uepAb=null;$('uep').innerHTML='<div class="fxb mutx"
   const F=n=>n==null?'—':'S/ '+Number(n).toLocaleString('es-PE',{maximumFractionDigits:0});
   const bar=(l,v,pct,c)=>`<div style="margin-bottom:10px"><div style="display:flex;justify-content:space-between;font-size:12px;font-weight:700;color:#37474F;margin-bottom:3px"><span>${l}</span><span style="color:${c}">${F(v)}${pct!=null?' · '+Math.round(pct)+'%':''}</span></div><div style="height:8px;background:#ECEFF3;border-radius:6px;overflow:hidden"><div style="height:100%;width:${pct!=null?Math.min(pct,100):100}%;background:${c}"></div></div></div>`;
   if(id==='fuentes')return RU.verDetalleResumen('🏦','POR FUENTE DE FINANCIAMIENTO',(extra&&extra.length?extra:[]).map(f=>`<div style="margin-bottom:14px"><div style="font-weight:800;color:var(--p2);font-size:12.5px;margin-bottom:4px">${f.nombre}</div>${bar('PIM',f.pim,null,'#C9A227')}${bar('Devengado',f.dev,f.pim?100*f.dev/f.pim:null,'#1B9E5A')}</div>`).join('')||'<p class="mutx">Sin fuentes con presupuesto.</p>');
-  if(id==='benef')return RU.verDetalleResumen('👥','BENEFICIARIOS DIRECTOS',extra&&extra.total?`<p class="mutx">Suma del campo "beneficiarios (habitantes)" que cada inversión declara en el MEF · ${extra.conDato} de ${cuis.length} con dato registrado.</p>`:'<p class="mutx">Ninguna inversión de esta unidad ejecutora tiene el dato de beneficiarios registrado en el MEF.</p>');
+  if(id==='benef')return RU.verDetalleResumen('👥','BENEFICIARIOS DIRECTOS',extra&&extra.total?`<p class="mutx">Hasta ${extra.total.toLocaleString('es-PE')} habitantes: es el dato de la inversión con más beneficiarios declarados en el MEF (no se suman entre inversiones porque la misma población se repite) · ${extra.conDato} de ${cuis.length} con dato registrado.</p>`:'<p class="mutx">Ninguna inversión de esta unidad ejecutora tiene el dato de beneficiarios registrado en el MEF.</p>');
   const pim1=T.pim||1,ICO={kpi:['💰','RESUMEN GENERAL'],cert:['📋','CERTIFICACIÓN'],comp:['🤝','COMPROMISO'],dev:['💵','DEVENGADO']}[id]||['📊','EJECUCIÓN PRESUPUESTAL'];
   RU.verDetalleResumen(ICO[0],ICO[1],bar('PIM',T.pim,null,'#37474F')+bar('Certificación',T.cert,100*(T.cert||0)/pim1,'#6A1B9A')+bar('Comprometido',T.comp,100*(T.comp||0)/pim1,'#00838F')+bar('Devengado',T.dev,100*(T.dev||0)/pim1,'#E65100')+(T.gir!=null?bar('Girado',T.gir,100*(T.gir||0)/pim1,'#0d366b'):'')+'<p class="mutx" style="font-size:10.5px;margin-top:6px">Fuente: Transparencia Económica — MEF</p>');
  }
@@ -439,7 +439,7 @@ async function paginaUE(ue){uepAb=null;$('uep').innerHTML='<div class="fxb mutx"
   const invItems=cuis.map(c=>({act_proy:c.cui,c}));
   const totT={pim:U.pim,cert:U.cert,comp_anual:U.comp,comp:U.comp,dev:U.dev,gir:U.gir};
   const ftsPub=Object.values(U.fuentes||{}).filter(f=>f.pim>0).sort((a,b)=>b.pim-a.pim);
-  const totBen=cuis.reduce((s,c)=>s+(c.beneficiarios||0),0),conBen=cuis.filter(c=>c.beneficiarios).length;
+  const totBen=cuis.reduce((s,c)=>Math.max(s,c.beneficiarios||0),0),conBen=cuis.filter(c=>c.beneficiarios).length;   // C8: 'hasta X' (la mayor inversion); sumar entre inversiones cuenta dos veces a la misma poblacion
   window.ResumenInversion($('uep-wrap'),totT,invItems,{
    nivel:U.nivel,fts:ftsPub,beneficiarios:cuis.length?{total:totBen,conDato:conBen}:null,nAlertas:nAlert,estSel:uepEstSel,
    onEstSel:k=>{uepEstSel=k;pintar()},

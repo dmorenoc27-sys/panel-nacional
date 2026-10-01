@@ -217,7 +217,7 @@
     restaurando = false;
     const el = $('ent'), u = E._ue, P_ = E.presupuesto, I = E.ingresos, T = modoInv ? P_.inversiones : P_.total, nAl = E.alertas.dev_sin_girar.length + E.alertas.comp_sin_devengar.length + E.alertas.cert_sin_comp.length;
     const tabs = [['res', 'Resumen'], ['ppto', 'Presupuesto'], ['inv', modoInv ? 'Inversiones' : 'Metas'], ['exp', 'Expedientes' + (filtroMeta ? ' · ' + filtroMeta : '')], ['ing', 'Ingresos'], ['plz', '⏱ Plazos'], ['pi', E._ue.nivel === 'R' ? '🏅 FED' : E._ue.nivel === 'E' ? '🎯 Metas' : '🏅 Incentivos Municipales'], ['al', `Alertas (${nAl})`], ['prov', 'Proveedores'], ['cert', 'Certificaciones']];
-    const cab = `<div class="pd-cui"><span>MI ENTIDAD · UE ${u.cod}</span><span>· ${E.publico ? 'Datos MEF' : 'SIAF'} al ${E.corte}</span>${E._corteVista ? `<span style="background:var(--gold);color:#1C1917;border-radius:6px;padding:1px 8px;margin-left:6px">CORTE ${fDMY(E._corteVista)}</span>` : ''}<span>· Transparencia al ${R.corte}</span><span class="x" id="ent-salir" title="Cerrar sesión">×</span></div><div class="pd-title">${u.nombre}</div>`;
+    const cab = `<div class="pd-cui"><span>MI ENTIDAD · UE ${u.cod}</span><span>· ${E.publico ? 'Datos MEF' : 'SIAF'} al ${E.corte}${(d => d > 1 ? ` · <b style="color:${d > 30 ? '#D64545' : d > 7 ? '#E39B1E' : 'inherit'}" title="días desde la fecha de corte de los datos">hace ${d} días</b>` : '')(Math.round((Date.now() - new Date(String(E.corte).slice(0, 10))) / 864e5))}</span>${E._corteVista ? `<span style="background:var(--gold);color:#1C1917;border-radius:6px;padding:1px 8px;margin-left:6px">CORTE ${fDMY(E._corteVista)}</span>` : ''}<span>· Transparencia al ${R.corte}</span><span class="x" id="ent-salir" title="Cerrar sesión">×</span></div><div class="pd-title">${u.nombre}</div>`;
     // ponytail: Plan de Incentivos también entra sin la cabecera técnica (KPIs, barra HOY, pestañas) — solo cabecera + volver
     if (tabE === 'pi' || tabE === 'sea') { el.innerHTML = `<div class="card" style="flex:0 0 auto;padding:0"><div class="pd-hdr" style="border-radius:var(--rad)">${cab}<div class="pd-badges"><span class="pd-badge">${tabE === 'sea' ? '📑 Contrataciones' : E._ue.nivel === 'R' ? '🏅 FED · Fondo de Estímulo al Desempeño' : E._ue.nivel === 'E' ? '🎯 Metas' : '🏅 Plan de Incentivos ' + ANIO}</span><button class="btn" id="ent-volver-pi" style="margin-left:auto;background:#fff;color:var(--p2)">‹ Volver</button></div></div></div><div class="card" style="flex:1;min-height:0;padding:0"><div class="wrap" id="ent-body" style="padding:0"></div></div>`;
       $('ent-volver-pi').onclick = () => { tabE = 'inv'; render(); }; $('ent-salir').onclick = salir; cuerpo(); return; }
@@ -250,7 +250,7 @@
   const benefCache = {};
   async function totalBeneficiarios(items, key) {
     const res = await Promise.all(items.map(it => ssi(it.act_proy).catch(() => null)));
-    const total = res.reduce((s, f) => s + (f?.beneficiarios || 0), 0), conDato = res.filter(f => f?.beneficiarios).length;
+    const total = res.reduce((s, f) => Math.max(s, f?.beneficiarios || 0), 0), conDato = res.filter(f => f?.beneficiarios).length;   // C8: 'hasta X', no suma
     return benefCache[key] = { total, conDato };
   }
   function paneles(b, items, nota, min, key) {
@@ -471,7 +471,7 @@
       <div style="flex:1.15;min-width:0;display:flex;flex-direction:column;gap:7px;min-height:0">
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:7px">
           ${kpiT('kpi', '💰', FM(T.pim), `Resumen general · devengado ${Math.round((T.dev || 0) * 100 / pim1)}%`, '#0F2A43', '#F4FBF4', '#C8E6C9')}
-          ${kpiT('benef', '👥', bc ? N(bc.total) : '…', bc ? `Beneficiarios · ${bc.conDato}/${items.length} con dato` : 'Beneficiarios · calculando…', '#1B5E20', '#F4FBF4', '#C8E6C9')}
+          ${kpiT('benef', '👥', bc ? N(bc.total) : '…', bc ? `Beneficiarios · hasta (mayor inversión) · ${bc.conDato}/${items.length} con dato` : 'Beneficiarios · calculando…', '#1B5E20', '#F4FBF4', '#C8E6C9')}
           ${kpiT('fuentes', '🏦', fts[0] ? cap(fts[0].nombre) : 'sin datos', `Por fuente · ${fts.length} fuentes`, '#1565C0', '#F5F9FF', '#BBDEFB')}
           ${kpiT('cert', '📋', FM(T.cert), `Certificación · ${Math.round((T.cert || 0) * 100 / pim1)}% del PIM`, '#6A1B9A', '#F8F3FC', '#D8BFE0')}
           ${kpiT('comp', '🤝', FM(T.comp_anual), `Compromiso · ${Math.round((T.comp_anual || 0) * 100 / pim1)}% del PIM`, '#00838F', '#F0FBFC', '#B2E0E4')}
@@ -819,10 +819,10 @@
     } else if (tabE === 'sea') {
       const cuis = Object.values(LAKE).filter(c => c.pim > 0 || c.dev > 0 || c.avance_fisico > 0), sea = c => SEA_R[c.cui];
       const procs = cuis.map(c => ({ c, s: sea(c) })).filter(x => x.s);
-      const est = x => { const e = (x.s.estado || '').toUpperCase(), fin = x.s.fin; return /DESIERT/.test(e) ? 'desierto' : /NULO|CANCEL/.test(e) ? 'nulo' : x.s.firma ? (fin && fin < hoyS() && !(x.c.avance_fisico >= 100) ? 'vencido' : 'firmado') : /ADJUDIC|CONSENTID|OTORGAD/.test(e) || x.s.bp ? 'bpro' : 'proceso'; };
+      const est = x => { const e = (x.s.estado || '').toUpperCase(), fin = x.s.fin; return /SIN ACTUALIZAR|SIN ESTADO/.test(e) ? 'viejo' : /DESIERT/.test(e) ? 'desierto' : /NULO|CANCEL/.test(e) ? 'nulo' : x.s.firma ? (fin && fin < hoyS() && !(x.c.avance_fisico >= 100) ? 'vencido' : 'firmado') : /ADJUDIC|CONSENTID|OTORGAD/.test(e) || x.s.bp ? 'bpro' : 'proceso'; };
       const K = {}; procs.forEach(x => (K[est(x)] = K[est(x)] || []).push(x)); const k = s => (K[s] || []).length;
       const sinProc = cuis.filter(c => c.pim >= 5e5 && !sea(c) && !(c.dev > 0)).length;
-      const NK = { proceso: 'en convocatoria', bpro: 'con buena pro, sin contrato', firmado: 'contratos vigentes', vencido: 'contratos con plazo vencido', desierto: 'desiertos', nulo: 'nulos / cancelados' };
+      const NK = { proceso: 'en convocatoria', bpro: 'con buena pro, sin contrato', firmado: 'contratos vigentes', vencido: 'contratos con plazo vencido', desierto: 'desiertos', nulo: 'nulos / cancelados', viejo: 'sin actualizar en SEACE (+18 meses)' };
       const obras = `<p class="mutx" style="font-size:11.5px;padding:8px 8px 0">${procs.length} obras con proceso en SEACE · ${k('firmado') + k('vencido')} contratadas · ${k('proceso')} en convocatoria · ${k('bpro')} con buena pro sin firmar · ${k('vencido')} con plazo vencido · ${k('desierto')} desiertos${sinProc ? ` · ${sinProc} con presupuesto ≥ S/ 500 mil sin proceso registrado` : ''}</p><table><tr><th>Inversión</th><th>Situación</th><th>Contratista</th><th>Convocado</th><th>Firma</th><th>Fin de plazo</th><th>Monto</th></tr>${Object.keys(NK).flatMap(s => (K[s] || []).map(x => `<tr class="l" data-sf="${x.c.cui}" style="cursor:pointer"><td style="white-space:normal"><b>${x.c.cui}</b> ${x.c.nombre.slice(0, 70)}</td><td>${NK[s]}</td><td style="white-space:normal">${x.s.prov || '—'}</td><td>${x.s.conv || ''}</td><td>${x.s.firma || ''}</td><td style="color:${s === 'vencido' ? 'var(--bad)' : 'inherit'}">${x.s.fin || ''}</td><td>${F(x.s.monto)}</td></tr>`)).join('')}</table>`;
       const irCui = cui => { filtroMeta = cui; tabE = 'exp'; render(); };
       if (window.Contrataciones) Contrataciones.ui(b, E._ue, { obras, onCui: irCui }).then(() => b.querySelectorAll('tr.l').forEach(tr => tr.onclick = () => irCui(tr.dataset.sf)));
