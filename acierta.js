@@ -92,7 +92,7 @@ ${['INVERSIONES', 'CONTRATACIONES', 'PRESUPUESTO', 'PLANEAMIENTO', 'SIAF'].reduc
   function cargarGsap() {
     return new Promise(res => {
       if (root.gsap) return res(true);
-      const s = document.createElement('script'); s.src = 'https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js'; s.onload = () => res(true); s.onerror = () => res(false);
+      const s = document.createElement('script'); s.src = 'https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js'; s.integrity = 'sha384-g4NTh/Iv5PPU4xPyhEWqPcwtNXOvdaDI8LLnyYfyNZOjKJeYQyjzQ9X5275eBjpt'; s.crossOrigin = 'anonymous'; s.onload = () => res(true); s.onerror = () => res(false);
       document.head.appendChild(s); setTimeout(() => res(!!root.gsap), 4000);
     });
   }

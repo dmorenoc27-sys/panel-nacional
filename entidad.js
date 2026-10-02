@@ -124,7 +124,7 @@
         toast('Generando el Expediente PPT desde la ficha de la entidad…'); location.hash = '#/ue/' + ue;
         setTimeout(() => { const b = $('ppt'); if (b && !b.hidden) b.click(); }, 1800); return;
       }
-      if (!window.JSZip) await new Promise((ok, err) => { const s = document.createElement('script'); s.src = 'https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js'; s.onload = ok; s.onerror = err; document.head.appendChild(s); });
+      if (!window.JSZip) await new Promise((ok, err) => { const s = document.createElement('script'); s.src = 'https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js'; s.integrity = 'sha384-+mbV2IY1Zk/X1p/nWllGySJSUN8uMs+gUAN10Or95UBH0fpj6GfKgPmgC5EXieXG'; s.crossOrigin = 'anonymous'; s.onload = ok; s.onerror = err; document.head.appendChild(s); });
       const datos = await fetch(`data/reportes/${ue}.json?v=${Date.now()}`).then(x => x.json());
       if (r.corte && r.corte.foto) r.corte.datos = await fetch(`data/reportes/${ue}/${r.corte.fecha}.json`).then(x => x.json());
       const buf = await fetch(cfg.plantilla).then(x => { if (!x.ok) throw new Error('plantilla'); return x.arrayBuffer(); });
@@ -319,8 +319,8 @@
     if (window.L) return Promise.resolve();
     if (_leafletP) return _leafletP;
     _leafletP = new Promise(res => {
-      if (!document.getElementById('leaflet-css')) { const lc = document.createElement('link'); lc.id = 'leaflet-css'; lc.rel = 'stylesheet'; lc.href = 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css'; document.head.appendChild(lc); }
-      const ls = document.createElement('script'); ls.src = 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js'; ls.onload = res; ls.onerror = res; document.head.appendChild(ls);
+      if (!document.getElementById('leaflet-css')) { const lc = document.createElement('link'); lc.id = 'leaflet-css'; lc.rel = 'stylesheet'; lc.href = 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css'; lc.integrity = 'sha384-c6Rcwz4e4CITMbu/NBmnNS8yN2sC3cUElMEMfP3vqqKFp7GOYaaBBCqmaWBjmkjb'; lc.crossOrigin = 'anonymous'; document.head.appendChild(lc); }
+      const ls = document.createElement('script'); ls.src = 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js'; ls.integrity = 'sha384-NElt3Op+9NBMCYaef5HxeJmU4Xeard/Lku8ek6hoPTvYkQPh3zLIrJP7KiRocsxO'; ls.crossOrigin = 'anonymous'; ls.onload = res; ls.onerror = res; document.head.appendChild(ls);
     });
     return _leafletP;
   }
