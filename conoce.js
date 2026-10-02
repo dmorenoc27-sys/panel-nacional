@@ -150,9 +150,9 @@
     const mini = (t, desc, scr) => `<div class="cn-mini cn-rv"><div class="cn-t">${t}</div><div class="cn-d">${desc}</div><div class="cn-scr">${scr}</div></div>`;
     const av = d.pim ? 100 * d.dev / d.pim : 55;
     return `
-<button class="cn-x" id="cn-x">Entrar a DIANA →</button>
+<button class="cn-x" id="cn-x">Entrar a Acierta →</button>
 <div class="cn-hero" id="cn-intro"></div>
-<div class="cn-cue">Desliza para conocer DIANA</div>
+<div class="cn-cue">Desliza para conocer Acierta</div>
 <section class="cn-s w" id="cn-hoy"><div>
  <div class="cn-nums cn-rv" style="margin:0">
    <div class="cn-num"><b data-cu="${d.pim / 1e6}" data-pre="S/ " data-suf=" M">0</b><small>Presupuesto ${new Date().getFullYear()}</small></div>
@@ -172,7 +172,7 @@
 
 <section class="cn-s w" id="cn-que"><div>
  <h2 class="cn-rv">Lo que verás dentro</h2>
- <p class="cn-lead cn-rv">Cada módulo vive y se mueve con los datos del día. Así se ve DIANA por dentro.</p>
+ <p class="cn-lead cn-rv">Cada módulo vive y se mueve con los datos del día. Así se ve Acierta por dentro.</p>
  <div class="cn-grid">
  ${mini('Resumen ejecutivo', 'PIM, certificado, comprometido, devengado, girado y saldo. Avance en vivo, por nivel, sector, pliego y territorio.', `
   <div class="cn-tiles"><div class="cn-tile"><small>PIM</small><b>S/ ${M(d.pim)} M</b><div class="cn-bar"><i style="--c:#1C1917"></i></div></div>
@@ -212,7 +212,7 @@
 
 <section class="cn-s">
  <h2 class="cn-rv">Cómo funciona</h2>
- <p class="cn-lead cn-rv">Sin instalar nada, sin cargar datos a mano. DIANA se alimenta sola cada mañana.</p>
+ <p class="cn-lead cn-rv">Sin instalar nada, sin cargar datos a mano. Acierta se alimenta sola cada mañana.</p>
  <div class="cn-flow">
   <div class="cn-step cn-rv"><div class="n">1</div><h3>Cada mañana, datos abiertos</h3><p>Consulta Amigable, Banco de Inversiones, Formato 12-B, expedientes técnicos, ingresos y transferencias del MEF.</p></div>
   <div class="cn-step cn-rv"><div class="n">2</div><h3>Cruces automáticos</h3><p>SEACE, sanciones y penalidades de la OECE, padrón SUNAT, obras INFOBRAS de la Contraloría y el SSI de cada inversión.</p></div>
@@ -223,9 +223,9 @@
 </section>
 
 <div class="cn-fin cn-rv">
- <h2>¿Tu entidad quiere DIANA?</h2>
+ <h2>¿Tu entidad quiere Acierta?</h2>
  <p>Activamos tu unidad ejecutora en un día: acceso con clave, reportes a medida con tu plantilla y seguimiento diario. Un sistema de ARKA PROYECTOS.</p>
- <div class="cn-cta"><a class="cn-btn p" href="https://www.arkaproyectos.com.pe" target="_blank" rel="noopener">Solicitar DIANA para mi entidad</a><button class="cn-btn g" id="cn-go2">Entrar a DIANA</button></div>
+ <div class="cn-cta"><a class="cn-btn p" href="https://www.arkaproyectos.com.pe" target="_blank" rel="noopener">Solicitar Acierta para mi entidad</a><button class="cn-btn g" id="cn-go2">Entrar a Acierta</button></div>
 </div>`;
   }
   function cuenta(el) {   // contador animado
@@ -238,7 +238,7 @@
     if (!document.getElementById('cn-css')) { const st = document.createElement('style'); st.id = 'cn-css'; st.textContent = CSS; document.head.appendChild(st); }
     const el = document.createElement('div'); el.id = 'cn'; el.innerHTML = html(datos()); document.body.appendChild(el);
     document.body.style.overflow = 'hidden';
-    if (window.DIANA) DIANA.intro(el.querySelector('#cn-intro'), { botones: '<button class="dn-btn" id="cn-go">Entrar a DIANA</button><a class="dn-btn g" href="#cn-que">Ver qué hay dentro ↓</a>' });
+    if (window.ACIERTA) ACIERTA.intro(el.querySelector('#cn-intro'), { botones: '<button class="dn-btn" id="cn-go">Entrar a Acierta</button><a class="dn-btn g" href="#cn-que">Ver qué hay dentro ↓</a>' });
     el.querySelectorAll('#cn-x,#cn-go,#cn-go2').forEach(b => b.onclick = cerrar);
     el.addEventListener('click', e => { const a = e.target.closest('a[href="#cn-que"]'); if (a) { e.preventDefault(); el.querySelector('#cn-hoy').scrollIntoView({ behavior: 'smooth' }); } });
     el.querySelectorAll('[data-cu]').forEach(cuenta);

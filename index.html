@@ -3,8 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>DIANA · Sistema inteligente de gestión pública</title>
-<meta name="description" content="DIANA, sistema inteligente de gestión pública: inversiones, contrataciones, presupuesto, planeamiento y SIAF de cada entidad del Perú, con alertas tempranas y reportes. Con Arkia, la IA de ARKA PROYECTOS. Datos abiertos del MEF.">
+<title>Acierta · Sistema inteligente de gestión pública</title>
+<meta name="description" content="Acierta, sistema inteligente de gestión pública: inversiones, contrataciones, presupuesto, planeamiento y SIAF de cada entidad del Perú, con alertas tempranas y reportes. Con Arkia, la IA de ARKA PROYECTOS. Datos abiertos del MEF.">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Manrope:wght@500;600;700;800&family=Jost:wght@500;600;700;800&family=Fraunces:ital,wght@1,500&display=swap" rel="stylesheet">
 <style>
@@ -195,8 +195,8 @@ body{overflow-x:hidden}.nav{overflow:hidden;flex-wrap:nowrap}.top{overflow-x:aut
 </style>
 </head>
 <body>
-<nav class="nav"><a class="brand" href="#/" title="DIANA · Inicio"><span class="mono" id="iso"></span><span><b id="marca" style="font-family:Jost,Inter,sans-serif;letter-spacing:.14em;font-size:17px">DIANA</b><small>Sistema inteligente de gestión pública</small></span></a>
- <div class="secs" id="secs"><a href="#/" data-s="inicio">Inicio</a><a href="#/explorar" data-s="explorar" title="Inversión pública por nivel, territorio y entidad">Inversiones</a><a href="#/modulo/contrataciones" data-s="modulo" data-m="contrataciones" title="Procesos, proveedores y radar de sanciones">Contrataciones</a><a href="#/presupuesto" data-s="presupuesto" title="Todo el gasto: PIM, devengado y saldo">Presupuesto</a><a href="#/modulo/planeamiento" data-s="modulo" data-m="planeamiento" title="Plan de Incentivos, FED, metas y seguimiento">Planeamiento</a><a href="#/vigilancia" data-s="vigilancia" title="Lo que requiere decisión hoy">Alertas</a><a href="#/entidad" data-s="entidad" style="color:var(--gold)" title="Datos internos del SIAF, con clave">Mi entidad</a><details class="mas"><summary>Más ▾</summary><div><a href="#/comparar" data-s="comparar">Comparar entidades</a><a href="#/cartera" data-s="cartera">Mi cartera</a><a href="#" onclick="guia(true);return false">¿Cómo empiezo?</a></div></details><a href="#" class="conoce" onclick="Conoce.abrir();return false" title="Ver la presentación animada de DIANA">Conoce DIANA</a></div>
+<nav class="nav"><a class="brand" href="#/" title="Acierta · Inicio"><span class="mono" id="iso"></span><span><b id="marca" style="font-family:Jost,Inter,sans-serif;letter-spacing:.14em;font-size:17px">ACIERTA</b><small>Sistema inteligente de gestión pública</small></span></a>
+ <div class="secs" id="secs"><a href="#/" data-s="inicio">Inicio</a><a href="#/explorar" data-s="explorar" title="Inversión pública por nivel, territorio y entidad">Inversiones</a><a href="#/modulo/contrataciones" data-s="modulo" data-m="contrataciones" title="Procesos, proveedores y radar de sanciones">Contrataciones</a><a href="#/presupuesto" data-s="presupuesto" title="Todo el gasto: PIM, devengado y saldo">Presupuesto</a><a href="#/modulo/planeamiento" data-s="modulo" data-m="planeamiento" title="Plan de Incentivos, FED, metas y seguimiento">Planeamiento</a><a href="#/modulo/gestion" data-s="modulo" data-m="gestion" title="Cierre de inversiones, procesos en curso, plazos, proyección y recursos">Gestión</a><a href="#/vigilancia" data-s="vigilancia" title="Lo que requiere decisión hoy">Alertas</a><a href="#/entidad" data-s="entidad" style="color:var(--gold)" title="Datos internos del SIAF, con clave">Mi entidad</a><details class="mas"><summary>Más ▾</summary><div><a href="#/comparar" data-s="comparar">Comparar entidades</a><a href="#/cartera" data-s="cartera">Mi cartera</a><a href="#" onclick="guia(true);return false">¿Cómo empiezo?</a></div></details><a href="#" class="conoce" onclick="Conoce.abrir();return false" title="Ver la presentación animada de Acierta">Conoce Acierta</a></div>
  <span class="sp"></span><div class="qbox"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg><input type="search" id="q" placeholder="Municipalidad, pliego, función o CUI…" autocomplete="off"><ul class="sug" id="sug"></ul></div>
  <label class="mut">Año <select id="anio"></select></label><span class="mut" id="corte"></span></nav>
 <div class="guia" id="guia" hidden><b>¿Cómo empiezo?</b><span><span class="n">1</span>Busca tu <b>entidad</b> en el buscador de arriba</span><span><span class="n">2</span>Elige el <b>módulo</b> en el menú</span><span><span class="n">3</span>Abre cualquier cifra y <b>exporta</b> a Excel, PPT o PDF</span><span class="x" onclick="guia(false)" title="Entendido">×</span></div>
@@ -224,17 +224,18 @@ body{overflow-x:hidden}.nav{overflow:hidden;flex-wrap:nowrap}.top{overflow-x:aut
 </div>
 </main>
 <div class="tip" id="tip"></div><dialog class="fx" id="fx"></dialog><div class="toast" id="toast"></div>
-<footer><a href="#" onclick="Conoce.abrir();return false" style="color:var(--p);font-weight:700;text-decoration:none">✨ ¿Tu entidad quiere DIANA? Conócela en 60 segundos →</a> · Herramienta no oficial con datos abiertos del MEF (Consulta Amigable y Banco de Inversiones), actualizada cada mañana · montos en soles · avance = devengado / PIM · semáforo: verde ≥ 70 %, ámbar 40–70 %, rojo &lt; 40 % · DIANA · Sistema inteligente de gestión pública, con Arkia, la IA de <a href="https://www.arkaproyectos.com.pe">ARKA PROYECTOS</a></footer>
+<footer><a href="#" onclick="Conoce.abrir();return false" style="color:var(--p);font-weight:700;text-decoration:none">✨ ¿Tu entidad quiere Acierta? Conócela en 60 segundos →</a> · Herramienta no oficial con datos abiertos del MEF (Consulta Amigable y Banco de Inversiones), actualizada cada mañana · montos en soles · avance = devengado / PIM · semáforo: verde ≥ 70 %, ámbar 40–70 %, rojo &lt; 40 % · Acierta · Sistema inteligente de gestión pública, con Arkia, la IA de <a href="https://www.arkaproyectos.com.pe">ARKA PROYECTOS</a></footer>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="expediente.js?v=10d3f3a"></script>
 <script src="incentivos.js?v=4492226"></script>
 <script src="fed.js?v=6e049bd"></script>
-<script src="entidad.js?v=4634628"></script>
+<script src="entidad.js?v=fc1ec01"></script>
 <script src="proveedores.js?v=1a11bf3"></script>
 <script src="contrataciones.js?v=622aece"></script>
+<script src="gestion.js?v=9f6be27"></script>
 <script src="reporte_ue.js?v=1c58747"></script>
-<script src="diana.js?v=a526a55"></script>
-<script src="conoce.js?v=d32e227"></script>
+<script src="acierta.js?v=3487116"></script>
+<script src="conoce.js?v=c9b6eb9"></script>
 <script>
 const M=n=>{const v=(n||0)/1e6;return v.toLocaleString('es-PE',{maximumFractionDigits:Math.abs(v)>=1000?0:1})};
 const N=n=>(n||0).toLocaleString('es-PE');
@@ -421,6 +422,7 @@ async function paginaUE(ue){uepAb=null;$('uep').innerHTML='<div class="fxb mutx"
   const RU=window.ResumenInversionUtil;
   if(!RU)return;
   if(id==='sea'){RU.verDetalleResumen('📑',`CONTRATACIONES · ${String(U.nombre||'').replace(/</g,'&lt;')} · UE ${U.cod}`,`<div id="ct-slot"></div>`);const obras=`<p class="mutx" style="margin-bottom:10px">${p2info}</p>${p2det()}`;const verCui=cui=>{RU.cerrarDetalleResumen();fichaCUI(cui)};const wireL=el=>el.querySelectorAll('tr.l[data-k^="cui:"]').forEach(tr=>tr.onclick=()=>verCui(tr.dataset.k.slice(4)));if(window.Contrataciones)Contrataciones.ui(document.getElementById('ct-slot'),U,{obras,onCui:verCui,onAtras:RU.cerrarDetalleResumen}).then(()=>wireL(document.getElementById('ct-slot')));else{document.getElementById('ct-slot').innerHTML=obras;wireL(document.getElementById('ct-slot'))}}
+  else if(id==='ges'){RU.verDetalleResumen('🧭',`GESTIÓN · ${String(U.nombre||'').replace(/</g,'&lt;')} · UE ${U.cod}`,`<div id="gs-slot"></div>`);const verCui=cui=>{RU.cerrarDetalleResumen();fichaCUI(cui)};if(window.Gestion)Gestion.ui(document.getElementById('gs-slot'),U,{onCui:verCui,onAtras:RU.cerrarDetalleResumen})}
   else if(id==='al')RU.verDetalleResumen('🎯','METAS Y SEGUIMIENTO',`<p class="mutx" style="margin-bottom:10px">${p3sub}</p>${p3det()}`);
   else if(id==='pi'){RU.verDetalleResumen(P4.ic,P4.n4.toUpperCase(),P4.info+P4.det());if(U.nivel==='R'&&typeof FED!=='undefined'){const slot=document.getElementById('fed-slot');if(slot)FED.ui(slot,U)}}
  }
@@ -466,7 +468,7 @@ $('fx').onclick=e=>{if(e.target===$('fx'))$('fx').close()};
 const SH={};async function ficha(cod){const k=(parseInt(cod,10)%64).toString().padStart(2,'0');SH[k]=SH[k]||await j(`data/ue/${k}.json`);return SH[k][cod]}
 const GRAFICOS=false; // ponytail: David pidió no mostrar por ahora las series mensual/anual; poner true para volver a verlas
 const SECS={inicio:'Inicio',explorar:'Inversiones',vigilancia:'Alertas',comparar:'Comparar',cartera:'Mi cartera',entidad:'Mi entidad',modulo:'Módulo',presupuesto:'Presupuesto'};
-const MODULOS={contrataciones:{ic:'📑',t:'Contrataciones',det:'sea',d:'Plan Anual de Contrataciones (programado vs. con buena pro, mes a mes); obras, bienes, servicios y consultorías desde 2018 por año y objeto; proveedores, contratos resueltos, penalidades y arbitrajes; y el Radar de Proveedores para verificar cualquier RUC en un clic. Para municipalidades, gobiernos regionales y entidades nacionales.'},planeamiento:{ic:'🎯',t:'Planeamiento',det:'pi',d:'Plan de Incentivos municipal (metas, plazos y qué falta cumplir), Fondo de Estímulo al Desempeño (FED) para regiones y el seguimiento de metas y compromisos de la entidad.'}};
+const MODULOS={contrataciones:{ic:'📑',t:'Contrataciones',det:'sea',d:'Plan Anual de Contrataciones (programado vs. con buena pro, mes a mes); obras, bienes, servicios y consultorías desde 2018 por año y objeto; proveedores, contratos resueltos, penalidades y arbitrajes; y el Radar de Proveedores para verificar cualquier RUC en un clic. Para municipalidades, gobiernos regionales y entidades nacionales.'},gestion:{ic:'🧭',t:'Gestión',det:'ges',d:'Lo que la entidad necesita para cerrar bien el año: checklist de cierre por inversión (ET, Formato 9, liquidación, saldo) e inversiones activas sin ejecución para evaluar desactivación; procesos SEACE abiertos, desiertos y contratos con plazo; calendario de plazos con semáforo (F12-B, devengado, girado, PMI, reversiones); proyección al 31/12 y recursos por rubro (canon, FONCOMUN, saldos de balance, transferencias con dispositivo legal).'},planeamiento:{ic:'🎯',t:'Planeamiento',det:'pi',d:'Plan de Incentivos municipal (metas, plazos y qué falta cumplir), Fondo de Estímulo al Desempeño (FED) para regiones y el seguimiento de metas y compromisos de la entidad.'}};
 function guia(v){if(v===false){try{localStorage.setItem('guia_ok','1')}catch(e){}}if(v===true){try{localStorage.removeItem('guia_ok')}catch(e){}}let ok='';try{ok=localStorage.getItem('guia_ok')}catch(e){}$('guia').hidden=!!ok||!(seccion()==='inicio'&&!drill(estado));if(v===true)scrollTo({top:0,behavior:'smooth'})}
 const fCorte=c=>{const m=/^(\d{4})-(\d{2})-(\d{2})(?:[ T](\d{2}:\d{2}))?/.exec(c||'');return m?`${+m[3]} ${['ene','feb','mar','abr','may','jun','jul','ago','set','oct','nov','dic'][+m[2]-1]} ${m[1]}${m[4]?' · '+m[4]:''}`:c};
 const drill=e=>!!(e.nivel||e.dpto||e.prov||e.dist||e.ue||e.pliego);
@@ -678,7 +680,7 @@ let ULT_U=null;async function go(e){estado={...e};fchip='';if(U)ULT_U=U;U=null;c
  if(!sinMapa)mapa();
  if(sinMapa){$('ptabs').querySelectorAll('button').forEach(b=>b.classList.toggle('on',b.dataset.p==='rank'));$('pRank').hidden=false;$('pDist').hidden=true}
  crumbs();tabla();tabla2();hash();starUI();nivUI();$('tcard').querySelector('.wrap').scrollTop=0}
-if(window.DIANA){$('iso').innerHTML=DIANA.isoSVG({size:38});DIANA.favicon()}
+if(window.ACIERTA){$('iso').innerHTML=ACIERTA.isoSVG({size:38});ACIERTA.favicon()}
 $('niv').querySelectorAll('button').forEach(b=>b.onclick=()=>{nivF=b.dataset.n;tab='sectores';fdpto='';ftxt='';go(nivF?{nivel:nivF}:{})});
 $('sw').querySelectorAll('button').forEach(b=>b.onclick=()=>{modo=b.dataset.m;$('sw').querySelectorAll('button').forEach(x=>x.classList.toggle('on',x===b));go(estado)});
 $('exp').onclick=()=>{const w=$('board').classList.toggle('wide');$('tcard').classList.toggle('wide',w);$('exp').textContent=w?'⤡ Tablero':'⤢ Ampliar'};
@@ -708,7 +710,7 @@ document.addEventListener('click',e=>{if(!e.target.closest('.qbox'))$('sug').inn
 async function cargarAnio(y,ruta){if(y===ANIO_ACTUAL){R=BASE.R;S=BASE.S;UES=BASE.UES;DEP=BASE.DEP;C=BASE.C}
  else{const [r,u,d,se]=await Promise.all([j(`data/anio/${y}/resumen.json`),j(`data/anio/${y}/ues.json`),j(`data/anio/${y}/departamentos.json`),j(`data/anio/${y}/serie.json`)]);
   R={...r,corte:BASE.R.corte};UES=u.ues;DEP=d;S={anio:y,pais:{[y]:se.pais,[y-1]:null},niveles:{[y]:se.niveles,[y-1]:{}}};C={nivel_fuente:[],nivel_funcion:[],pliego_fuente:[],pliego_funcion:[],dpto_funcion:[],dpto_fuente:[],dpto_serie:[],dpto_hist:[]}}
- ANIO=y;$('anio').value=y;$('corte').textContent=`Datos al ${fCorte(BASE.R.corte)}`;fdpto='';ftxt='';alerta='';go(ruta||{})}
+ ANIO=y;$('anio').value=y;$('corte').textContent=`Datos al ${fCorte(BASE.R.corte)}`;{const dd=Math.floor((Date.now()-new Date(String(BASE.R.corte).slice(0,10)))/864e5);$('corte').style.color=dd>=2?'#D64545':dd>=1?'#E39B1E':'';$('corte').title=dd>=1?`Los datos tienen ${dd} día${dd>1?'s':''}; la actualización del día está pendiente`:'Datos actualizados hoy'}fdpto='';ftxt='';alerta='';go(ruta||{})}
 function desdeHash(){const [p,qs]=location.hash.slice(1).split('?');const Q=new URLSearchParams(qs||'');const y=+(Q.get('anio')||ANIO_ACTUAL);nivF=Q.get('niv')||'';const s=p.split('/').filter(Boolean);let r={};
  if(s[0]==='presupuesto'){modo='tot';r={}}else if(!s.length||s[0]==='explorar'){modo='inv';r=s.length?{sec:'explorar'}:{}}else if(s[0]==='modulo')r={sec:'modulo',mod:s[1]||'contrataciones'};else if(s[0]==='cui')r={sec:'cui',cui:s[1]};else if(s[0]==='funcion')r={sec:'funcion',funcion:decodeURIComponent(s.slice(1).join('/'))};else if(s[0]==='cartera')r={sec:'cartera'};else if(s[0]==='entidad')r={sec:'entidad',ent:s[1]};else if(s[0]==='comparar')r={sec:'comparar',a:Q.get('a')||undefined,b:Q.get('b')||undefined};else if(s[0]==='vigilancia'){r={sec:'vigilancia'};for(const k of ['nivel','sector','dpto','prov','dist','pliego'])if(Q.get(k))r[k]=Q.get(k);if(Q.get('a'))alerta=Q.get('a')}
  else if(s[0]==='ue')r={ue:s[1]};else if(s[0]==='prov')r={prov:s[1]};else if(s[0]==='dist')r={prov:s[1].slice(0,4),dist:s[1]};else if(s[0]==='dpto')r={dpto:decodeURIComponent(s.slice(1).join('/'))};else if(s[0]==='pliego')r={nivel:s[1],sector:s[2],pliego:s[3]};else if(s[0]==='sector')r={nivel:s[1],sector:s[2]};else if(s[0]==='nivel')r={nivel:s[1]};
