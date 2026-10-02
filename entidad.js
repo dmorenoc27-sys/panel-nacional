@@ -31,8 +31,8 @@
     try { lista = await j('data/entidad/index.json'); } catch (e) { }
     el.innerHTML = `<div class="card" style="flex:0 0 auto;max-width:560px;margin:30px auto;padding:0"><div class="pd-hdr"><div class="pd-cui">MI ENTIDAD · ACCESO PRIVADO</div><div class="pd-title">Seguimiento interno con datos del SIAF</div><div class="pd-badges"><span class="pd-badge">Cifrado AES-256</span><span class="pd-badge">La clave nunca sale de tu navegador</span></div></div>
      <div style="padding:16px 18px"><p style="margin:0 0 10px;font-size:12.5px;color:var(--ink2)">Aquí la entidad ve lo que Transparencia no muestra: expediente por expediente, proveedor, documento, glosa y la fase en que está cada pago. La información es de la entidad: se publica cifrada y solo se abre con su clave.</p>
-     ${lista.length ? `<label class="mutx" style="font-size:11px">Entidad</label><select id="ent-ue" style="width:100%;margin:4px 0 10px">${lista.map(x => `<option value="${x.ue}">${x.nombre || 'UE ' + x.ue} · ${x.publico ? 'datos MEF' : 'SIAF'} al ${x.corte || ''}</option>`).join('')}</select>` : '<p class="mutx">Aún no hay entidades publicadas.</p>'}
-     <label class="mutx" style="font-size:11px">Clave de acceso</label><input type="password" id="ent-clave" style="width:100%;padding:8px 10px;border:1.5px solid var(--line);border-radius:8px;font:inherit;margin:4px 0 12px" placeholder="••••••••" autocomplete="current-password">
+     ${lista.length ? `<label class="mutx" style="font-size:11px" for="ent-ue">Entidad</label><select id="ent-ue" style="width:100%;margin:4px 0 10px">${lista.map(x => `<option value="${x.ue}">${x.nombre || 'UE ' + x.ue} · ${x.publico ? 'datos MEF' : 'SIAF'} al ${x.corte || ''}</option>`).join('')}</select>` : '<p class="mutx">Aún no hay entidades publicadas.</p>'}
+     <label class="mutx" style="font-size:11px" for="ent-clave">Clave de acceso</label><input type="password" id="ent-clave" style="width:100%;padding:8px 10px;border:1.5px solid var(--line);border-radius:8px;font:inherit;margin:4px 0 12px" placeholder="••••••••" autocomplete="current-password">
      <label style="display:flex;gap:6px;align-items:center;font-size:12px;color:var(--ink2);margin:-4px 0 12px"><input type="checkbox" id="ent-rec" checked> Mantener la sesión abierta en este equipo</label>
      <div style="display:flex;gap:8px;align-items:center"><button class="btn p" id="ent-ir">Entrar</button><span class="mutx" id="ent-msg" style="font-size:12px"></span></div></div></div>`;
     const ir = async () => { const ue = $('ent-ue')?.value, clave = $('ent-clave').value, rec = $('ent-rec')?.checked; if (!ue || !clave) return; $('ent-msg').textContent = 'Descifrando…';
@@ -139,12 +139,12 @@
       if (!lb) { lb = document.createElement('div'); lb.id = 'rep-aviso'; lb.style.cssText = 'position:fixed;inset:0;z-index:99998;background:rgba(10,20,35,.55);display:flex;align-items:center;justify-content:center;padding:24px;box-sizing:border-box;cursor:pointer'; lb.onclick = () => lb.remove(); document.body.appendChild(lb); }
       lb.innerHTML = `<div onclick="event.stopPropagation()" style="cursor:default;background:#fff;border-radius:16px;max-width:520px;width:100%;box-shadow:0 12px 44px rgba(0,0,0,.35);padding:18px 22px 16px">
         <div style="display:flex;align-items:center;gap:10px;border-bottom:2px solid #DCE7F5;padding-bottom:10px;margin-bottom:12px">
-          <div style="width:38px;height:38px;border-radius:10px;background:linear-gradient(135deg,#0A1B2E,#1E6BB8);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0">📑</div>
+          <div style="width:38px;height:38px;border-radius:10px;background:linear-gradient(135deg,#08182A,#173B60);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0">📑</div>
           <div><div style="font-size:14px;font-weight:900;color:#0F2A43">Exportaciones y reportes a medida</div><div style="font-size:10.5px;font-weight:700;color:#5E7290">${nombre || 'Su entidad'}</div></div>
           <button style="margin-left:auto;background:none;border:0;font-size:20px;color:#94A3B8;cursor:pointer" onclick="this.closest('#rep-aviso').remove()">×</button></div>
         <p style="font-size:13px;line-height:1.55;margin:0 0 8px;color:#1E293B">Las exportaciones (Excel, PowerPoint, PDF) y los reportes con el formato propio de cada entidad, a la fecha de corte que se necesite, se habilitan por contrato.</p>
         <p style="font-size:13px;line-height:1.55;margin:0;color:#1E293B">Para activarlo, escríbanos a <a href="mailto:${CONTACTO}" style="font-weight:800;color:var(--p)">${CONTACTO}</a>.</p>
-        <div style="font-size:9.5px;color:#9AA8BC;text-align:center;margin-top:12px">clic fuera para cerrar</div></div>`;
+        <div style="font-size:9.5px;color:#596577;text-align:center;margin-top:12px">clic fuera para cerrar</div></div>`;
     },
     // compuerta de TODA exportación (Excel, PPT, PDF/imprimir): con contrato (reportes/<ue>.json) ejecuta fn; si no, el aviso de contacto
     async exportar(ue, nombre, fn) {
@@ -262,7 +262,7 @@
     b.querySelectorAll('.pnl').forEach(c => c.onclick = e => { if (e.target.closest('.pnl-det')) return; const id = c.dataset.p; abiertos[K] = abiertos[K] === id ? null : id; cuerpo(); if (abiertos[K]) b.querySelector(`.pnl[data-p="${id}"]`)?.scrollIntoView({ block: 'start', behavior: 'smooth' }); });
   }
   // ---- vista alcalde: 6 paneles grandes, lenguaje llano, infograma en cada uno; clic = desarrollo + salto a la pestaña técnica ----
-  const COLH = { ok: '#1B9E5A', warn: '#E39B1E', bad: '#D64545', p: '#1E5AA8', gris: '#B0BEC5', gold: '#C9A227', teal: '#00897B' };
+  const COLH = { ok: '#1B9E5A', warn: '#E39B1E', bad: '#D64545', p: '#1E5AA8', gris: '#B0BEC5', gold: '#C9A227', teal: '#00766B' };
   const apilada = segs => { const tot = segs.reduce((s, x) => s + x[1], 0) || 1; return `<div style="display:flex;height:22px;border-radius:6px;overflow:hidden;background:var(--grid)">${segs.filter(s => s[1]).map(([l, v, c]) => `<div title="${l}: ${v}" style="width:${100 * v / tot}%;background:${c};color:#fff;font-size:11px;font-weight:700;display:grid;place-items:center">${v}</div>`).join('')}</div><div style="display:flex;flex-wrap:wrap;gap:4px 12px;margin-top:6px;font-size:11px">${segs.map(([l, v, c]) => `<span><i style="display:inline-block;width:9px;height:9px;border-radius:2px;background:${c};margin-right:4px"></i><b>${v}</b> ${l}</span>`).join('')}</div>`; };
   // ponytail: "estado de la cartera" como bloques grandes de color (idea del dashboard MINAM) — mismo dato que apilada(), presentación con más impacto
   const cartera = (segs, total) => `<div class="pd-lbl" style="margin:0 0 6px">ESTADO DE LA CARTERA — ${total} INVERSIONES</div><div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(80px,1fr));gap:6px">${segs.filter(s => s[1]).map(([l, v, c]) => `<div style="background:${c};color:#fff;border-radius:8px;padding:8px 6px;text-align:center;box-shadow:0 2px 8px rgba(0,0,0,.12)"><div style="font-size:19px;font-weight:800;line-height:1.1">${v}</div><div style="font-size:9px;font-weight:700;letter-spacing:.02em;text-transform:uppercase;opacity:.92;margin-top:2px;line-height:1.2">${l}</div></div>`).join('')}</div>`;
@@ -274,7 +274,7 @@
   const FM = n => 'S/ ' + M(n) + ' M';
   const mlabel = s => META[s] ? (META[s].es_inv ? META[s].act_proy : 'meta ' + META[s].meta) : s;
   // ponytail: estado de ejecución de una inversión a partir de los campos ya cargados en LAKE (sin fetch adicional por CUI)
-  const ESTINV = { culminada: ['Culminada', '#2E7D32'], ejecucion: ['En ejecución de obra', '#1565C0'], expediente: ['En expediente técnico', '#8E24AA'], viable: ['Viable · por iniciar', '#F9A825'], paralizada: ['Paralizada / suspendida', '#C62828'] };
+  const ESTINV = { culminada: ['Culminada', '#2E7D32'], ejecucion: ['En ejecución de obra', '#1565C0'], expediente: ['En expediente técnico', '#8E24AA'], viable: ['Viable · por iniciar', '#9A6700'], paralizada: ['Paralizada / suspendida', '#C62828'] };
   // ponytail: mismos 5 estados y colores que ESTINV, solo que con etiquetas cortas — para que los chips de "estado de la cartera" nunca partan en 2 líneas
   const ESTCHIP = { culminada: 'Culminada', ejecucion: 'En ejecución', expediente: 'Expediente técnico', viable: 'Por iniciar', paralizada: 'Paralizada' };
   // ponytail: forma además de color (igual que el dashboard MINAM: círculo=avanza normal, rombo/cuadrado=requiere atención) — así el estado no depende solo del color, ni en la leyenda ni en los puntos del mapa
@@ -283,9 +283,9 @@
   // Tipos: NORMA=normativa · PRENSA=nota de prensa · DOC=documento fijo · SEG=en seguimiento. pin:true = fijado arriba.
   // Agregar así: {f:'AAAA-MM-DD', t:'NORMA', ti:'Título', d:'detalle corto (opcional)', u:'https://...'}
   const NOVEDADES = [];
-  const NOV_TIPO = { NORMA: ['NORMATIVA', '#6A1B9A'], PRENSA: ['PRENSA', '#1565C0'], DOC: ['DOCUMENTO', '#2E7D32'], SEG: ['EN SEGUIMIENTO', '#E65100'] };
+  const NOV_TIPO = { NORMA: ['NORMATIVA', '#6A1B9A'], PRENSA: ['PRENSA', '#1565C0'], DOC: ['DOCUMENTO', '#2E7D32'], SEG: ['EN SEGUIMIENTO', '#B84300'] };
   function novHTML() {
-    if (!NOVEDADES.length) return '<div style="font-size:11px;color:#90A4AE;padding:8px 4px">Sin novedades por ahora.</div>';
+    if (!NOVEDADES.length) return '<div style="font-size:11px;color:#596577;padding:8px 4px">Sin novedades por ahora.</div>';
     const hoy = new Date();
     const items = NOVEDADES.slice().sort((a, b) => ((a.pin ? 1 : 0) - (b.pin ? 1 : 0)) || b.f.localeCompare(a.f));
     return items.map(n => {
@@ -298,10 +298,10 @@
           ${n.pin ? '<span style="font-size:9px">📌</span>' : ''}
           <span style="font-size:8px;font-weight:900;color:#fff;background:${m[1]};border-radius:4px;padding:1.5px 5px;letter-spacing:.4px">${m[0]}</span>
           ${nuevo ? '<span style="font-size:8px;font-weight:900;color:#fff;background:#C62828;border-radius:4px;padding:1.5px 5px">NUEVO</span>' : ''}
-          <span style="font-size:8.5px;font-weight:700;color:#90A4AE;margin-left:auto">${fch}</span>
+          <span style="font-size:8.5px;font-weight:700;color:#596577;margin-left:auto">${fch}</span>
         </div>
         <div style="font-size:11px;font-weight:800;color:#263238;line-height:1.3">${n.ti}</div>
-        ${n.d ? `<div style="font-size:9.5px;color:#607D8B;line-height:1.35;margin-top:2px">${n.d}</div>` : ''}
+        ${n.d ? `<div style="font-size:9.5px;color:#596577;line-height:1.35;margin-top:2px">${n.d}</div>` : ''}
       </a>`;
     }).join('');
   }
@@ -326,7 +326,7 @@
   }
   function pintarMapaInv(items, estSel, onGoto) {
     cargarLeaflet().then(() => {
-      const el = $('inv-mapa'); if (!el || !window.L) return;
+      const el = $('inv-mapa'); if (!el || !window.L || el._leaflet_id) return;   // ya pintado por una llamada anterior (dos render seguidos)
       const mp = L.map(el, { scrollWheelZoom: false });
       L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '© OpenStreetMap', maxZoom: 18 }).addTo(mp);
       // ponytail: halo pulsante — mismo @keyframes nacPulse del dashboard MINAM (Dashboard_UE003_MINAM/index.html), inyectado una sola vez
@@ -435,10 +435,8 @@
     const pim1 = T.pim || 1;
     // ponytail: medidas calcadas del kpi()/chip()/barra() reales del dashboard MINAM (Dashboard_UE003_MINAM/index.html, función _renderImpacto) — la letra nunca va por debajo de esos tamaños; solo los paddings/gaps se ajustan un poco más apretados para no dejar aire de sobra
     const secHdr = (txt, mb) => `<div style="font-size:11px;font-weight:900;color:#37474F;text-transform:uppercase;letter-spacing:.6px;margin-bottom:${mb == null ? 7 : mb}px">${txt}</div>`;
-    const kpiT = (id, icono, num, lbl, col, bg, br) => `<div data-p="${id}" style="cursor:pointer;min-width:0;background:${bg};border:1.5px solid ${br};border-left:5px solid ${col};border-radius:14px;padding:7px 11px;display:flex;flex-direction:row;align-items:center;gap:8px;box-shadow:0 1px 5px rgba(16,24,40,.08)">
-      <span style="font-size:23px;flex:none;line-height:1">${icono}</span>
-      <div style="min-width:0"><div style="font-size:18px;font-weight:900;color:${col};letter-spacing:-.5px;line-height:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis" title="${num}">${num}</div>
-      <div style="font-size:10px;font-weight:800;color:#546E7A;margin-top:3px;line-height:1.25;text-transform:uppercase;letter-spacing:.3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis" title="${lbl}">${lbl}</div></div>
+    const kpiT = (id, icono, num, lbl, col) => `<div class="ri-kpi" data-p="${id}" style="--c:${col}">${window.Ico ? Ico(icono) : ''}
+      <div style="min-width:0"><div class="n" title="${num}">${num}</div><div class="l" title="${lbl}">${lbl}</div></div>
     </div>`;
     // ponytail: clic en un chip de estado reemplaza "Ejecución presupuestal" por la lista de CUIs de ese estado (mismo patrón que _estadoListaHTML del dashboard MINAM, con CUI en vez de nombre corto — acá no hay catálogo de nombres cortos)
     const estSel = opts.estSel && est[opts.estSel] ? opts.estSel : null;
@@ -448,7 +446,7 @@
       <div style="font-size:9.5px;font-weight:800;margin-top:3px;text-transform:uppercase;letter-spacing:.3px;opacity:.95;line-height:1.2;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${lbl}">${lbl}</div>
     </div>`; };
     const barra = (lbl, val, pctv, col) => `<div style="margin-bottom:7px"><div style="display:flex;justify-content:space-between;font-size:10.5px;font-weight:800;color:#37474F;margin-bottom:3px"><span>${lbl}</span><span style="color:${col}">${FM(val)}${pctv != null ? ` · ${Math.round(pctv)}%` : ''}</span></div>
-      <div style="height:7px;background:#ECEFF3;border-radius:6px;overflow:hidden"><div style="height:100%;width:${pctv != null ? Math.min(pctv, 100) : 100}%;background:linear-gradient(90deg,${col}CC,${col});border-radius:6px"></div></div>
+      <div style="height:7px;background:#ECEFF3;border-radius:6px;overflow:hidden"><div class="ri-bar" style="height:100%;width:${pctv != null ? Math.min(pctv, 100) : 100}%;background:linear-gradient(90deg,${col}CC,${col});border-radius:6px"></div></div>
     </div>`;
     const panelInferior = estSel ? (() => {
       const [lbl, col] = ESTINV[estSel], arr = est[estSel];
@@ -460,48 +458,48 @@
         <span style="flex:1;font-size:11.5px;font-weight:700;color:#37474F;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${it.act_proy}</span>
         <span style="color:${col};font-weight:900;font-size:10px;flex:none">→</span>
       </div>`).join('')}</div>
-      <div style="font-size:9px;color:#90A4AE;margin-top:6px">Clic en un CUI para abrir su ficha · ✕ o el mismo estado para volver</div>`;
+      <div style="font-size:9px;color:#596577;margin-top:6px">Clic en un CUI para abrir su ficha · ✕ o el mismo estado para volver</div>`;
     })() : `${secHdr('Ejecución presupuestal')}
-      ${barra('PIM', T.pim, null, '#37474F')}
-      ${barra('Certificación', T.cert, (T.cert || 0) * 100 / pim1, '#6A1B9A')}
-      ${barra('Compromiso', T.comp_anual, (T.comp_anual || 0) * 100 / pim1, '#00838F')}
-      ${barra('Devengado', T.dev, (T.dev || 0) * 100 / pim1, '#E65100')}
-      <div style="font-size:9px;color:#90A4AE;margin-top:2px">Fuente: Transparencia Económica — MEF</div>`;
-    b.innerHTML = `<div style="display:flex;gap:9px;height:100%;box-sizing:border-box;padding:8px">
-      <div style="flex:1.15;min-width:0;display:flex;flex-direction:column;gap:7px;min-height:0">
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:7px">
-          ${kpiT('kpi', '💰', FM(T.pim), `Resumen general · devengado ${Math.round((T.dev || 0) * 100 / pim1)}%`, '#0F2A43', '#F4FBF4', '#C8E6C9')}
-          ${kpiT('benef', '👥', bc ? N(bc.total) : '…', bc ? `Beneficiarios · hasta (mayor inversión) · ${bc.conDato}/${items.length} con dato` : 'Beneficiarios · calculando…', '#1B5E20', '#F4FBF4', '#C8E6C9')}
-          ${kpiT('fuentes', '🏦', fts[0] ? cap(fts[0].nombre) : 'sin datos', `Por fuente · ${fts.length} fuentes`, '#1565C0', '#F5F9FF', '#BBDEFB')}
-          ${kpiT('cert', '📋', FM(T.cert), `Certificación · ${Math.round((T.cert || 0) * 100 / pim1)}% del PIM`, '#6A1B9A', '#F8F3FC', '#D8BFE0')}
-          ${kpiT('comp', '🤝', FM(T.comp_anual), `Compromiso · ${Math.round((T.comp_anual || 0) * 100 / pim1)}% del PIM`, '#00838F', '#F0FBFC', '#B2E0E4')}
-          ${kpiT('dev', '💵', FM(T.dev), `Devengado · ${Math.round((T.dev || 0) * 100 / pim1)}% del PIM`, '#E65100', '#FDEEE3', '#F5CBA0')}
+      ${barra('PIM', T.pim, null, '#0F2A43')}
+      ${barra('Certificación', T.cert, (T.cert || 0) * 100 / pim1, '#1E5AA8')}
+      ${barra('Compromiso', T.comp_anual, (T.comp_anual || 0) * 100 / pim1, '#2F69B3')}
+      ${barra('Devengado', T.dev, (T.dev || 0) * 100 / pim1, '#147A45')}
+      <div style="font-size:9px;color:#596577;margin-top:2px">Fuente: Transparencia Económica — MEF</div>`;
+    b.innerHTML = `<div class="ri">
+      <div class="ri-a">
+        <div class="ri-kpis">
+          ${kpiT('kpi', 'wallet', FM(T.pim), `Resumen general · devengado ${Math.round((T.dev || 0) * 100 / pim1)}%`, '#0F2A43')}
+          ${kpiT('benef', 'users', bc ? N(bc.total) : '…', bc ? `Beneficiarios · hasta (mayor inversión) · ${bc.conDato}/${items.length} con dato` : 'Beneficiarios · calculando…', '#7A5B12')}
+          ${kpiT('fuentes', 'bank', fts[0] ? cap(fts[0].nombre) : 'sin datos', `Por fuente · ${fts.length} fuentes`, '#0F2A43')}
+          ${kpiT('cert', 'clipboard', FM(T.cert), `Certificación · ${Math.round((T.cert || 0) * 100 / pim1)}% del PIM`, '#1E5AA8')}
+          ${kpiT('comp', 'handshake', FM(T.comp_anual), `Compromiso · ${Math.round((T.comp_anual || 0) * 100 / pim1)}% del PIM`, '#2F69B3')}
+          ${kpiT('dev', 'trend', FM(T.dev), `Devengado · ${Math.round((T.dev || 0) * 100 / pim1)}% del PIM`, '#147A45')}
         </div>
         <div class="card" style="flex:none;border-radius:14px;padding:8px 11px">
           ${secHdr(`Estado de la cartera — ${items.length} inversiones`)}
           <div style="display:flex;gap:7px">${estList.map(([l, v, c, k]) => chipPill(v, l, c, k)).join('')}</div>
         </div>
-        <div class="card" style="flex:1;min-height:0;border-radius:14px;padding:8px 11px;overflow:auto">${panelInferior}</div>
+        <div class="card" tabindex="0" style="flex:1;min-height:0;border-radius:14px;padding:8px 11px;overflow:auto">${panelInferior}</div>
       </div>
-      <div class="card" style="flex:1;min-width:0;border-radius:14px;display:flex;flex-direction:column;padding:10px 12px">
+      <div class="card ri-b" style="border-radius:14px;display:flex;flex-direction:column;padding:10px 12px">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
           ${secHdr(`Mapa de inversiones${(() => { const tot = estSel ? est[estSel].length : items.length, con = mapItems.filter(it => (!estSel || it.est === estSel) && it.lat != null && it.lon != null).length; return con < tot ? ` · ${con}/${tot} con coordenadas` : ''; })()}`, 0)}
           <div style="display:flex;gap:8px;font-size:9px;font-weight:700;color:#546E7A;flex-wrap:wrap">${Object.entries(ESTINV).map(([k, [l, c]]) => `<span><span style="display:inline-block;width:8px;height:8px;${ESTSHAPE[k]};background:${c};margin-right:3px"></span>${l}</span>`).join('')}</div>
         </div>
         <div id="inv-mapa" style="flex:1;min-height:0;border-radius:11px;background:var(--grid)"></div>
       </div>
-      <div class="card" style="flex:0 0 240px;min-width:0;border-radius:14px;display:flex;flex-direction:column;gap:8px;padding:10px">
+      <div class="card ri-c" style="border-radius:14px;display:flex;flex-direction:column;gap:8px;padding:10px">
         ${secHdr('Ir al detalle', 6)}
         ${(() => {
           const nAl = opts.nAlertas || 0;
           // ponytail: el incentivo cambia por nivel de gobierno: municipal = Plan de Incentivos, regional = FED, nacional = Metas (en elaboración)
           const GO = [
-            ['pi', ...(opts.nivel === 'R' ? ['🏅', 'FED', '#C9A227'] : opts.nivel === 'E' ? ['🎯', 'Metas', '#C9A227'] : ['🏅', 'Plan de Incentivos', '#C9A227'])],
-            ['sea', '📑', 'Contrataciones', '#00897B'],
-            ['al', '🚨', nAl ? `Alertas · ${nAl}` : 'Alertas', '#D64545']
+            ['pi', ...(opts.nivel === 'R' ? ['🏅', 'FED', '#7A5B12'] : opts.nivel === 'E' ? ['🎯', 'Metas', '#7A5B12'] : ['🏅', 'Plan de Incentivos', '#7A5B12'])],
+            ['sea', '📑', 'Contrataciones', '#1E5AA8'],
+            ['al', '🚨', nAl ? `Alertas · ${nAl}` : 'Alertas', '#B42A2A']
           ];
           // ponytail: SIN class="pnl" a propósito — esa clase global trae flex-direction:column y pisaba el layout en fila (ver mismo bug ya corregido en kpiT/chipPill)
-          return GO.map(([id, ic, t, c]) => `<div class="go-btn" data-go="${id}" style="cursor:pointer;flex:1;min-height:0;border-radius:12px;background:linear-gradient(160deg,#fff 55%,${c}14);border:1px solid ${c}33;display:flex;flex-direction:row;align-items:center;gap:11px;padding:0 13px;box-shadow:0 2px 8px rgba(15,42,67,.07)">
+          return GO.map(([id, ic, t, c]) => `<div class="go-btn" data-go="${id}" style="color:${c};cursor:pointer;flex:1;min-height:0;border-radius:12px;background:linear-gradient(160deg,#fff 55%,${c}14);border:1px solid ${c}33;display:flex;flex-direction:row;align-items:center;gap:11px;padding:0 13px;box-shadow:0 2px 8px rgba(15,42,67,.07)">
             <span style="font-size:26px;flex:none;line-height:1">${ic}</span>
             <span style="font-size:12.5px;font-weight:800;color:${c};line-height:1.25">${t}</span>
           </div>`).join('');
@@ -548,14 +546,14 @@
     }
     lb.innerHTML = `<div class="fi-situ-card" onclick="event.stopPropagation()" style="cursor:default;background:#fff;border-radius:16px;max-width:560px;width:100%;max-height:80vh;overflow-y:auto;box-shadow:0 12px 44px rgba(0,0,0,.35);padding:16px 20px 14px">
       <div style="display:flex;align-items:center;gap:10px;border-bottom:2px solid #DCE7F5;padding-bottom:10px;margin-bottom:11px">
-        <div style="width:38px;height:38px;border-radius:10px;background:linear-gradient(135deg,#0A1B2E,#1E6BB8);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0">📡</div>
+        <div style="width:38px;height:38px;border-radius:10px;background:linear-gradient(135deg,#08182A,#173B60);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0">📡</div>
         <div><div style="font-size:14px;font-weight:900;color:#0F2A43">Seguimiento de la inversión</div>
         <div style="font-size:10.5px;font-weight:700;color:#5E7290">CUI ${cui} · Formato 12-B — Ejecución de la inversión</div></div>
         <button class="fi-situ-copy" style="margin-left:auto;flex-shrink:0;background:#0F2A43;color:#fff;border:none;border-radius:9px;padding:7px 14px;font-size:11px;font-weight:900;cursor:pointer;letter-spacing:.3px;box-shadow:0 2px 6px rgba(15,42,67,.3)">⧉ Copiar</button>
       </div>
-      ${nombre ? `<div class="fi-situ-nom" style="font-size:10.5px;font-weight:700;color:#78909C;line-height:1.4;margin-bottom:10px">${nombre}</div>` : ''}
+      ${nombre ? `<div class="fi-situ-nom" style="font-size:10.5px;font-weight:700;color:#596577;line-height:1.4;margin-bottom:10px">${nombre}</div>` : ''}
       <div class="fi-situ-txt" style="background:#EAF1FB;border:1.5px solid #B9D0EC;border-radius:12px;padding:12px 15px;font-size:12.5px;color:#1E293B;line-height:1.65;font-weight:600;user-select:text;cursor:text">${contenidoHTML}</div>
-      <div style="font-size:9px;color:#9AA8BC;text-align:center;margin-top:10px">Fuente: Formato 12-B — Seguimiento de la ejecución · MEF (Banco de Inversiones) · clic fuera para cerrar</div>
+      <div style="font-size:9px;color:#596577;text-align:center;margin-top:10px">Fuente: Formato 12-B — Seguimiento de la ejecución · MEF (Banco de Inversiones) · clic fuera para cerrar</div>
     </div>`;
     lb.style.display = 'flex';
     const btn = lb.querySelector('.fi-situ-copy');
@@ -571,7 +569,7 @@
     const F = n => n == null ? '—' : 'S/ ' + Number(n).toLocaleString('es-PE', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
     const nombre = f?.nombre || c.nombre || 'Inversión ' + cui;
     const tipo = (f?.tipo || c.tipo || '').toUpperCase();
-    const tipoCol = { 'PROYECTO DE INVERSION': '#5E35B1', 'IOARR': '#E65100', 'PROGRAMA DE INVERSION': '#00838F' }[tipo] || '#546E7A';
+    const tipoCol = { 'PROYECTO DE INVERSION': '#5E35B1', 'IOARR': '#B84300', 'PROGRAMA DE INVERSION': '#00838F' }[tipo] || '#546E7A';
     const situ = (f?.situacion || c.situacion || '').toUpperCase();
     const cerrado = /CULMIN|CERRAD/.test(situ);
     // ponytail: "pim" acá es una señal de "hay presupuesto conocido" para el chip de estado — se toma
@@ -610,11 +608,11 @@
     }
     const secHdrFi = (ic, bg, tit, sub) => `<div style="display:flex;align-items:center;gap:9px;margin-bottom:12px;padding-bottom:10px;border-bottom:1px solid #EEF1F4">
       <div style="width:26px;height:26px;border-radius:8px;background:${bg};display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0">${ic}</div>
-      <div style="display:flex;flex-direction:column;gap:1px;min-width:0"><span style="font-size:12px;font-weight:800;color:#1E293B;text-transform:uppercase;letter-spacing:.5px;line-height:1.15">${tit}</span>${sub ? `<span style="font-size:9px;font-weight:600;color:#94A3B8">${sub}</span>` : ''}</div>
+      <div style="display:flex;flex-direction:column;gap:1px;min-width:0"><span style="font-size:12px;font-weight:800;color:#1E293B;text-transform:uppercase;letter-spacing:.5px;line-height:1.15">${tit}</span>${sub ? `<span style="font-size:9px;font-weight:600;color:#596577">${sub}</span>` : ''}</div>
     </div>`;
     const comp = f?.comp || [];
     const compTot = comp.reduce((s, cp) => s + cp.a.reduce((t, a) => t + (+a.c || 0), 0), 0);
-    const PALETA = ['#1E5AA8', '#E65100', '#5E35B1', '#00838F', '#AD1457', '#3572BE'];
+    const PALETA = ['#1E5AA8', '#B84300', '#5E35B1', '#00838F', '#AD1457', '#3572BE'];
     const compAccHTML = comp.length ? comp.map(cp => {
       const nAcc = cp.a.length;
       return `<div style="margin-bottom:8px">
@@ -646,7 +644,7 @@
           <div style="flex:1;text-align:center"><div style="font-size:23px;font-weight:900;color:#0F2A43;line-height:1">${N(benef)}</div><div style="font-size:10px;font-weight:800;color:#1E5AA8;margin-top:3px">Beneficiarios</div></div>
         </div>`
       : '<p class="vacio" style="font-size:11px;text-align:center;padding:14px 0">Sin datos de impacto registrados a nivel nacional.</p>';
-    return `<div style="background:linear-gradient(135deg,#153F6E 0%,#1E5AA8 55%,#5F94D1 100%);padding:10px 18px 9px;position:relative">
+    return `<div style="background:radial-gradient(120% 160% at 0% 0%,#1B4672,#0F2A43 55%,#08182A);padding:10px 18px 9px;position:relative">
       <button class="fi-regresar" style="position:absolute;top:12px;right:12px;height:28px;border-radius:14px;border:1.5px solid rgba(255,255,255,.32);background:rgba(255,255,255,.12);cursor:pointer;font-size:10.5px;color:#fff;font-weight:800;letter-spacing:.4px;display:flex;align-items:center;gap:6px;padding:0 14px;font-family:inherit">← Regresar</button>
       <button class="fi-print" style="position:absolute;bottom:10px;right:12px;height:28px;border-radius:14px;border:none;background:#fff;cursor:pointer;font-size:10.5px;color:#0F2A43;font-weight:900;letter-spacing:.4px;display:flex;align-items:center;gap:5px;padding:0 14px;font-family:inherit;box-shadow:0 2px 8px rgba(0,20,0,.28)">⬇ Descargar Ficha</button>
       <div style="font-size:13.5px;font-weight:800;color:#fff;letter-spacing:.8px;text-transform:uppercase;margin-bottom:4px">CUI ${cui}</div>
@@ -667,27 +665,27 @@
         ${secHdrFi('💰', '#DCE7F5', 'Presupuesto de Inversión')}
         <div style="display:flex;flex-direction:column;gap:3px">
           <div style="display:flex;justify-content:space-between;align-items:baseline;gap:6px;background:#F8FFFE;border:1px solid #CFD8DC;border-radius:8px;padding:3px 8px">
-            <span style="font-size:8.5px;font-weight:800;color:#607D8B;text-transform:uppercase;letter-spacing:.4px">● Perfil Viable</span>
+            <span style="font-size:8.5px;font-weight:800;color:#596577;text-transform:uppercase;letter-spacing:.4px">● Perfil Viable</span>
             <span style="font-size:11px;font-weight:900;color:#37474F;white-space:nowrap">${F(f?.viable)}</span>
           </div>
           <div style="display:flex;justify-content:space-between;align-items:baseline;gap:6px;padding:1.5px 2px">
-            <span style="font-size:8px;font-weight:800;color:#78909C;text-transform:uppercase;letter-spacing:.3px;white-space:nowrap">Costo inversión act. <span style="color:#B0BEC5">(a)</span></span>
+            <span style="font-size:8px;font-weight:800;color:#596577;text-transform:uppercase;letter-spacing:.3px;white-space:nowrap">Costo inversión act. <span style="color:#596577">(a)</span></span>
             <span style="font-size:9.5px;font-weight:800;color:#455A64;white-space:nowrap">${F(f?.costo)}</span>
           </div>
           <div style="display:flex;justify-content:space-between;align-items:baseline;gap:6px;padding:1.5px 2px">
-            <span style="font-size:8px;font-weight:800;color:#78909C;text-transform:uppercase;letter-spacing:.3px;white-space:nowrap">Control concurrente <span style="color:#B0BEC5">(b)</span></span>
+            <span style="font-size:8px;font-weight:800;color:#596577;text-transform:uppercase;letter-spacing:.3px;white-space:nowrap">Control concurrente <span style="color:#596577">(b)</span></span>
             <span style="font-size:9.5px;font-weight:800;color:#455A64;white-space:nowrap">${F(f?.cc_eje)}</span>
           </div>
           <div style="display:flex;justify-content:space-between;align-items:baseline;gap:6px;padding:1.5px 2px">
-            <span style="font-size:8px;font-weight:800;color:#78909C;text-transform:uppercase;letter-spacing:.3px;white-space:nowrap">Controversias <span style="color:#B0BEC5">(c)</span></span>
+            <span style="font-size:8px;font-weight:800;color:#596577;text-transform:uppercase;letter-spacing:.3px;white-space:nowrap">Controversias <span style="color:#596577">(c)</span></span>
             <span style="font-size:9.5px;font-weight:800;color:#455A64;white-space:nowrap">${F(f?.contro)}</span>
           </div>
           <div style="display:flex;justify-content:space-between;align-items:baseline;gap:6px;padding:1.5px 2px">
-            <span style="font-size:8px;font-weight:800;color:#78909C;text-transform:uppercase;letter-spacing:.3px;white-space:nowrap">Carta fianza <span style="color:#B0BEC5">(d)</span></span>
+            <span style="font-size:8px;font-weight:800;color:#596577;text-transform:uppercase;letter-spacing:.3px;white-space:nowrap">Carta fianza <span style="color:#596577">(d)</span></span>
             <span style="font-size:9.5px;font-weight:800;color:#455A64;white-space:nowrap">${F(f?.carta)}</span>
           </div>
           <div style="display:flex;justify-content:space-between;align-items:baseline;gap:6px;background:#EAF1FB;border:1.5px solid #B9D0EC;border-radius:8px;padding:4px 8px" title="Costo total de la inversión actualizado = (a)+(b)+(c)+(d)">
-            <span style="font-size:8.5px;font-weight:900;color:#1E5AA8;text-transform:uppercase;letter-spacing:.4px">● Costo Total <span style="color:#8FB4E0">(a+b+c+d)</span></span>
+            <span style="font-size:8.5px;font-weight:900;color:#1E5AA8;text-transform:uppercase;letter-spacing:.4px">● Costo Total <span style="color:#596577">(a+b+c+d)</span></span>
             <span style="font-size:11px;font-weight:900;color:#0F2A43;white-space:nowrap">${F(f?.costo_total || f?.costo)}</span>
           </div>
         </div>
@@ -699,41 +697,41 @@
         </div>
         <div style="display:flex;gap:5px;justify-content:center">
           ${donutTick(f?.av_fis, '#0D47A1', 'Av. Físico')}
-          ${donutTick(f?.av_ejec, '#00897B', 'Av. Financiero')}
+          ${donutTick(f?.av_ejec, '#00766B', 'Av. Financiero')}
         </div>
       </div>
       <div style="border-right:1px solid #DCE7F5;display:flex;flex-direction:column;justify-content:center;padding:6px 10px;gap:4px;background:linear-gradient(180deg,#EAF1FB 0%,#FAFBFE 100%)">
         ${tarjeta('PIM ' + ANIO, c.pim, '#1E5AA8', '#EAF1FB', '#B9D0EC', '#0F2A43')}
         ${tarjeta('Certificación ' + ANIO, c.cert, '#6A1B9A', '#F7F0FB', '#CE93D8', '#4A148C')}
-        ${tarjeta('Devengado ' + ANIO, c.dev, '#E65100', '#FFF8F0', '#FFCC80', '#BF360C')}
+        ${tarjeta('Devengado ' + ANIO, c.dev, '#B84300', '#FFF8F0', '#FFCC80', '#BF360C')}
       </div>
       <div style="border-right:1px solid #DCE7F5;display:flex;flex-direction:column;gap:7px;padding:8px 8px;background:linear-gradient(180deg,#EAF1FB 0%,#FAFBFE 100%)">
         <div class="fi-seg-hdr" style="flex:1;background:#EDF3FB;border:1.5px solid #B9D0EC;border-radius:12px;padding:8px 11px;display:flex;flex-direction:column;justify-content:center;cursor:pointer">
-          <div style="font-size:12px;font-weight:900;color:#0F2A43;text-transform:uppercase;letter-spacing:.6px;display:flex;align-items:center;gap:8px"><span style="width:30px;height:30px;border-radius:9px;background:linear-gradient(135deg,#0A1B2E,#1E6BB8);display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0">📡</span>Seguimiento</div>
-          <div style="font-size:10px;color:#7C93B8;font-weight:700;margin-top:4px;padding-left:38px">Clic para ver · Formato 12-B</div>
+          <div style="font-size:12px;font-weight:900;color:#0F2A43;text-transform:uppercase;letter-spacing:.6px;display:flex;align-items:center;gap:8px"><span style="width:30px;height:30px;border-radius:9px;background:linear-gradient(135deg,#08182A,#173B60);display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0">📡</span>Seguimiento</div>
+          <div style="font-size:10px;color:#596577;font-weight:700;margin-top:4px;padding-left:38px">Clic para ver · Formato 12-B</div>
         </div>
         <div style="flex:1;background:#EDF3FB;border:1.5px solid #B9D0EC;border-radius:12px;padding:8px 11px;display:flex;flex-direction:column;justify-content:center">
           <div style="font-size:12px;font-weight:900;color:#0F2A43;text-transform:uppercase;letter-spacing:.6px;display:flex;align-items:center;gap:8px"><span style="width:30px;height:30px;border-radius:9px;background:linear-gradient(135deg,#0D47A1,#1976D2);display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0">🚀</span>Puesta en Marcha</div>
-          <div style="font-size:10px;color:#8FA0BC;font-weight:600;margin-top:4px;padding-left:38px">Información en preparación</div>
+          <div style="font-size:10px;color:#596577;font-weight:600;margin-top:4px;padding-left:38px">Información en preparación</div>
         </div>
       </div>
       <div style="padding:6px;display:flex;flex-direction:column;justify-content:center;background:linear-gradient(180deg,#FAFBFE 0%,#EAF1FB 100%)">
         <div style="position:relative;width:100%;aspect-ratio:3/2;border-radius:8px;border:1.5px solid #B9D0EC;background:#EEF2F8;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;text-align:center;padding:4px">
           <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="#A9BEDC" stroke-width="1.5"><rect x="3" y="5" width="18" height="14" rx="2"/><circle cx="8.5" cy="10" r="1.6"/><path d="M3 16l5-5 4 4 3-3 6 6"/></svg>
-          <div style="font-size:9px;font-weight:700;color:#8CA0C4;text-transform:uppercase;letter-spacing:.3px;line-height:1.3">Fotografía de obra<br>en preparación</div>
+          <div style="font-size:9px;font-weight:700;color:#596577;text-transform:uppercase;letter-spacing:.3px;line-height:1.3">Fotografía de obra<br>en preparación</div>
         </div>
       </div>
     </div>
     <div style="display:grid;grid-template-columns:1.55fr 1.05fr 0.52fr;gap:10px;padding:10px 0 0">
-      <div style="background:#fff;border:1px solid #E5E9EF;border-radius:14px;padding:14px 16px;overflow-y:auto">
+      <div tabindex="0" style="background:#fff;border:1px solid #E5E9EF;border-radius:14px;padding:14px 16px;overflow-y:auto">
         ${secHdrFi('🧩', '#DCE7F5', 'Componentes y Acciones Programados')}
         <div>${compAccHTML}</div>
       </div>
-      <div style="background:#fff;border:1px solid #E5E9EF;border-radius:14px;padding:14px 16px;overflow-y:auto">
+      <div tabindex="0" style="background:#fff;border:1px solid #E5E9EF;border-radius:14px;padding:14px 16px;overflow-y:auto">
         ${secHdrFi('📊', '#DCE7F5', 'Ejecución por Actividad', 'Por componente de inversión')}
         ${actividadHTML}${footerHTML}
       </div>
-      <div style="background:#fff;border:1px solid #E5E9EF;border-radius:14px;padding:14px 16px;overflow-y:auto">
+      <div tabindex="0" style="background:#fff;border:1px solid #E5E9EF;border-radius:14px;padding:14px 16px;overflow-y:auto">
         ${secHdrFi('💰', '#FEF3E0', 'Impacto de la Inversión', 'Entregables y población beneficiada')}
         ${impactoHTML}
       </div>
