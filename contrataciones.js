@@ -34,8 +34,8 @@
       .ct-det{margin-top:12px;border-radius:14px;background:#fff;border:1px solid rgba(15,42,67,.08);box-shadow:0 8px 24px -12px rgba(15,42,67,.25);padding:14px 16px;animation:ctIn .28s ease}
       .ct-det .pd-lbl:first-child{margin-top:0}
       @keyframes ctIn{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:none}}
-      .ct-hero{position:relative;overflow:hidden;border-radius:16px;background:radial-gradient(900px 300px at 10% -20%,rgba(255,255,255,.14),transparent 60%),linear-gradient(135deg,#0A1B2E 0%,#123E7A 55%,#1E6BB8 100%);color:#fff;padding:18px 20px;box-shadow:0 14px 34px -14px rgba(10,27,46,.6)}
-      .ct-hero input{transition:box-shadow .2s ease,transform .2s ease}.ct-hero input:focus{outline:0;box-shadow:0 0 0 4px rgba(255,205,68,.45);transform:scale(1.01)}
+      .ct-hero{position:relative;overflow:hidden;border-radius:16px;background:radial-gradient(900px 300px at 10% -20%,rgba(255,255,255,.14),transparent 60%),linear-gradient(135deg,#164A8C 0%,#1E5AA8 55%,#2F6FC2 100%);color:#fff;padding:18px 20px;box-shadow:0 14px 34px -14px rgba(22,74,140,.5)}
+      .ct-hero input{transition:box-shadow .2s ease,transform .2s ease}.ct-hero input:focus{outline:0;box-shadow:0 0 0 4px rgba(255,255,255,.45);transform:scale(1.01)}
       .ct-top{display:flex;gap:12px;align-items:center;margin:0 0 12px;padding:10px 14px;background:linear-gradient(135deg,#fff 60%,#EDF3FC);border:1px solid var(--line);border-left:5px solid var(--p);border-radius:12px;box-shadow:var(--sh)}
       .ct-top .ct-mod{font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;font-weight:800;color:var(--p)}
       .ct-top .ct-nom{font-size:17px;font-weight:800;color:var(--p2);line-height:1.15;margin:2px 0}

@@ -68,32 +68,33 @@
   function indicador() {
     const secs = $('secs'); if (!secs) return; let ind = $('nav-ind'); if (!ind) { ind = document.createElement('i'); ind.id = 'nav-ind'; ind.setAttribute('aria-hidden', 'true'); secs.appendChild(ind); secs.classList.add('ind'); }
     const on = secs.querySelector(':scope > a.on'); if (!on) { ind.style.opacity = 0; return; }
-    const p = { x: on.offsetLeft + 10, width: Math.max(16, on.offsetWidth - 20), opacity: 1 };
-    if (g && !RM.matches && ind.style.opacity === '1') g.to(ind, Object.assign({ duration: .5, ease: 'power3.out', overwrite: true }, p)); else { ind.style.transform = `translateX(${p.x}px)`; ind.style.width = p.width + 'px'; ind.style.opacity = 1; if (g) g.set(ind, { x: p.x }); }
+    // barra lateral: el indicador se desliza en vertical hasta la sección activa
+    const p = { y: on.offsetTop + 6, height: Math.max(16, on.offsetHeight - 12), opacity: 1 };
+    if (g && !RM.matches && ind.style.opacity === '1') g.to(ind, Object.assign({ duration: .5, ease: 'power3.out', overwrite: true }, p)); else { ind.style.transform = `translateY(${p.y}px)`; ind.style.height = p.height + 'px'; ind.style.opacity = 1; if (g) g.set(ind, { y: p.y }); }
   }
   // portada: diana que respira + partículas con hilos (canvas 2D). ponytail: un solo canvas reutilizado; se pausa si no se ve.
   function fondo() {
     const hero = $('hero'); if (!hero) return; const cv = document.createElement('canvas'); cv.id = 'hero-fx'; cv.setAttribute('aria-hidden', 'true');
     const c = cv.getContext('2d'); let w = 0, h = 0, dpr = 1, P = [], mx = -1, my = -1, t0 = performance.now();
     const fit = () => { dpr = Math.min(2, devicePixelRatio || 1); w = cv.clientWidth; h = cv.clientHeight; cv.width = w * dpr; cv.height = h * dpr; };
-    for (let i = 0; i < 34; i++) P.push({ x: Math.random(), y: Math.random(), vx: (Math.random() - .5) * .00012, vy: -.00004 - Math.random() * .00012, r: .8 + Math.random() * 2.2, a: .15 + Math.random() * .4, o: Math.random() < .35 });
+    for (let i = 0; i < 20; i++) P.push({ x: Math.random(), y: Math.random(), vx: (Math.random() - .5) * .00012, vy: -.00004 - Math.random() * .00012, r: .8 + Math.random() * 2.2, a: .15 + Math.random() * .4, o: Math.random() < .35 });
     function pinta(t) {
       if (!w || cv.clientWidth !== w || cv.clientHeight !== h) fit(); if (!w) return;
       c.setTransform(dpr, 0, 0, dpr, 0, 0); c.clearRect(0, 0, w, h);
-      const s = (t - t0) / 1000, cx = w * .94, cy = h * .95, R = Math.min(w, h) * .62;   // la diana asoma por la esquina inferior derecha, detrás de los avisos
+      const s = (t - t0) / 1000, cx = w * .96, cy = h * .04, R = Math.min(w, h) * .42;   // la diana asoma por la esquina superior derecha, en azules tenues sobre blanco
       // diana: tres anillos (crema, azul, celeste) con arcos que giran lento y el centro dorado que late
-      [[1, 'rgba(245,242,234,.16)', .05], [.72, 'rgba(53,114,190,.34)', -.08], [.44, 'rgba(143,180,224,.3)', .12]].forEach(([k, col, v], i) => {
+      [[1, 'rgba(30,90,168,.06)', .05], [.72, 'rgba(30,90,168,.09)', -.08], [.44, 'rgba(30,90,168,.12)', .12]].forEach(([k, col, v], i) => {
         c.lineWidth = Math.max(5, R * .07); c.strokeStyle = col; c.beginPath(); c.arc(cx, cy, R * k * (1 + .012 * Math.sin(s * .8 + i)), 0, 6.2832); c.stroke();
-        c.lineWidth = 2; c.strokeStyle = 'rgba(255,255,255,.3)'; c.lineCap = 'round'; c.beginPath(); const a = s * v * 2 + i * 2; c.arc(cx, cy, R * k, a, a + .9); c.stroke(); });
-      const lat = 1 + .1 * Math.sin(s * 1.6), gr = c.createRadialGradient(cx - 4, cy - 5, 1, cx, cy, R * .17 * lat); gr.addColorStop(0, '#F3DC8E'); gr.addColorStop(.6, '#C9A552'); gr.addColorStop(1, 'rgba(143,115,48,0)');
+        c.lineWidth = 2; c.strokeStyle = 'rgba(30,90,168,.28)'; c.lineCap = 'round'; c.beginPath(); const a = s * v * 2 + i * 2; c.arc(cx, cy, R * k, a, a + .9); c.stroke(); });
+      const lat = 1 + .1 * Math.sin(s * 1.6), gr = c.createRadialGradient(cx - 4, cy - 5, 1, cx, cy, R * .17 * lat); gr.addColorStop(0, 'rgba(47,111,194,.55)'); gr.addColorStop(.6, 'rgba(30,90,168,.35)'); gr.addColorStop(1, 'rgba(30,90,168,0)');
       c.fillStyle = gr; c.beginPath(); c.arc(cx, cy, R * .17 * lat, 0, 6.2832); c.fill();
       // onda que sale del centro cada 4 s
-      const k = (s % 4) / 4; c.strokeStyle = `rgba(243,220,142,${.35 * (1 - k)})`; c.lineWidth = 1.5; c.beginPath(); c.arc(cx, cy, R * (.17 + 1.1 * k), 0, 6.2832); c.stroke();
+      const k = (s % 4) / 4; c.strokeStyle = `rgba(30,90,168,${.22 * (1 - k)})`; c.lineWidth = 1.5; c.beginPath(); c.arc(cx, cy, R * (.17 + 1.1 * k), 0, 6.2832); c.stroke();
       // partículas e hilos
       for (const p of P) { p.x += p.vx; p.y += p.vy; if (p.y < -.03) { p.y = 1.03; p.x = Math.random(); } if (p.x < -.03) p.x = 1.03; if (p.x > 1.03) p.x = -.03;
-        const px = p.x * w, py = p.y * h; if (mx >= 0) { const d = Math.hypot(px - mx, py - my); if (d < 110) { c.strokeStyle = `rgba(243,220,142,${.3 * (1 - d / 110)})`; c.lineWidth = 1; c.beginPath(); c.moveTo(px, py); c.lineTo(mx, my); c.stroke(); } }
-        c.fillStyle = p.o ? `rgba(212,178,94,${p.a})` : `rgba(143,180,224,${p.a})`; c.beginPath(); c.arc(px, py, p.r, 0, 6.2832); c.fill(); }
-      for (let i = 0; i < P.length; i++) for (let j = i + 1; j < P.length; j++) { const dx = (P[i].x - P[j].x) * w, dy = (P[i].y - P[j].y) * h, d = dx * dx + dy * dy; if (d < 6400) { c.strokeStyle = `rgba(143,180,224,${.14 * (1 - d / 6400)})`; c.lineWidth = 1; c.beginPath(); c.moveTo(P[i].x * w, P[i].y * h); c.lineTo(P[j].x * w, P[j].y * h); c.stroke(); } }
+        const px = p.x * w, py = p.y * h; if (mx >= 0) { const d = Math.hypot(px - mx, py - my); if (d < 110) { c.strokeStyle = `rgba(30,90,168,${.25 * (1 - d / 110)})`; c.lineWidth = 1; c.beginPath(); c.moveTo(px, py); c.lineTo(mx, my); c.stroke(); } }
+        c.fillStyle = p.o ? `rgba(30,90,168,${p.a * .7})` : `rgba(111,155,212,${p.a * .8})`; c.beginPath(); c.arc(px, py, p.r, 0, 6.2832); c.fill(); }
+      for (let i = 0; i < P.length; i++) for (let j = i + 1; j < P.length; j++) { const dx = (P[i].x - P[j].x) * w, dy = (P[i].y - P[j].y) * h, d = dx * dx + dy * dy; if (d < 6400) { c.strokeStyle = `rgba(111,155,212,${.18 * (1 - d / 6400)})`; c.lineWidth = 1; c.beginPath(); c.moveTo(P[i].x * w, P[i].y * h); c.lineTo(P[j].x * w, P[j].y * h); c.stroke(); } }
     }
     const pon = () => { if (cv.parentNode !== hero) hero.prepend(cv); };
     pon(); new MutationObserver(pon).observe(hero, { childList: true });
