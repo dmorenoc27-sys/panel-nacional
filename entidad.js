@@ -219,10 +219,10 @@
     const tabs = [['res', 'Resumen'], ['ppto', 'Presupuesto'], ['inv', modoInv ? 'Inversiones' : 'Metas'], ['exp', 'Expedientes' + (filtroMeta ? ' · ' + filtroMeta : '')], ['ing', 'Ingresos'], ['plz', '⏱ Plazos'], ['ges', '🧭 Gestión'], ['pi', E._ue.nivel === 'R' ? '🏅 FED' : E._ue.nivel === 'E' ? '🎯 Metas' : '🏅 Incentivos Municipales'], ['al', `Alertas (${nAl})`], ['prov', 'Proveedores'], ['cert', 'Certificaciones']].concat(E._ue.nivel === 'M' || E._ue.nivel === 'R' ? [['cie', '🏛 Cierre de gestión']] : []);
     const cab = `<div class="pd-cui"><span>MI ENTIDAD · UE ${u.cod}</span><span>· ${E.publico ? 'Datos MEF' : 'SIAF'} al ${E.corte}${(d => d > 1 ? ` · <b style="color:${d > 30 ? '#D64545' : d > 7 ? '#E39B1E' : 'inherit'}" title="días desde la fecha de corte de los datos">hace ${d} días</b>` : '')(Math.round((Date.now() - new Date(String(E.corte).slice(0, 10))) / 864e5))}</span>${E._corteVista ? `<span style="background:var(--p);color:#fff;border-radius:6px;padding:1px 8px;margin-left:6px">CORTE ${fDMY(E._corteVista)}</span>` : ''}<span>· Transparencia al ${R.corte}</span><button type="button" class="x" id="ent-salir" title="Cerrar sesión" aria-label="Cerrar sesión" style="background:none;border:0;padding:0 4px;cursor:pointer;color:inherit;font:inherit;font-size:20px;line-height:1">×</button></div><div class="pd-title">${u.nombre}</div>`;
     // ponytail: Plan de Incentivos también entra sin la cabecera técnica (KPIs, barra HOY, pestañas) — solo cabecera + volver
-    if (tabE === 'pi' || tabE === 'sea' || tabE === 'ges' || tabE === 'cie') { el.innerHTML = `<div class="card" style="flex:0 0 auto;padding:0"><div class="pd-hdr" style="border-radius:var(--rad)">${cab}<div class="pd-badges"><span class="pd-badge">${tabE === 'sea' ? '📑 Contrataciones' : tabE === 'ges' ? '🧭 Gestión' : tabE === 'cie' ? '🏛 Cierre de gestión' : E._ue.nivel === 'R' ? '🏅 FED · Fondo de Estímulo al Desempeño' : E._ue.nivel === 'E' ? '🎯 Metas' : '🏅 Plan de Incentivos ' + ANIO}</span><button class="btn" id="ent-volver-pi" style="margin-left:auto;background:#fff;color:var(--p2)">‹ Volver</button></div></div></div><div class="card" style="flex:1;min-height:0;padding:0"><div class="wrap" id="ent-body" style="padding:0"></div></div>`;
+    if (tabE === 'pi' || tabE === 'sea' || tabE === 'ges' || tabE === 'cie') { el.innerHTML = `<div class="card" style="flex:0 0 auto;padding:0"><div class="pd-hdr" style="border-radius:var(--rad)">${cab}<div class="pd-badges"><span class="pd-badge">${tabE === 'sea' ? '📑 Contrataciones' : tabE === 'ges' ? '🧭 Gestión' : tabE === 'cie' ? '🏛 Cierre de gestión' : E._ue.nivel === 'R' ? '🏅 FED · Fondo de Estímulo al Desempeño' : E._ue.nivel === 'E' ? '🎯 Metas' : '🏅 Plan de Incentivos ' + ANIO}</span><button type="button" class="ov-volver" id="ent-volver-pi" style="margin-left:auto"><span class="ov-fl" aria-hidden="true">←</span>Volver</button></div></div></div><div class="card" style="flex:1;min-height:0;padding:0"><div class="wrap" id="ent-body" style="padding:0"></div></div>`;
       $('ent-volver-pi').onclick = () => { tabE = 'inv'; render(); }; $('ent-salir').onclick = salir; cuerpo(); return; }
     // ponytail: Inversión pública también entra sin cabecera técnica — lista simple de obras; la ficha de cada una se abre debajo
-    if (tabE === 'inv') { el.innerHTML = `<div class="card" style="flex:0 0 auto;padding:0"><div class="pd-hdr" style="border-radius:var(--rad)">${cab}<div class="pd-badges"><span class="pd-badge">🏗 Inversión pública</span>${repCorteHTML()}${abiertos.invLista ? `<input type="search" id="ent-invq" placeholder="Buscar por CUI o nombre…" value="${q}" style="padding:6px 10px;border:1.5px solid var(--line);border-radius:8px;font:inherit;font-size:12px;width:240px"><button class="btn" id="ent-volver-inv" style="background:#fff;color:var(--p2)">‹ Volver</button>` : `<button class="btn" id="ent-ver-lista" style="background:#fff;color:var(--p2)">📋 Ver lista completa</button>`}<button class="btn" id="ent-tec" style="background:#fff;color:var(--p2)">Ver detalle técnico ▸</button></div></div></div><div class="card" style="flex:1;min-height:0;padding:0"><div class="wrap" id="ent-body" style="padding:0"></div></div>`;
+    if (tabE === 'inv') { el.innerHTML = `<div class="card" style="flex:0 0 auto;padding:0"><div class="pd-hdr" style="border-radius:var(--rad)">${cab}<div class="pd-badges"><span class="pd-badge">🏗 Inversión pública</span>${repCorteHTML()}${abiertos.invLista ? `<input type="search" id="ent-invq" placeholder="Buscar por CUI o nombre…" value="${q}" style="padding:6px 10px;border:1.5px solid var(--line);border-radius:8px;font:inherit;font-size:12px;width:240px"><button type="button" class="ov-volver" id="ent-volver-inv"><span class="ov-fl" aria-hidden="true">←</span>Volver</button>` : `<button class="btn" id="ent-ver-lista" style="background:#fff;color:var(--p2)">📋 Ver lista completa</button>`}<button class="btn" id="ent-tec" style="background:#fff;color:var(--p2)">Ver detalle técnico ▸</button></div></div></div><div class="card" style="flex:1;min-height:0;padding:0"><div class="wrap" id="ent-body" style="padding:0"></div></div>`;
       $('ent-tec').onclick = () => { tabE = 'res'; render(); }; $('ent-salir').onclick = salir;
       if ($('ent-volver-inv')) $('ent-volver-inv').onclick = () => { abiertos.invLista = false; render(); };
       if ($('ent-invq')) $('ent-invq').oninput = e => { q = e.target.value.trim().toLowerCase(); cuerpo(); };
@@ -264,7 +264,7 @@
   // ---- vista alcalde: 6 paneles grandes, lenguaje llano, infograma en cada uno; clic = desarrollo + salto a la pestaña técnica ----
   const COLH = { ok: '#1B9E5A', warn: '#E39B1E', bad: '#D64545', p: '#1E5AA8', gris: '#B0BEC5', gold: '#C9A227', teal: '#00766B' };
   const apilada = segs => { const tot = segs.reduce((s, x) => s + x[1], 0) || 1; return `<div style="display:flex;height:22px;border-radius:6px;overflow:hidden;background:var(--grid)">${segs.filter(s => s[1]).map(([l, v, c]) => `<div title="${l}: ${v}" style="width:${100 * v / tot}%;background:${c};color:#fff;font-size:11px;font-weight:700;display:grid;place-items:center">${v}</div>`).join('')}</div><div style="display:flex;flex-wrap:wrap;gap:4px 12px;margin-top:6px;font-size:11px">${segs.map(([l, v, c]) => `<span><i style="display:inline-block;width:9px;height:9px;border-radius:2px;background:${c};margin-right:4px"></i><b>${v}</b> ${l}</span>`).join('')}</div>`; };
-  // ponytail: "estado de la cartera" como bloques grandes de color (idea del dashboard MINAM) — mismo dato que apilada(), presentación con más impacto
+  // ponytail: "estado de la cartera" como bloques grandes de color — mismo dato que apilada(), presentación con más impacto
   const cartera = (segs, total) => `<div class="pd-lbl" style="margin:0 0 6px">ESTADO DE LA CARTERA — ${total} INVERSIONES</div><div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(80px,1fr));gap:6px">${segs.filter(s => s[1]).map(([l, v, c]) => `<div style="background:${c};color:#fff;border-radius:8px;padding:8px 6px;text-align:center;box-shadow:0 2px 8px rgba(0,0,0,.12)"><div style="font-size:19px;font-weight:800;line-height:1.1">${v}</div><div style="font-size:9px;font-weight:700;letter-spacing:.02em;text-transform:uppercase;opacity:.92;margin-top:2px;line-height:1.2">${l}</div></div>`).join('')}</div>`;
   const barras = filas => `<div style="display:grid;grid-template-columns:auto 1fr auto;gap:5px 10px;align-items:center;font-size:12px">${filas.map(([l, v, max, c, txt]) => `<span style="font-weight:600">${l}</span><div style="height:14px;background:var(--grid);border-radius:4px;overflow:hidden"><div style="width:${Math.min(100, 100 * v / (max || 1))}%;height:100%;background:${c}"></div></div><b style="min-width:70px;text-align:right">${txt}</b>`).join('')}</div>`;
   const ir = (k, txt) => `<div style="margin-top:8px"><button class="btn ir" data-ir="${k}" style="background:var(--p2);color:#fff">${txt || 'Abrir el detalle completo ▸'}</button></div>`;
@@ -277,9 +277,9 @@
   const ESTINV = { culminada: ['Culminada', '#2E7D32'], ejecucion: ['En ejecución de obra', '#1565C0'], expediente: ['En expediente técnico', '#8E24AA'], viable: ['Viable · por iniciar', '#9A6700'], paralizada: ['Paralizada / suspendida', '#C62828'] };
   // ponytail: mismos 5 estados y colores que ESTINV, solo que con etiquetas cortas — para que los chips de "estado de la cartera" nunca partan en 2 líneas
   const ESTCHIP = { culminada: 'Culminada', ejecucion: 'En ejecución', expediente: 'Expediente técnico', viable: 'Por iniciar', paralizada: 'Paralizada' };
-  // ponytail: forma además de color (igual que el dashboard MINAM: círculo=avanza normal, rombo/cuadrado=requiere atención) — así el estado no depende solo del color, ni en la leyenda ni en los puntos del mapa
+  // ponytail: forma además de color — así el estado no depende solo del color, ni en la leyenda ni en los puntos del mapa
   const ESTSHAPE = { culminada: 'border-radius:50%', ejecucion: 'border-radius:50%', expediente: 'border-radius:50%', viable: 'border-radius:2px;transform:rotate(45deg)', paralizada: 'border-radius:2px' };
-  // ponytail: mismo patrón "editable por David" del dashboard MINAM (Dashboard_UE003_MINAM/index.html) — array vacío listo para que él agregue normativa/prensa/documentos.
+  // ponytail: mismo patrón "editable por David".
   // Tipos: NORMA=normativa · PRENSA=nota de prensa · DOC=documento fijo · SEG=en seguimiento. pin:true = fijado arriba.
   // Agregar así: {f:'AAAA-MM-DD', t:'NORMA', ti:'Título', d:'detalle corto (opcional)', u:'https://...'}
   const NOVEDADES = [];
@@ -313,7 +313,7 @@
     if (/EXPEDIENTE|PERFIL|FORMULA|ESTUDIO/.test(s) || c.f12b) return 'expediente';
     return 'viable';
   }
-  // ponytail: Leaflet se carga una sola vez, bajo demanda (igual que el dashboard MINAM); si no hay red, el mapa simplemente no aparece
+  // ponytail: Leaflet se carga una sola vez, bajo demanda; si no hay red, el mapa simplemente no aparece
   let _leafletP = null;
   function cargarLeaflet() {
     if (window.L) return Promise.resolve();
@@ -329,7 +329,7 @@
       const el = $('inv-mapa'); if (!el || !window.L || el._leaflet_id) return;   // ya pintado por una llamada anterior (dos render seguidos)
       const mp = L.map(el, { scrollWheelZoom: false });
       L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '© OpenStreetMap', maxZoom: 18 }).addTo(mp);
-      // ponytail: halo pulsante — mismo @keyframes nacPulse del dashboard MINAM (Dashboard_UE003_MINAM/index.html), inyectado una sola vez
+      // ponytail: halo pulsante
       if (!document.getElementById('nac-pulse-css')) {
         const pc = document.createElement('style'); pc.id = 'nac-pulse-css';
         pc.textContent = '@keyframes nacPulse{0%{transform:scale(.55);opacity:.85}70%{transform:scale(2.2);opacity:0}100%{opacity:0}}'
@@ -343,7 +343,7 @@
       items.forEach(it => {
         // ponytail: "0,0" (null island, frente a África) es el valor centinela típico cuando al MEF le falta la coordenada real — nunca es un dato válido en Perú (longitud siempre negativa)
         if (it.lat == null || it.lon == null || it.lon === 0) return;
-        if (estSel && it.est !== estSel) return; // al seleccionar un estado, el mapa muestra solo esos puntos (igual que _mapaFiltroToggle del dashboard MINAM)
+        if (estSel && it.est !== estSel) return; // al seleccionar un estado, el mapa muestra solo esos puntos
         const key = it.lat.toFixed(4) + ',' + it.lon.toFixed(4);
         (grupos[key] || (grupos[key] = [])).push(it);
       });
@@ -419,11 +419,14 @@
   function verDetalleResumen(icono, titulo, html) {
     let ov = $('res-overlay'); if (!ov) { ov = document.createElement('div'); ov.id = 'res-overlay'; document.body.appendChild(ov); }
     ov.style.cssText = 'position:fixed;inset:0;z-index:9999;background:var(--bg);display:flex;flex-direction:column;animation:fiIn .16s ease';
-    ov.innerHTML = `<div class="pd-hdr" style="border-radius:0;flex:0 0 auto"><div class="pd-cui"><span>${icono} ${titulo}</span><span class="x" id="res-cerrar" title="Cerrar">×</span></div></div><div style="flex:1;min-height:0;overflow:auto;padding:16px 20px">${html}</div>`;
-    ov.querySelector('#res-cerrar').onclick = cerrarDetalleResumen;
+    ov.innerHTML = `<div class="pd-hdr ov-hdr" style="border-radius:0;flex:0 0 auto"><div class="pd-cui"><span>${icono} ${titulo}</span><button type="button" class="ov-volver" id="res-volver" style="margin-left:auto"><span class="ov-fl" aria-hidden="true">←</span>Volver</button></div></div><div id="res-body" style="flex:1;min-height:0;overflow:auto;padding:16px 20px">${html}</div>`;
+    ov.querySelector('#res-volver').onclick = cerrarDetalleResumen;
   }
-  // ponytail: resumen de "Inversión pública" — tablero fijo de dos columnas (KPIs + cartera a la izquierda, mapa a la derecha), sin scroll, como el dashboard MINAM; el detalle de cada KPI (embudo, fuentes) se abre en un overlay para no romper el layout fijo.
-  // Reutilizable: no depende de E/LAKE/abiertos — recibe T/items/opts ya armados por quien la llama, así sirve tanto para "Mi entidad" (datos privados del SIAF) como para la ficha pública de la UE (datos de Transparencia/SEACE, sin clave). Expuesta en window.ResumenInversion.
+  // Tablero de inversión de una entidad: la "cadena del gasto" (PIM → certificado → comprometido → devengado → girado) como un
+  // caudal continuo que se estrecha etapa a etapa; debajo, el mapa y la cartera por estado. Una sola pantalla, sin scroll.
+  // Reutilizable: recibe T/items/opts ya armados (Mi entidad con SIAF o ficha pública con Transparencia). Expuesta en window.ResumenInversion.
+  const RMQ = matchMedia('(prefers-reduced-motion: reduce)');
+  let PANEL_ABIERTO = null;   // panel desplegado sobre el mapa (se conserva entre repintados)
   function resumenInversion(b, T, items, opts) {
     opts = opts || {};
     const fts = opts.fts || [];
@@ -431,310 +434,294 @@
     items.forEach(it => est[estadoInv(it.c)].push(it));
     const mapItems = items.map(it => ({ cui: it.act_proy, nombre: (it.c.nombre || (opts.nombreFallback ? opts.nombreFallback(it) : it.act_proy)).slice(0, 70), lat: it.c.lat, lon: it.c.lon, est: estadoInv(it.c) }));
     const bc = opts.beneficiarios || null;
-    const estList = Object.entries(est).filter(([, v]) => v.length).map(([k, v]) => [ESTCHIP[k], v.length, ESTINV[k][1], k]);
-    const pim1 = T.pim || 1;
-    // ponytail: medidas calcadas del kpi()/chip()/barra() reales del dashboard MINAM (Dashboard_UE003_MINAM/index.html, función _renderImpacto) — la letra nunca va por debajo de esos tamaños; solo los paddings/gaps se ajustan un poco más apretados para no dejar aire de sobra
-    const secHdr = (txt, mb) => `<div style="font-size:11px;font-weight:900;color:#37474F;text-transform:uppercase;letter-spacing:.6px;margin-bottom:${mb == null ? 7 : mb}px">${txt}</div>`;
-    const kpiT = (id, icono, num, lbl, col) => `<div class="ri-kpi" data-p="${id}" style="--c:${col}">${window.Ico ? Ico(icono) : ''}
-      <div style="min-width:0"><div class="n" title="${num}">${num}</div><div class="l" title="${lbl}">${lbl}</div></div>
-    </div>`;
-    // ponytail: clic en un chip de estado reemplaza "Ejecución presupuestal" por la lista de CUIs de ese estado (mismo patrón que _estadoListaHTML del dashboard MINAM, con CUI en vez de nombre corto — acá no hay catálogo de nombres cortos)
+    const pim1 = T.pim || 1, pct = v => Math.round((v || 0) * 100 / pim1);
+    const ico = n => window.Ico ? Ico(n) : '';
     const estSel = opts.estSel && est[opts.estSel] ? opts.estSel : null;
-    // ponytail: chips no seleccionados se atenúan y el seleccionado crece un poco — igual que window._mapaFiltroToggle del dashboard MINAM
-    const chipPill = (n, lbl, col, key) => { const on = !estSel || key === estSel; return `<div data-est="${key}" style="cursor:pointer;flex:1;min-width:0;background:${col};border-radius:13px;padding:6px 5px;text-align:center;color:#fff;box-shadow:0 2px 8px ${col}55;opacity:${on ? 1 : .35};transform:${estSel && key === estSel ? 'scale(1.04)' : 'scale(1)'};transition:opacity .15s,transform .15s">
-      <div style="font-size:19px;font-weight:900;line-height:1">${n}</div>
-      <div style="font-size:9.5px;font-weight:800;margin-top:3px;text-transform:uppercase;letter-spacing:.3px;opacity:.95;line-height:1.2;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${lbl}">${lbl}</div>
-    </div>`; };
-    const barra = (lbl, val, pctv, col) => `<div style="margin-bottom:7px"><div style="display:flex;justify-content:space-between;font-size:10.5px;font-weight:800;color:#37474F;margin-bottom:3px"><span>${lbl}</span><span style="color:${col}">${FM(val)}${pctv != null ? ` · ${Math.round(pctv)}%` : ''}</span></div>
-      <div style="height:7px;background:#ECEFF3;border-radius:6px;overflow:hidden"><div class="ri-bar" style="height:100%;width:${pctv != null ? Math.min(pctv, 100) : 100}%;background:linear-gradient(90deg,${col}CC,${col});border-radius:6px"></div></div>
-    </div>`;
-    const panelInferior = estSel ? (() => {
-      const [lbl, col] = ESTINV[estSel], arr = est[estSel];
-      return `<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:7px">
-        <div style="font-size:10.5px;font-weight:900;color:${col};text-transform:uppercase;letter-spacing:.4px"><span style="display:inline-block;width:8px;height:8px;${ESTSHAPE[estSel]};background:${col};margin-right:5px"></span>${lbl.toUpperCase()} — ${arr.length} INVERSI${arr.length === 1 ? 'ÓN' : 'ONES'}</div>
-        <div data-est-clear title="Volver a ejecución presupuestal" style="cursor:pointer;width:18px;height:18px;border-radius:50%;background:#ECEFF3;color:#546E7A;font-size:11px;font-weight:900;line-height:18px;text-align:center;flex:none">✕</div>
-      </div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:2px 8px">${arr.map(it => `<div data-inv-goto="${it.act_proy}" style="display:flex;align-items:center;gap:5px;padding:3px 4px;border-radius:6px;cursor:pointer">
-        <span style="flex:1;font-size:11.5px;font-weight:700;color:#37474F;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${it.act_proy}</span>
-        <span style="color:${col};font-weight:900;font-size:10px;flex:none">→</span>
-      </div>`).join('')}</div>
-      <div style="font-size:9px;color:#596577;margin-top:6px">Clic en un CUI para abrir su ficha · ✕ o el mismo estado para volver</div>`;
-    })() : `${secHdr('Ejecución presupuestal')}
-      ${barra('PIM', T.pim, null, '#0F2A43')}
-      ${barra('Certificación', T.cert, (T.cert || 0) * 100 / pim1, '#1E5AA8')}
-      ${barra('Compromiso', T.comp_anual, (T.comp_anual || 0) * 100 / pim1, '#2F69B3')}
-      ${barra('Devengado', T.dev, (T.dev || 0) * 100 / pim1, '#147A45')}
-      <div style="font-size:9px;color:#596577;margin-top:2px">Fuente: Transparencia Económica — MEF</div>`;
+    const nAl = opts.nAlertas || 0;
+    // ---- cadena del gasto: 4 o 5 etapas (girado solo cuando hay dato) ----
+    const etapas = [['kpi', 'PIM', T.pim, 'presupuesto vigente del año', 'wallet', '#0F2A43'], ['cert', 'Certificado', T.cert, 'con respaldo presupuestal', 'clipboard', '#1E5AA8'], ['comp', 'Comprometido', T.comp_anual, 'con contrato u orden', 'handshake', '#2F69B3'], ['dev', 'Devengado', T.dev, 'obligación de pago reconocida', 'coins', '#147A45']];
+    if (T.gir != null) etapas.push(['gir', 'Girado', T.gir, 'pagado al proveedor', 'send', '#0F6E4F']);
+    const caudal = '';
+    const cadena = `<aside class="gx" aria-label="Cadena del gasto">
+      <div class="gx-h">Cadena del gasto <small>${ANIO}</small></div>
+      <div class="gx-et">${etapas.map(([id, l, v, d, ic, col], i) => `<button type="button" class="gx-e" data-p="${id}" style="--c:${col}" title="${d}"><span class="gx-i">${ico(ic)}</span><span class="gx-t"><span class="gx-l">${l}${i ? ` <small>${pct(v)} %</small>` : ''}</span><span class="gx-n" data-cuenta="${Math.round(v || 0)}">${FM(v)}</span><span class="gx-b"><span style="width:${Math.min(100, (v || 0) * 100 / pim1)}%"></span></span></span></button>`).join('')}</div>
+      <div class="gx-pie">${fts.length ? `<button type="button" class="gx-lnk" data-p="fuentes">${fts.length} fuente${fts.length === 1 ? '' : 's'} de financiamiento<small>la mayor, ${cap(fts[0].nombre)}</small></button>` : '<span>Sin fuentes con presupuesto</span>'}<button type="button" class="gx-lnk" data-p="benef">${bc ? `${N(bc.total)} beneficiarios<small>hasta, según la mayor inversión</small>` : 'Beneficiarios<small>calculando…</small>'}</button><span class="gx-src">Fuente: ${opts.fuenteTxt || 'Transparencia Económica, MEF'}</span></div>
+    </aside>`;
+    // ---- cartera por estado: filas con proporción, no chips ----
+    const tot = items.length || 1;
+    const filas = Object.entries(est).filter(([, v]) => v.length).map(([k, v]) => { const [l, c] = ESTINV[k], on = !estSel || k === estSel; return `<button type="button" class="ca-f ${estSel === k ? 'on' : ''}" data-est="${k}" style="--c:${c};opacity:${on ? 1 : .45}" aria-pressed="${estSel === k}"><i style="${ESTSHAPE[k]}"></i><span class="ca-l">${l}</span><span class="ca-b"><span style="width:${Math.max(1.5, 100 * v.length / tot)}%"></span></span><span class="ca-n">${N(v.length)}</span></button>`; }).join('');
+    const lista = estSel ? (() => { const [lbl, c] = ESTINV[estSel], arr = est[estSel]; return `<div class="ca-lista" style="--c:${c}"><div class="ca-lh"><span>${lbl}: ${arr.length} inversi${arr.length === 1 ? 'ón' : 'ones'}</span><button type="button" data-est-clear class="x" aria-label="Volver a la cartera">×</button></div><div class="ca-cuis">${arr.map(it => `<button type="button" data-inv-goto="${it.act_proy}" title="${(it.c.nombre || '').replace(/"/g, '&quot;').slice(0, 120)}">${it.act_proy}</button>`).join('')}</div><div class="ca-nota">Clic en un código para abrir su ficha</div></div>`; })() : '';
+    // ---- ir al detalle: lista de enlaces, sin cajas ----
+    const GO = [['pi', ...(opts.nivel === 'R' ? ['FED', 'Fondo de Estímulo al Desempeño', 'medal', '#7A5B12'] : opts.nivel === 'E' ? ['Metas', 'metas e indicadores', 'target', '#7A5B12'] : ['Plan de Incentivos', 'compromisos municipales', 'medal', '#7A5B12']), ''], ['sea', 'Contrataciones', 'procesos y contratos en el SEACE', 'doc', '#1E5AA8', ''], ['al', 'Alertas', 'lo que requiere decisión', 'siren', '#B42A2A', nAl ? N(nAl) : '']];
+    if (opts.cierre) GO.push(['cierre', 'Cierre de gestión', 'transferencia 2026', 'building', '#0F2A43', '']);
+    const mayores = items.filter(it => it.c.pim > 0).sort((a, b2) => (b2.c.pim || 0) - (a.c.pim || 0)).slice(0, 6);
+    const detalle = `<nav class="ri-go" aria-label="Ir al detalle"><div class="ri-goh">Ir al detalle</div>${GO.map(([id, t, d, ic, col, n]) => `<button type="button" class="ri-gob" data-go="${id}" style="--c:${col}"><span class="ri-goi">${ico(ic)}</span><span class="ri-got"><b>${t}</b><small>${d}</small></span>${n ? `<span class="ri-gon">${n}</span>` : ''}<span class="ri-goa" aria-hidden="true">›</span></button>`).join('')}</nav>`;
+    // ---- cartera de inversiones: tarjetas con filtro por estado, orden y búsqueda; cada tarjeta abre su ficha ----
+    const ORD = { pim: ['PIM', (x, y) => (y.c.pim || 0) - (x.c.pim || 0)], dev: ['Devengado', (x, y) => (y.c.dev || 0) - (x.c.dev || 0)], fis: ['Avance físico', (x, y) => (y.c.avance_fisico ?? -1) - (x.c.avance_fisico ?? -1)], nom: ['Nombre', (x, y) => String(x.c.nombre || '').localeCompare(String(y.c.nombre || ''))] };
+    let orden = 'pim', busca = '';
+    const nomDe = it => (it.c.nombre || (opts.nombreFallback ? opts.nombreFallback(it) : it.act_proy));
+    const filtroChips = `<div class="ca-filt" role="group" aria-label="Filtrar por estado">${Object.entries(est).filter(([, v]) => v.length).map(([k, v]) => { const [l, c] = ESTINV[k]; return `<button type="button" class="ca-chip ${estSel === k ? 'on' : ''}" data-est="${k}" style="--c:${c}" aria-pressed="${estSel === k}"><i style="${ESTSHAPE[k]}"></i>${l.split(' ·')[0].split(' /')[0]}<b>${N(v.length)}</b></button>`; }).join('')}${estSel ? `<button type="button" class="ca-chip ca-todas" data-est-clear>${ico('x')} todas</button>` : ''}</div>`;
+    const cartGrid = () => { const arr = (estSel ? est[estSel] : items).filter(it => !busca || String(it.act_proy).includes(busca) || nomDe(it).toLowerCase().includes(busca)).sort(ORD[orden][1]);
+      return arr.length ? arr.slice(0, 120).map((it, i) => { const k = estadoInv(it.c), [l, c] = ESTINV[k], fis = it.c.avance_fisico != null && it.c.avance_fisico >= 0 ? Math.round(it.c.avance_fisico) : null, av = it.c.pim ? Math.round(100 * (it.c.dev || 0) / it.c.pim) : null;
+        return `<div role="button" tabindex="0" class="ca-card" data-inv-goto="${it.act_proy}" style="--c:${c};--i:${i}" title="Abrir la ficha de la inversión"><span class="ca-in"><span class="ca-ch"><span class="ca-cc">${it.act_proy}</span><span class="ca-ce"><i style="${ESTSHAPE[k]}"></i>${l.split(' ·')[0].split(' /')[0]}</span></span><span class="ca-cn">${nomDe(it).toLowerCase().replace(/^\w/, ch => ch.toUpperCase())}</span><span class="ca-cm"><span><small>PIM</small><b>${FM(it.c.pim || 0)}</b></span><span><small>devengado</small><b>${FM(it.c.dev || 0)}${av != null ? ` <em>${av} %</em>` : ''}</b></span><span class="ca-cr" style="--p:${fis ?? 0}"><b><i></i><span>${fis != null ? fis + '%' : '—'}</span></b><small>físico</small></span></span></span><span class="ca-ca" aria-hidden="true">›</span></div>`; }).join('') + (arr.length > 120 ? `<p class="ca-nota">Se muestran las 120 primeras de ${N(arr.length)}; afina con el buscador.</p>` : '') : '<p class="vacio">Ninguna inversión coincide.</p>'; };
+    const btnCadena = `<button type="button" class="ri-gob ri-cadb" data-cadena style="--c:#0F2A43"><span class="ri-goi">${ico('wallet')}</span><span class="ri-got"><b>Cadena del gasto</b><small>PIM ${FM(T.pim)} · devengado ${pct(T.dev)} %</small></span><span class="ri-goa" aria-hidden="true">›</span></button>`;
     b.innerHTML = `<div class="ri">
-      <div class="ri-a">
-        <div class="ri-kpis">
-          ${kpiT('kpi', 'wallet', FM(T.pim), `Resumen general · devengado ${Math.round((T.dev || 0) * 100 / pim1)}%`, '#0F2A43')}
-          ${kpiT('benef', 'users', bc ? N(bc.total) : '…', bc ? `Beneficiarios · hasta (mayor inversión) · ${bc.conDato}/${items.length} con dato` : 'Beneficiarios · calculando…', '#7A5B12')}
-          ${kpiT('fuentes', 'bank', fts[0] ? cap(fts[0].nombre) : 'sin datos', `Por fuente · ${fts.length} fuentes`, '#0F2A43')}
-          ${kpiT('cert', 'clipboard', FM(T.cert), `Certificación · ${Math.round((T.cert || 0) * 100 / pim1)}% del PIM`, '#1E5AA8')}
-          ${kpiT('comp', 'handshake', FM(T.comp_anual), `Compromiso · ${Math.round((T.comp_anual || 0) * 100 / pim1)}% del PIM`, '#2F69B3')}
-          ${kpiT('dev', 'trend', FM(T.dev), `Devengado · ${Math.round((T.dev || 0) * 100 / pim1)}% del PIM`, '#147A45')}
-        </div>
-        <div class="card" style="flex:none;border-radius:14px;padding:8px 11px">
-          ${secHdr(`Estado de la cartera — ${items.length} inversiones`)}
-          <div style="display:flex;gap:7px">${estList.map(([l, v, c, k]) => chipPill(v, l, c, k)).join('')}</div>
-        </div>
-        <div class="card" tabindex="0" style="flex:1;min-height:0;border-radius:14px;padding:8px 11px;overflow:auto">${panelInferior}</div>
-      </div>
-      <div class="card ri-b" style="border-radius:14px;display:flex;flex-direction:column;padding:10px 12px">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
-          ${secHdr(`Mapa de inversiones${(() => { const tot = estSel ? est[estSel].length : items.length, con = mapItems.filter(it => (!estSel || it.est === estSel) && it.lat != null && it.lon != null).length; return con < tot ? ` · ${con}/${tot} con ubicación válida <a href="#/legal" title="Algunas inversiones no tienen coordenadas o las tienen registradas con errores en la fuente; ver Aviso legal, sección 3" style="text-decoration:none">ⓘ</a>` : ''; })()}`, 0)}
-          <div style="display:flex;gap:8px;font-size:9px;font-weight:700;color:#546E7A;flex-wrap:wrap">${Object.entries(ESTINV).map(([k, [l, c]]) => `<span><span style="display:inline-block;width:8px;height:8px;${ESTSHAPE[k]};background:${c};margin-right:3px"></span>${l}</span>`).join('')}</div>
-        </div>
-        <div id="inv-mapa" style="flex:1;min-height:0;border-radius:11px;background:var(--grid)"></div>
-      </div>
-      <div class="card ri-c" style="border-radius:14px;display:flex;flex-direction:column;gap:8px;padding:10px">
-        ${secHdr('Ir al detalle', 6)}
-        ${(() => {
-          const nAl = opts.nAlertas || 0;
-          // ponytail: el incentivo cambia por nivel de gobierno: municipal = Plan de Incentivos, regional = FED, nacional = Metas (en elaboración)
-          const GO = [
-            ['pi', ...(opts.nivel === 'R' ? ['🏅', 'FED', '#7A5B12'] : opts.nivel === 'E' ? ['🎯', 'Metas', '#7A5B12'] : ['🏅', 'Plan de Incentivos', '#7A5B12'])],
-            ['sea', '📑', 'Contrataciones', '#1E5AA8'],
-            ['al', '🚨', nAl ? `Alertas · ${nAl}` : 'Alertas', '#B42A2A']
-          ];
-          if (opts.cierre) GO.push(['cierre', '🏛', 'Cierre de gestión', '#0F2A43']);
-          // ponytail: SIN class="pnl" a propósito — esa clase global trae flex-direction:column y pisaba el layout en fila (ver mismo bug ya corregido en kpiT/chipPill)
-          return GO.map(([id, ic, t, c]) => `<div class="go-btn" data-go="${id}" style="color:${c};cursor:pointer;flex:1;min-height:0;border-radius:12px;background:linear-gradient(160deg,#fff 55%,${c}14);border:1px solid ${c}33;display:flex;flex-direction:row;align-items:center;gap:11px;padding:0 13px;box-shadow:0 2px 8px rgba(15,42,67,.07)">
-            <span style="font-size:26px;flex:none;line-height:1">${ic}</span>
-            <span style="font-size:12.5px;font-weight:800;color:${c};line-height:1.25">${t}</span>
-          </div>`).join('');
-        })()}
-      </div>
+      <dialog class="gx-dlg" aria-label="Cadena del gasto ${ANIO}"><button type="button" class="ov-volver gx-cerrar" data-cadena-cerrar><span class="ov-fl" aria-hidden="true">←</span>Volver</button>${cadena}</dialog>
+      <div class="ri-mapa ri-cart"><div class="ri-mh"><span>${N(items.length)} inversiones en la cartera${estSel ? ` <small>· ${N(est[estSel].length)} ${ESTINV[estSel][0].toLowerCase()}</small>` : ''}</span>
+          <span class="ca-tools"><label class="ca-busca">${ico('search')}<input type="search" placeholder="CUI o nombre…" aria-label="Buscar en la cartera"></label></span></div>
+        ${filtroChips}<div class="ca-grid" id="ca-grid">${cartGrid()}</div></div>
+      <aside class="ri-der">${btnCadena}${detalle}<button type="button" class="ri-ppt" data-ppt>${ico('download')}<span><b>Reporte PPT</b><small>presentación oficial a la fecha de corte</small></span></button></aside>
     </div>`;
-    if (!document.getElementById('nac-gobtn-css')) { const gc = document.createElement('style'); gc.id = 'nac-gobtn-css'; gc.textContent = '.go-btn{transition:transform .15s,box-shadow .15s}.go-btn:hover{transform:translateY(-2px);box-shadow:0 8px 18px rgba(15,42,67,.14)!important}'; document.head.appendChild(gc); }
+    const grid = b.querySelector('#ca-grid'), RMq = matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const entra = () => { if (RMq) return; grid.querySelectorAll('.ca-card').forEach((x, i) => { if (i < 24 && x.animate) x.animate([{ opacity: 0, transform: 'translateY(10px)' }, { opacity: 1, transform: 'none' }], { duration: 420, delay: 30 * i, easing: 'cubic-bezier(.2,.8,.2,1)', fill: 'backwards' }); }); };
+    const repinta = () => { grid.innerHTML = cartGrid(); grid.querySelectorAll('[data-inv-goto]').forEach(x => { x.onclick = () => opts.onCuiGoto && opts.onCuiGoto(x.dataset.invGoto); x.onkeydown = ev => { if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); x.click(); } }; }); entra(); };
+    grid.querySelectorAll('.ca-card').forEach(x => x.onkeydown = ev => { if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); x.click(); } });
+    b.querySelector('.ca-busca input').oninput = ev => { busca = ev.target.value.trim().toLowerCase(); repinta(); };
+    entra();
+    const ppt = b.querySelector('[data-ppt]'); if (ppt) ppt.onclick = () => { const r = document.getElementById('rep-ppt'); if (r) r.click(); else if (window.CorteReporte) CorteReporte.sinPago(opts.nombre || ''); };
+    const dlg = b.querySelector('.gx-dlg');
+    const kpi = (id, cb) => b.querySelectorAll(`[data-p="${id}"]`).forEach(el2 => el2.onclick = () => { if (dlg.open) dlg.close(); cb(); });
+    kpi('kpi', () => opts.onKpi && opts.onKpi('kpi', T)); kpi('cert', () => opts.onKpi && opts.onKpi('cert', T)); kpi('comp', () => opts.onKpi && opts.onKpi('comp', T)); kpi('dev', () => opts.onKpi && opts.onKpi('dev', T)); kpi('gir', () => opts.onKpi && opts.onKpi('dev', T));
+    kpi('benef', () => opts.onKpi && opts.onKpi('benef', T, bc)); kpi('fuentes', () => opts.onKpi && opts.onKpi('fuentes', T, fts));
+    b.querySelector('[data-cadena]').onclick = () => { dlg.showModal(); animarTablero(dlg); };
+    b.querySelector('[data-cadena-cerrar]').onclick = () => dlg.close();
+    dlg.onclick = ev => { if (ev.target === dlg) dlg.close(); };
     b.querySelectorAll('[data-go]').forEach(x => x.onclick = () => opts.onNav && opts.onNav(x.dataset.go));
-    pintarMapaInv(mapItems, estSel, opts.onCuiGoto);
-    const kpi = (id, cb) => { const el2 = b.querySelector(`[data-p="${id}"]`); if (el2) el2.onclick = cb; };
-    kpi('kpi', () => opts.onKpi && opts.onKpi('kpi', T));
-    kpi('cert', () => opts.onKpi && opts.onKpi('cert', T));
-    kpi('comp', () => opts.onKpi && opts.onKpi('comp', T));
-    kpi('dev', () => opts.onKpi && opts.onKpi('dev', T));
-    kpi('benef', () => opts.onKpi && opts.onKpi('benef', T, bc));
-    kpi('fuentes', () => opts.onKpi && opts.onKpi('fuentes', T, fts));
     b.querySelectorAll('[data-est]').forEach(x => x.onclick = () => { const k = x.dataset.est; opts.onEstSel && opts.onEstSel(estSel === k ? null : k); });
     if (b.querySelector('[data-est-clear]')) b.querySelector('[data-est-clear]').onclick = () => opts.onEstSel && opts.onEstSel(null);
     b.querySelectorAll('[data-inv-goto]').forEach(x => x.onclick = () => opts.onCuiGoto && opts.onCuiGoto(x.dataset.invGoto));
+    pintarMapaInv(mapItems, estSel, opts.onCuiGoto);
+    animarTablero(b);
+  }
+  // un solo momento de movimiento al entrar: el caudal se extiende de izquierda a derecha y las cifras cuentan hasta su valor;
+  // con "reducir movimiento" activado todo aparece ya en su estado final
+  function animarTablero(b) {
+    if (RMQ.matches || b.dataset.animado) { b.dataset.animado = 1; return; }
+    b.dataset.animado = 1;
+    b.querySelectorAll('.gx-n[data-cuenta]').forEach((el, i) => { const fin = +el.dataset.cuenta, txt = el.textContent; if (!fin) return; const t0 = performance.now(), d = 900 + i * 120;
+      const f = t => { const p = Math.min(1, (t - t0) / d), e = 1 - Math.pow(1 - p, 3); el.textContent = FM(fin * e); if (p < 1) requestAnimationFrame(f); else el.textContent = txt; }; requestAnimationFrame(f); });
+    b.querySelectorAll('.ca-b>span,.gx-b>span').forEach(s => { const w = s.style.width; s.style.width = '0'; requestAnimationFrame(() => requestAnimationFrame(() => { s.style.width = w; })); });
+    b.querySelectorAll('.gx-e,.ri-mapa,.ri-gob,.ri-ppt').forEach((el, i) => el.animate && el.animate([{ opacity: 0, transform: 'translateY(6px)' }, { opacity: 1, transform: 'none' }], { duration: 500, delay: 250 + i * 90, easing: 'cubic-bezier(.2,.8,.2,1)', fill: 'backwards' }));
   }
   window.ResumenInversion = resumenInversion;
   window.ResumenInversionUtil = { funnelGasto, verDetalleResumen, cerrarDetalleResumen, estadoInv };
-  // ponytail: ficha de inversión — mismo modelo visual del Dashboard Ejecutivo UE003 MINAM (pedido de David),
+  // ponytail: ficha de inversión
   // reutilizable entre el overlay de "Mi entidad" y la ficha pública del CUI (paginaCUI en index.html).
-  // Queda fuera lo que en ese dashboard es específico de GICA/JICA y no tiene dato genérico equivalente
   // a nivel nacional: desglose control concurrente/controversias/carta fianza, chip "programado en el
   // PMI", hectáreas/vehículos/tipo de obra, y exportación a PPT (Descargar Ficha usa impresión del navegador).
-  // ponytail: extraído de fichaInversionHTML para reusarlo también en el modal de Seguimiento (modelo MINAM _situDetalle)
+  // Seguimiento (Formato 12-B): ventana grande en dos columnas. Izquierda, lo declarado por la UEI en el F12-B
+  // (fecha del último registro, avance físico, periodo, situación, problemática, acciones, riesgos y fotos);
+  // derecha, lo que el SEACE registra de su contratación. Cada bloque dice de dónde sale.
   function buildSituDet(f, c, sp) {
-    return [
-      f?.situ_act ? `<div style="font-size:10.5px;margin-bottom:6px">${f.situ_act}</div>` : '',
-      f?.problema ? `<div style="font-size:9.5px;color:#B71C1C;margin-bottom:6px"><b>Problemática:</b> ${f.problema}</div>` : '',
-      sp && sp.length ? contratacion(sp, c, f, true) : ''
-    ].join('') || '<p class="vacio" style="font-size:10.5px">Sin seguimiento adicional registrado.</p>';
+    const esc = s => String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    const F0 = n => n == null ? '—' : 'S/ ' + Math.round(n).toLocaleString('es-PE');
+    const par = t => esc(t).split('\n').filter(Boolean).map(x => `<p>${x}</p>`).join('');
+    const av = f?.av_fis, p = av == null || isNaN(av) ? null : Math.max(0, Math.min(100, +av)), C = 2 * Math.PI * 26;
+    const datos = [['Último registro F12-B', f?.f12b || '—'], ['Periodo de ejecución', f?.inicio || f?.fin ? `${f.inicio || '?'} → ${f.fin || '?'}` : '—'], ['Modalidad', f?.modalidad ? f.modalidad.toLowerCase().replace(/,/g, ' · ').replace(/^\w/, ch => ch.toUpperCase()) : '—'], ['Expediente técnico', f?.et_fecha ? `aprobado ${f.et_fecha}${f.et_monto ? ' · ' + F0(f.et_monto) : ''}` : (c?.et_fecha > '1900' ? `aprobado ${String(c.et_fecha).slice(0, 10)}` : '—')], ['Paralizada', f?.paralizada === 'SI' ? 'Sí, según el F12-B' : f?.paralizada === 'NO' ? 'No' : '—'], ['Unidad ejecutora (UEI)', f?.uei ? f.uei.toLowerCase().replace(/^\w/, ch => ch.toUpperCase()) : '—']];
+    const bloque = (ic, t, html, cls) => html ? `<section class="sg-b ${cls || ''}"><h4>${window.Ico ? Ico(ic) : ''}${t}</h4>${html}</section>` : '';
+    const fotos = (f?.fotos || []).map(([per, url]) => `<figure><img src="${esc(url)}" alt="Foto de la obra ${esc(per || '')}" loading="lazy" referrerpolicy="no-referrer" onerror="this.closest('figure').remove()"><figcaption>${esc(per || '')}</figcaption></figure>`).join('');
+    const izq = `<div class="sg-hd"><div class="sg-g"><svg viewBox="0 0 64 64" aria-hidden="true"><circle cx="32" cy="32" r="26"/><circle cx="32" cy="32" r="26" class="sg-gv" style="stroke-dasharray:${C};stroke-dashoffset:${C * (1 - (p || 0) / 100)}"/></svg><b>${p == null ? 's/d' : (p % 1 === 0 ? p : p.toFixed(1)) + '<small>%</small>'}</b><span>Avance físico declarado</span></div>
+        <dl class="sg-dl">${datos.map(([k, v]) => `<div><dt>${k}</dt><dd>${esc(v)}</dd></div>`).join('')}</dl></div>
+      ${bloque('flag', 'Situación declarada', f?.situ_act ? par(f.situ_act) : '')}
+      ${bloque('alert', 'Problemática', f?.problema ? par(f.problema) : '', 'sg-prob')}
+      ${bloque('tools', 'Acciones de gestión', f?.acciones ? par(f.acciones) : '')}
+      ${bloque('shield', 'Riesgos', f?.riesgo ? par(f.riesgo) : '')}
+      ${fotos ? `<section class="sg-b"><h4>${window.Ico ? Ico('pin') : ''}Fotos de la obra <small>publicadas por la UEI en el F12-B</small></h4><div class="sg-fotos">${fotos}</div></section>` : ''}
+      ${!f ? '<p class="vacio">La ficha del Banco de Inversiones aún no fue capturada para esta inversión.</p>' : (!f.situ_act && !f.problema ? '<p class="vacio">La UEI no ha registrado situación en el Formato 12-B.</p>' : '')}`;
+    const der = sp && sp.length ? contratacion(sp, c, f, true) : '<p class="vacio">Sin procesos registrados en el SEACE para este CUI.</p>';
+    return `<div class="sg-cols"><div class="sg-col"><div class="sg-ch"><span>Formato 12-B</span><small>Seguimiento de la ejecución · Banco de Inversiones, MEF</small></div>${izq}</div>
+      <div class="sg-col sg-sea"><div class="sg-ch"><span>Contratación</span><small>procesos y contratos · SEACE</small></div>${der}</div></div>`;
   }
-  // Modal de Seguimiento (Formato 12-B) — clon del lightbox #situ-detalle del Dashboard UE003 MINAM
-  function mostrarSeguimientoModal(cui, nombre, contenidoHTML) {
-    let lb = $('fi-situ-modal');
-    if (!lb) {
-      lb = document.createElement('div'); lb.id = 'fi-situ-modal';
-      lb.style.cssText = 'display:none;position:fixed;inset:0;z-index:99998;background:rgba(10,20,35,.55);align-items:center;justify-content:center;padding:24px;box-sizing:border-box;cursor:pointer';
-      lb.onclick = () => { lb.style.display = 'none'; };
-      document.body.appendChild(lb);
-    }
-    lb.innerHTML = `<div class="fi-situ-card" onclick="event.stopPropagation()" style="cursor:default;background:#fff;border-radius:16px;max-width:560px;width:100%;max-height:80vh;overflow-y:auto;box-shadow:0 12px 44px rgba(0,0,0,.35);padding:16px 20px 14px">
-      <div style="display:flex;align-items:center;gap:10px;border-bottom:2px solid #DCE7F5;padding-bottom:10px;margin-bottom:11px">
-        <div style="width:38px;height:38px;border-radius:10px;background:linear-gradient(135deg,#164A8C,#2F6FC2);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0">📡</div>
-        <div><div style="font-size:14px;font-weight:900;color:#0F2A43">Seguimiento de la inversión</div>
-        <div style="font-size:10.5px;font-weight:700;color:#5E7290">CUI ${cui} · Formato 12-B — Ejecución de la inversión</div></div>
-        <button class="fi-situ-copy" style="margin-left:auto;flex-shrink:0;background:#0F2A43;color:#fff;border:none;border-radius:9px;padding:7px 14px;font-size:11px;font-weight:900;cursor:pointer;letter-spacing:.3px;box-shadow:0 2px 6px rgba(15,42,67,.3)">⧉ Copiar</button>
-      </div>
-      ${nombre ? `<div class="fi-situ-nom" style="font-size:10.5px;font-weight:700;color:#596577;line-height:1.4;margin-bottom:10px">${nombre}</div>` : ''}
-      <div class="fi-situ-txt" style="background:#EAF1FB;border:1.5px solid #B9D0EC;border-radius:12px;padding:12px 15px;font-size:12.5px;color:#1E293B;line-height:1.65;font-weight:600;user-select:text;cursor:text">${contenidoHTML}</div>
-      <div style="font-size:9px;color:#596577;text-align:center;margin-top:10px">Fuente: Formato 12-B — Seguimiento de la ejecución · MEF (Banco de Inversiones) · clic fuera para cerrar</div>
+  function mostrarSeguimientoModal(cui, nombre, contenidoHTML, host) {
+    // ponytail: si la ficha está en un <dialog> modal, la ventana va dentro (fuera quedaría tapada por la capa superior del diálogo)
+    host = host || document.body; let lb = $('fi-situ-modal');
+    if (lb && lb.parentElement !== host) { lb.remove(); lb = null; }
+    if (!lb) { lb = document.createElement('div'); lb.id = 'fi-situ-modal'; lb.className = 'sg-ov'; lb.onclick = () => { lb.style.display = 'none'; }; host.appendChild(lb); }
+    lb.innerHTML = `<div class="sg-card" role="dialog" aria-modal="true" aria-label="Seguimiento de la inversión ${cui}" onclick="event.stopPropagation()">
+      <div class="pd-hdr sg-hdr"><div class="pd-cui"><span>CUI ${cui}</span><span>· Seguimiento de la inversión</span></div>
+        ${nombre ? `<div class="pd-title sg-nom">${nombre}</div>` : ''}
+        <div class="fi-acts"><span class="sp"></span><button type="button" class="btn fi-situ-copy">Copiar texto</button><button type="button" class="ov-volver sg-cerrar"><span class="ov-fl" aria-hidden="true">←</span>Volver</button></div></div>
+      <div class="sg-body fi-situ-txt" tabindex="0">${contenidoHTML}</div>
+      <div class="sg-pie">Fuentes: Formato 12-B del Banco de Inversiones (MEF) y SEACE · lo declarado por la UEI se muestra tal cual, sin interpretación</div>
     </div>`;
     lb.style.display = 'flex';
+    lb.querySelector('.sg-cerrar').onclick = () => { lb.style.display = 'none'; };
+    const onKey = e => { if (e.key === 'Escape') { lb.style.display = 'none'; document.removeEventListener('keydown', onKey); } }; document.addEventListener('keydown', onKey);
     const btn = lb.querySelector('.fi-situ-copy');
     btn.onclick = () => {
-      const nom = lb.querySelector('.fi-situ-nom'), cont = lb.querySelector('.fi-situ-txt');
-      const txt = ((nom ? nom.innerText + '\n' : '') + 'CUI ' + cui + ' — Seguimiento (Formato 12-B — MEF)\n\n' + (cont ? cont.innerText : '')).trim();
-      const listo = () => { btn.textContent = '✓ Copiado'; btn.style.background = '#2E7D32'; setTimeout(() => { btn.textContent = '⧉ Copiar'; btn.style.background = '#0F2A43'; }, 1600); };
+      const cont = lb.querySelector('.fi-situ-txt');
+      const txt = ((nombre ? nombre + '\n' : '') + 'CUI ' + cui + ' — Seguimiento (Formato 12-B — MEF)\n\n' + (cont ? cont.innerText : '')).trim();
+      const listo = () => { btn.textContent = '✓ Copiado'; setTimeout(() => { btn.textContent = 'Copiar texto'; }, 1600); };
       if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(txt).then(listo, listo); else listo();
     };
   }
+  // Ficha de una inversión: dossier en dos columnas sobre papel. Izquierda: la cadena del gasto del año, el costo de la inversión
+  // como asiento (viable → costo actualizado → total) y los componentes con su peso. Derecha: avance físico y financiero,
+  // programación en el PMI, seguimiento (Formato 12-B) y beneficiarios. Sin cajas vacías "en preparación".
+  // ---- utilidades de fechas para la ficha (plazo del F12-B: primeros 10 días hábiles del mes siguiente) ----
+  const FERIADOS = ['01-01', '05-01', '06-07', '06-29', '07-23', '07-28', '07-29', '08-06', '08-30', '10-08', '11-01', '12-08', '12-09', '12-25'];   // feriados nacionales fijos; Jueves y Viernes Santo no entran (varían)
+  const esHabil = d => d.getDay() !== 0 && d.getDay() !== 6 && !FERIADOS.includes(d.toISOString().slice(5, 10));
+  const diaHabil = (y, m, n) => { const d = new Date(Date.UTC(y, m, 1)); let k = 0; while (true) { if (esHabil(d)) { k++; if (k === n) return d; } d.setUTCDate(d.getUTCDate() + 1); } };
+  const fecha = v => v ? new Date(String(v).slice(0, 10) + 'T00:00:00Z') : null;
+  const fISO = d => d ? d.toISOString().slice(0, 10) : '';
+  const fCorta = v => { const d = fecha(v); return d ? d.toLocaleDateString('es-PE', { day: '2-digit', month: 'short', year: 'numeric', timeZone: 'UTC' }).replace('.', '') : '—'; };
+  // estado del Formato 12-B frente al plazo (primeros 10 días hábiles del mes siguiente al mes ejecutado)
+  function estadoF12B(f, hoy) {
+    if (!f) return ['nd', 'Sin ficha', 'la ficha del Banco de Inversiones aún no fue capturada'];
+    const situ = (f.situacion || '').toUpperCase();
+    if (/CERRAD|LIQUID/.test(situ) || f.cierre === 'SI') return ['na', 'No aplica', 'inversión cerrada o liquidada'];
+    if (!f.inicio && !(f.dev_acum > 0)) return ['na', 'No aplica', 'sin inicio de ejecución registrado'];
+    const ini = new Date(Date.UTC(hoy.getUTCFullYear(), hoy.getUTCMonth(), 1)), lim = diaHabil(hoy.getUTCFullYear(), hoy.getUTCMonth(), 10), ult = fecha(f.f12b);
+    if (ult && ult >= ini) return ult <= lim ? ['ok', 'Al día', `registrado el ${fCorta(f.f12b)}, dentro del plazo (${fCorta(fISO(lim))})`] : ['ok', 'Registrado', `el ${fCorta(f.f12b)}, después del plazo del mes (${fCorta(fISO(lim))}): no se puede saber si fue extemporáneo`];
+    if (hoy <= lim) { let n = 0; const d = new Date(hoy); while (d < lim) { d.setUTCDate(d.getUTCDate() + 1); if (esHabil(d)) n++; } return ['warn', 'En plazo', `aún sin registro del mes pasado; quedan ${n} día${n === 1 ? '' : 's'} hábil${n === 1 ? '' : 'es'} (hasta el ${fCorta(fISO(lim))})`]; }
+    return ['bad', 'Vencido', `sin registro del mes pasado; el plazo venció el ${fCorta(fISO(lim))}${f.f12b ? ` · último registro ${fCorta(f.f12b)}` : ''}`];
+  }
+  // Ficha de una inversión: "de lo aprobado a lo ejecutado". Izquierda: tres cifras (aprobado, contratado, ejecutado) con el ritmo
+  // (plazo, físico, financiero), la línea de tiempo, los componentes del 08-A/08-B/08-C con sus otros costos, dónde fue el dinero
+  // (devengado por tipo de gasto) y el control (Contraloría, paralizaciones, INFOBRAS). Derecha: presupuesto del año, F12-B y SEACE.
+  // Cada bloque dice su fuente y su fecha. Lenguaje de apoyo, no de control.
   function fichaInversionHTML(cui, f, c, sp) {
-    c = c || {};
-    const F = n => n == null ? '—' : 'S/ ' + Number(n).toLocaleString('es-PE', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-    const nombre = f?.nombre || c.nombre || 'Inversión ' + cui;
-    const tipo = (f?.tipo || c.tipo || '').toUpperCase();
-    const tipoCol = { 'PROYECTO DE INVERSION': '#5E35B1', 'IOARR': '#B84300', 'PROGRAMA DE INVERSION': '#00838F' }[tipo] || '#546E7A';
-    const situ = (f?.situacion || c.situacion || '').toUpperCase();
-    const cerrado = /CULMIN|CERRAD/.test(situ);
-    // ponytail: "pim" acá es una señal de "hay presupuesto conocido" para el chip de estado — se toma
-    // de c (Consulta Amigable) o, si no está disponible en este contexto, de la ficha SSI (costo/viable),
-    // para no marcar "Obra suspendida" solo porque el contexto de la UE no cargó localmente.
-    const av = f?.av_fis, dev = c.dev || 0, pim = c.pim || f?.costo || f?.viable || 0;
-    let estObra = 'Obra en ejecución', colObra = '#1565C0';
-    if (cerrado || (av != null && av >= 99.95)) { estObra = 'Obra culminada'; colObra = '#2E7D32'; }
-    else if (dev <= 0 && (av == null || av <= 0)) { estObra = 'Obra por iniciar'; colObra = '#F57F17'; }
-    else if (pim <= 0) { estObra = 'Obra suspendida'; colObra = '#C62828'; }
-    const dpto = c.dpto || '';
-    // tacómetro de 40 marcas — mismo estilo del modelo (donutTick local; no pisa el donut() global de index.html)
-    function donutTick(pct, color, label) {
-      const N2 = 40, RI = 27, RO = 34;
-      const sd = (pct == null || isNaN(pct));
-      const filled = sd ? 0 : Math.min(N2, Math.floor(Math.max(pct, 0) / 100 * N2));
-      let segs = '';
-      for (let i = 0; i < N2; i++) {
-        const a = (-90 + i * (360 / N2)) * Math.PI / 180, on = i < filled;
-        const x0 = (40 + RI * Math.cos(a)).toFixed(1), y0 = (40 + RI * Math.sin(a)).toFixed(1);
-        const x1 = (40 + RO * Math.cos(a)).toFixed(1), y1 = (40 + RO * Math.sin(a)).toFixed(1);
-        segs += `<line x1="${x0}" y1="${y0}" x2="${x1}" y2="${y1}" stroke="${on ? color : 'rgba(128,128,128,.22)'}" stroke-width="${on ? 2.6 : 2}" stroke-linecap="round"/>`;
-      }
-      const num = sd ? 's/d' : (pct % 1 === 0 ? pct : +(+pct).toFixed(1));
-      const pctTs = sd ? '' : '<tspan font-size="9.5" font-weight="800" dx="1.5">%</tspan>';
-      return `<div style="background:#F8FAFF;border:1.5px solid ${color}55;border-radius:12px;padding:7px 8px;display:flex;flex-direction:column;align-items:center;gap:4px;width:94px;box-sizing:border-box">
-        <div style="font-size:10px;font-weight:800;color:${color};text-transform:uppercase;letter-spacing:.5px;text-align:center;line-height:1.2;min-height:24px;display:flex;align-items:center;justify-content:center">${label}</div>
-        <svg viewBox="0 0 80 80" width="58" height="58">${segs}<text x="40" y="45.5" text-anchor="middle" font-size="16.5" font-weight="900" fill="${color}" font-family="system-ui,sans-serif">${num}${pctTs}</text></svg>
-      </div>`;
-    }
-    function tarjeta(lbl, val, dot, bg, br, txt) {
-      return `<div style="background:${bg};border:1.5px solid ${br};border-left:5px solid ${dot};border-radius:10px;padding:4px 10px">
-        <div style="display:flex;align-items:center;gap:4px;margin-bottom:2px"><svg viewBox="0 0 12 12" width="9" height="9"><circle cx="6" cy="6" r="6" fill="${dot}" opacity=".2"/><circle cx="6" cy="6" r="3.5" fill="${dot}"/></svg><div style="font-size:9.5px;color:${dot};font-weight:800;text-transform:uppercase;letter-spacing:.6px">${lbl}</div></div>
-        <div style="font-size:${val >= 1e7 ? '13px' : val >= 1e6 ? '14px' : '16px'};font-weight:900;color:${txt};letter-spacing:-.4px">${F(val)}</div>
-      </div>`;
-    }
-    const secHdrFi = (ic, bg, tit, sub) => `<div style="display:flex;align-items:center;gap:9px;margin-bottom:12px;padding-bottom:10px;border-bottom:1px solid #EEF1F4">
-      <div style="width:26px;height:26px;border-radius:8px;background:${bg};display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0">${ic}</div>
-      <div style="display:flex;flex-direction:column;gap:1px;min-width:0"><span style="font-size:12px;font-weight:800;color:#1E293B;text-transform:uppercase;letter-spacing:.5px;line-height:1.15">${tit}</span>${sub ? `<span style="font-size:9px;font-weight:600;color:#596577">${sub}</span>` : ''}</div>
+    c = c || {}; sp = sp || [];
+    const F0 = n => n == null ? '—' : 'S/ ' + Math.round(n).toLocaleString('es-PE');
+    const esc = s => String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    const ico = n => window.Ico ? Ico(n) : '';
+    const hoy = new Date(); hoy.setUTCHours(0, 0, 0, 0);
+    const nombre = f?.nombre || c.nombre || 'Inversión ' + cui, tipo = (f?.tipo || c.tipo || ''), situ = (f?.situacion || c.situacion || '').toUpperCase();
+    const cerrado = /CULMIN|CERRAD/.test(situ) || f?.cierre === 'SI';
+    const av = f?.av_fis, devY = c.dev || 0, pim = c.pim || 0;
+    const costo = f?.costo || null, costoTot = f?.costo_total || costo, devAc = f?.dev_acum || null;
+    const culminada = cerrado || (av != null && av >= 99.95);
+    const parHist = f?.paraliza || [], parReinicio = parHist.some(p => /inicio de ejecuci|reinici/i.test(p[2] || ''));
+    const paralizada = !culminada && (f?.paralizada === 'SI' && !parReinicio);
+    let estObra = 'Obra en ejecución', colObra = 'var(--azul)';
+    if (culminada) { estObra = 'Obra culminada'; colObra = 'var(--ok-t)'; }
+    else if (paralizada) { estObra = 'Obra paralizada'; colObra = 'var(--bad-t)'; }
+    else if (devY <= 0 && (av == null || av <= 0) && !(devAc > 0)) { estObra = 'Obra por iniciar'; colObra = 'var(--warn-t)'; }
+    const meta = [tipo ? cap(tipo) : '', c.dpto ? cap(c.dpto) : '', f?.modalidad ? f.modalidad.toLowerCase().replace(/,/g, ' · ').replace(/^\w/, ch => ch.toUpperCase()) : '', cerrado ? 'Cerrada en el Banco de Inversiones' : 'Activa'].filter(Boolean);
+    const fuente = (t, d) => `<div class="fi-fu">${t}${d ? ` · ${d}` : ''}</div>`;
+    const fSSI = f?.actualizado ? `consultado el ${fCorta(f.actualizado)}` : '';
+    // ---- contratado (SEACE: contratos de obra; INFOBRAS como respaldo) y plazo contractual ----
+    const contratos = sp.filter(p => p.contrato && (p.contrato.monto_final || p.contrato.monto));
+    const montoContr = contratos.reduce((t, p) => t + (p.contrato.monto_final || p.contrato.monto || 0), 0) || null;
+    const infobras = f?.infobras || [];
+    const contrIB = infobras.reduce((t, o) => t + (o.contratado || 0), 0) || null;
+    const ctVig = contratos.map(p => p.contrato).sort((x, y) => (y.firma || '').localeCompare(x.firma || ''))[0];
+    const plazoIni = fecha(ctVig?.ini || f?.inicio), plazoFin = fecha(ctVig ? (ctVig.fin_act || ctVig.fin) : f?.fin);
+    const plazoPct = plazoIni && plazoFin && plazoFin > plazoIni ? Math.max(0, Math.min(100, 100 * (hoy - plazoIni) / (plazoFin - plazoIni))) : null;
+    const finPct = costoTot && devAc != null ? 100 * devAc / costoTot : null;
+    const fisPct = av == null || isNaN(av) ? null : +av;
+    const pc = v => v == null ? 's/d' : (Math.round(v * 10) / 10).toLocaleString('es-PE') + ' %';
+    // ---- veredicto en lenguaje llano ----
+    const notas = [];
+    if (paralizada) { const p = parHist[0]; notas.push(['bad', `Paralizada${p && p[0] ? ` desde el ${fCorta(p[0])}` : ''}${p && p[1] ? `: ${esc(p[1].split(':')[0].slice(0, 90))}` : ''}`]); }
+    else if (parHist.length) { const p = parHist[0]; notas.push(['info', `Tuvo una paralización el ${fCorta(p[0])}${p[1] ? ` (${esc(p[1].split(':')[0].slice(0, 70))})` : ''}${p[2] ? ` · ${esc(p[2])}` : ''}`]); }
+    if (plazoPct != null && fisPct != null && plazoPct - fisPct >= 20 && !cerrado) notas.push(['warn', `Lleva ${pc(plazoPct)} del plazo y ${pc(fisPct)} de avance físico declarado: se sugiere revisar el ritmo de obra`]);
+    if (finPct != null && fisPct != null && finPct - fisPct >= 20 && !cerrado) notas.push(['warn', `El gasto (${pc(finPct)}) va por delante del avance físico (${pc(fisPct)}): podría incluir adelantos o avance aún no declarado`]);
+    if (finPct != null && finPct > 100.5) notas.push(['bad', `El devengado acumulado (${F0(devAc)}) supera el costo total actualizado (${F0(costoTot)}): convendría actualizar la sección C del Formato 08-A`]);
+    if ((c.dev_ant || 0) - (c.gir || 0) >= 1e5) notas.push(['warn', `${F0((c.dev_ant || 0) - (c.gir || 0))} devengados que siguen sin girar`]);
+    if (plazoFin && plazoFin < hoy && !cerrado && fisPct != null && fisPct < 99.95) notas.push(['warn', `El plazo contractual venció el ${fCorta(fISO(plazoFin))}${ctVig?.ampliado ? ' (ya ampliado)' : ''} con ${pc(fisPct)} de avance físico`]);
+    if (f?.estim && devAc != null) { const dif = (f.estim.reduce((t, e) => t + (e[2] || 0), 0)) - devAc; if (Math.abs(dif) > Math.max(5000, devAc * .02)) notas.push(['warn', `La ejecución declarada por componente (Estimación F12-B) ${dif > 0 ? 'supera' : 'no llega'} al devengado acumulado en ${F0(Math.abs(dif))}`]); }
+    const oci = f?.oci || [];
+    if (oci.length) notas.push(['info', `${oci.length} informe${oci.length === 1 ? '' : 's'} de control de la Contraloría · último ${fCorta(oci.map(o => o[2]).sort().pop())}`]);
+    if (c.et_fecha > '1900' || f?.et_fecha) {} else if (c.pim >= 1e6 && c.estado === 'ACTIVO' && !cerrado) notas.push(['warn', 'Sin expediente técnico registrado en el Banco de Inversiones']);
+    const ef = estadoF12B(f, hoy);
+    const veredicto = `<div class="fi-ver"><div class="fi-vt">${ico('compass')}<span>${culminada ? 'Obra culminada' : paralizada ? 'Inversión paralizada' : plazoPct != null ? `Lleva <b>${pc(plazoPct)}</b> del plazo` : 'En ejecución'}${fisPct != null ? ` · <b>${pc(fisPct)}</b> de avance físico declarado${f?.f12b ? ` (al ${fCorta(f.f12b)})` : ''}` : ''}${finPct != null ? ` · <b>${pc(finPct)}</b> del costo devengado` : ''}</span></div>
+      ${notas.length ? `<div class="fi-vn">${notas.map(([k, t]) => `<span class="fi-chip ${k}">${t}</span>`).join('')}</div>` : ''}</div>`;
+    // ---- tres cifras + ritmo ----
+    const ICO3 = { ap: 'scroll', co: 'handshake', ej: 'cash' };
+    // tarjeta = icono + cifra; al clic se despliega dentro de la tarjeta su detalle (sin repetir la cifra) y su barra de ritmo
+    const aniosDev = f?.anual ? Object.keys(f.anual).filter(y => f.anual[y] > 0).sort() : [];
+    const barra = (l, v, col, n) => `<span class="fi-rb"><span>${l}<small>${n}</small></span><b style="color:${col}">${pc(v)}</b><span class="fi-rbb"><i style="width:${Math.min(100, v || 0)}%;background:${col}"></i></span></span>`;
+    const tile = (k, t, v, sub, src, rit) => `<button type="button" class="fi-t ${k}" aria-expanded="false" title="Ver el detalle"><span class="fi-ti">${window.Ico ? Ico(ICO3[k]) : ''}</span><span class="fi-tk">${t}</span><b>${v}</b><span class="fi-th">detalle <i>›</i></span><span class="fi-td"><small>${sub}</small>${rit}<i>${src}</i></span></button>`;
+    const tres = `<div class="fi-tres">
+      ${tile('ap', 'Aprobado', F0(costoTot), [f?.viable ? `viable ${F0(f.viable)}${f.viable_fecha ? ` (${fecha(f.viable_fecha).getUTCFullYear()})` : ''}` : '', f?.et_monto ? `según expediente técnico ${F0(f.et_monto)}${f.et_fecha ? ` (${fecha(f.et_fecha).getUTCFullYear()})` : ''}` : '', costo && costoTot !== costo ? `costo de inversión ${F0(costo)} + control concurrente, controversias y carta fianza` : ''].filter(Boolean).join(' → ') || 'costo total actualizado', 'Banco de Inversiones · F08-A', barra('Avance físico declarado', fisPct, 'var(--azul)', f?.f12b ? `F12-B al ${fCorta(f.f12b)} · lo declara la entidad` : 'F12-B'))}
+      ${tile('co', 'Contratado', F0(contrIB || montoContr), [contrIB ? `${infobras.length} obra${infobras.length === 1 ? '' : 's'} en INFOBRAS` : '', contratos.length ? `SEACE: ${contratos.length} contrato${contratos.length === 1 ? '' : 's'}${contrIB && montoContr ? ` por ${F0(montoContr)}` : ''}${contratos[0].bp?.prov ? ` · ${esc(contratos[0].bp.prov)}` : ''}` : ''].filter(Boolean).join(' · ') || 'sin contrato registrado', contrIB ? 'INFOBRAS · monto contratado de la obra' : montoContr ? 'SEACE · monto final del contrato' : 'SEACE · INFOBRAS', barra('Plazo transcurrido', plazoPct, '#5F6B7A', plazoIni ? `${fCorta(fISO(plazoIni))} → ${fCorta(fISO(plazoFin))}${ctVig ? ' · contrato SEACE' : ' · F12-B'}` : 'sin fechas de ejecución'))}
+      ${tile('ej', 'Ejecutado', F0(devAc), aniosDev.length ? `todos los años (${aniosDev.join(', ')}) · incluye adelantos` : 'devengado acumulado', 'Transparencia Económica · devengado acumulado', barra('Avance financiero', finPct, 'var(--ok-t)', 'devengado acumulado / costo total'))}
     </div>`;
-    const comp = f?.comp || [];
-    const compTot = comp.reduce((s, cp) => s + cp.a.reduce((t, a) => t + (+a.c || 0), 0), 0);
-    const PALETA = ['#1E5AA8', '#B84300', '#5E35B1', '#00838F', '#AD1457', '#3572BE'];
-    const compAccHTML = comp.length ? comp.map(cp => {
-      const nAcc = cp.a.length;
-      return `<div style="margin-bottom:8px">
-        <div class="fi-comp-hdr" style="cursor:pointer;background:#1E5AA8;color:#fff;border-radius:10px;padding:9px 13px;display:flex;align-items:center;justify-content:space-between;gap:8px">
-          <span style="font-size:11.5px;font-weight:700;display:flex;align-items:center;gap:6px"><span style="font-size:9px">►</span>${cp.n}</span>
-          <span style="background:rgba(255,255,255,.22);border-radius:9px;padding:2px 9px;font-size:10px;font-weight:800;white-space:nowrap">${nAcc} acci${nAcc === 1 ? 'ón' : 'ones'}</span>
-        </div>
-        <div style="display:none;padding:8px 6px 2px">${cp.a.map(a => `<div style="display:flex;justify-content:space-between;gap:8px;padding:3px 8px;font-size:10.5px;color:#37474F"><span>${a.n}${a.f ? ` <span class="mutx">· ${a.f}</span>` : ''}</span><b style="white-space:nowrap">${F(+a.c || null)}</b></div>`).join('')}</div>
-      </div>`;
-    }).join('') : '<p class="vacio" style="font-size:11px">Sin componentes registrados.</p>';
-    const actividadHTML = comp.length ? comp.map((cp, i) => {
-      const monto = cp.a.reduce((t, a) => t + (+a.c || 0), 0);
-      const pct = compTot ? (100 * monto / compTot) : 0;
-      const col = PALETA[i % PALETA.length];
-      return `<div style="margin-bottom:9px">
-        <div style="display:flex;justify-content:space-between;font-size:10.5px;margin-bottom:3px"><span style="font-weight:700;color:#37474F">${cp.n}</span><b style="color:${col}">${pct.toFixed(1)}%</b></div>
-        <div style="background:#EEF1F4;border-radius:6px;height:8px;overflow:hidden"><div style="width:${Math.max(2, pct)}%;height:100%;background:${col}"></div></div>
-        <div style="text-align:right;font-size:10px;font-weight:800;color:#37474F;margin-top:2px">${F(monto)}</div>
-      </div>`;
-    }).join('') : '<p class="vacio" style="font-size:11px">Sin desglose de actividad.</p>';
-    const footerHTML = `<div style="margin-top:6px;padding:8px 11px;background:rgba(30,90,168,.09);border:2px solid #1E5AA8;border-radius:10px;display:flex;justify-content:space-between;align-items:center">
-      <span style="font-size:10px;font-weight:900;color:#0F2A43;text-transform:uppercase;letter-spacing:.4px">Total Devengado</span>
-      <span style="font-size:13px;font-weight:900;color:#0F2A43">${F(c.dev)}</span>
-    </div>`;
+    // ---- línea de tiempo ----
+    const ev = [];
+    if (f?.viable_fecha) ev.push([f.viable_fecha, 'Viabilidad', 'ap']);
+    if (f?.et_fecha) ev.push([f.et_fecha, 'Expediente técnico', 'ap']); else if (c.et_fecha > '1900') ev.push([String(c.et_fecha).slice(0, 10), 'Expediente técnico', 'ap']);
+    const firmas = contratos.filter(p => p.contrato.firma).sort((a, b2) => a.contrato.firma.localeCompare(b2.contrato.firma));
+    if (firmas.length > 3) { const a = firmas[0], z = firmas[firmas.length - 1]; ev.push([a.contrato.firma, `1.er contrato · ${esc((a.bp?.prov || a.proceso || '').slice(0, 24))}`, 'co']); ev.push([z.contrato.firma, `Último contrato (${firmas.length}.º) · ${esc((z.bp?.prov || z.proceso || '').slice(0, 24))}`, 'co']); }
+    else firmas.forEach(p => ev.push([p.contrato.firma, `Contrato ${esc((p.bp?.prov || p.proceso || '').slice(0, 28))}`, 'co']));
+    if (f?.inicio) ev.push([f.inicio, 'Inicio de ejecución', 'ej']);
+    { const pz = (f?.paraliza || []).filter(p => p[0]).map(p => p[0]).sort(); if (pz.length > 2) { ev.push([pz[0], '1.ª paralización', 'bad']); ev.push([pz[pz.length - 1], `Última paralización (${pz.length})`, 'bad']); } else pz.forEach(d => ev.push([d, 'Paralización', 'bad'])); }
+    if (oci.length > 3) { const fs = oci.map(o => o[2]).filter(Boolean).sort(); ev.push([fs[0], 'Control (1.º informe)', 'ctl']); ev.push([fs[fs.length - 1], `Control (${oci.length}.º informe)`, 'ctl']); } else oci.forEach(o => { if (o[2]) ev.push([o[2], `Informe de control`, 'ctl']); });
+    if (f?.f12b) ev.push([f.f12b, 'Último F12-B', 'ej']);
+    if (plazoFin) ev.push([fISO(plazoFin), ctVig ? 'Fin de plazo contractual' : 'Fin previsto', hoy > plazoFin && !cerrado ? 'bad' : 'co']);
+    ev.push([fISO(hoy), 'Hoy', 'hoy']);
+    ev.sort((x, y) => x[0].localeCompare(y[0]));
+    const linea = ev.length > 2 ? `<div class="fi-tl"><div class="fi-tlb"></div>${ev.map((e, i) => { const x = ev.length === 1 ? 50 : 100 * i / (ev.length - 1); return `<div class="fi-te ${e[2]} ${i % 2 ? 'ab' : ''}" style="left:${x}%"><i></i><span><b>${e[1]}</b><small>${fCorta(e[0])}</small></span></div>`; }).join('')}</div>` : '';
+    // ---- componentes (08-A C / 08-B / 08-C) + otros costos, con la conciliación ----
+    const comp = f?.comp || [], otros = (f?.otros || []).map(o => [o.n, +o.c]);
+    const norm = t => String(t || '').toUpperCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^A-Z0-9]+/g, ' ').trim();
+    const EST = {}; (f?.estim || []).forEach(([n, costoE, monto, avance, tipo]) => { EST[norm(n)] = { n, costo: costoE, monto, avance, tipo }; });
+    const estDe = n => EST[norm(n)];
+    const estTot = (f?.estim || []).reduce((t, e) => t + (e[2] || 0), 0), estCostoTot = (f?.estim || []).reduce((t, e) => t + (e[1] || 0), 0);
+    const estDif = f?.estim && devAc != null ? estTot - devAc : null;
+    const ejecHTML = (e, ref) => e ? `<span class="fi-cpe"><span class="fi-cpeb"><i style="width:${Math.min(100, e.avance || (e.costo ? 100 * e.monto / e.costo : 0))}%"></i></span><b>${F0(e.monto)}</b><small>${(Math.round((e.avance || 0) * 10) / 10).toLocaleString('es-PE')} % ejecutado${ref != null && e.costo && Math.abs(e.costo - ref) > Math.max(500, ref * .01) ? ` · costo declarado ${F0(e.costo)}` : ''}</small></span>` : (f?.estim ? '<span class="fi-cpe vacio">sin ejecución declarada</span>' : '');
+    const compTot = comp.reduce((s, cp) => s + cp.a.reduce((t, a) => t + (+a.c || 0), 0), 0), otrosTot = otros.reduce((t, o) => t + o[1], 0);
+    const fmtNom = { '08-A seccion-C': 'Formato 08-A, sección C', '08-B programa': 'Formato 08-B', '08-C ioarr-activos': 'Formato 08-C', 'productos/acciones': 'productos y acciones de la ficha' }[f?.formato] || 'ficha de ejecución';
+    const compHTML = comp.length ? comp.map((cp, i) => { const monto = cp.a.reduce((t, a) => t + (+a.c || 0), 0), p = compTot ? 100 * monto / compTot : 0, n = cp.a.length, acc = [...cp.a].sort((x, y) => (+y.c || 0) - (+x.c || 0));
+      return `<div class="fi-cc" role="button" tabindex="0" aria-expanded="false"><div class="fi-cch"><span class="fi-cci">${i + 1}</span><span class="fi-cpn">${esc(cp.n)}</span><span class="fi-cpm">${F0(monto)}<small>${p.toFixed(0)} % de los componentes</small></span><span class="fi-cpb"><span style="width:${Math.max(1, p)}%"></span></span>${ejecHTML(estDe(cp.n), monto)}<span class="fi-cpa"><span>${n} acci${n === 1 ? 'ón' : 'ones'}${cp.a.some(a => a.u) ? ' · con metas físicas' : ''}</span><i>ver acciones ›</i></span></div>
+        <div class="fi-acc"><div><ol>${acc.map((a, j) => `<li style="--i:${j}"><i>${j + 1}</i><span>${esc(a.n)}${a.f ? ` <small>· ${esc(a.f)}</small>` : ''}${a.u ? ` <small>· meta ${esc(a.u)}</small>` : ''}</span><b>${F0(+a.c || null)}</b><span class="fi-accb"><span style="width:${monto ? Math.max(1, 100 * (+a.c || 0) / monto) : 0}%"></span></span></li>`).join('')}</ol></div></div></div>`; }).join('')
+      : `<p class="vacio">${f ? 'La ficha de ejecución no registra componentes.' : 'La ficha del Banco de Inversiones se incorpora en la próxima ronda nocturna.'}</p>`;
+    const estimHTML = f?.estim ? `<div class="fi-estim ${estDif != null && Math.abs(estDif) > Math.max(5000, (devAc || 0) * .02) ? 'warn' : 'ok'}"><div class="fi-esth"><span>${ico('clipboard')}Ejecución declarada por componente <small>pestaña Estimación del F12-B${f.estim_fecha ? ` · declarada el ${fCorta(f.estim_fecha)}` : ''}</small></span><b>${F0(estTot)}</b></div>
+      <div class="fi-estl">${(f.estim || []).filter(e => e[4] === '2' && (e[1] || e[2])).map(e => `<span>${esc(e[0].toLowerCase().replace(/^\w/, ch => ch.toUpperCase()))} <b>${F0(e[2])}</b><small> de ${F0(e[1])}${(() => { const o = otros.find(x => norm(x[0]) === norm(e[0])); return o && Math.abs(o[1] - e[1]) > Math.max(500, o[1] * .01) ? ` · 08-A: ${F0(o[1])}` : ''; })()}</small></span>`).join('')}</div>
+      <p class="fi-nota">${estDif == null ? '' : Math.abs(estDif) <= Math.max(5000, (devAc || 0) * .02) ? `Cuadra con el devengado acumulado (${F0(devAc)}).` : `No cuadra con el devengado acumulado (${F0(devAc)}): diferencia de ${F0(Math.abs(estDif))} ${estDif > 0 ? 'por encima' : 'por debajo'}. Se sugiere actualizar la pestaña Estimación en los primeros 10 días hábiles del mes.`}${estCostoTot && costo && Math.abs(estCostoTot - costo) > Math.max(5000, costo * .01) ? ` Los costos declarados en la Estimación suman ${F0(estCostoTot)}; el costo de inversión actualizado es ${F0(costo)}.` : ''}</p></div>` : (f && comp.length ? '<p class="fi-nota">La entidad aún no declara ejecución por componente en la pestaña Estimación del Formato 12-B.</p>' : '');
+    const concilia = f && comp.length ? `<div class="fi-con"><span>${comp.length} componente${comp.length === 1 ? '' : 's'} <b>${F0(compTot)}</b></span>${otros.length ? `<span>+ ${otros.map(([l, v]) => `${esc(l)} <b>${F0(v)}</b>`).join(' · ')}</span>` : ''}<span class="tot">= <b>${F0(compTot + otrosTot)}</b>${costo && Math.abs(compTot + otrosTot - costo) > Math.max(1000, costo * .005) ? ` <small>(costo de inversión actualizado ${F0(costo)}: diferencia ${F0(costo - compTot - otrosTot)})</small>` : costo ? ' <small>= costo de inversión actualizado</small>' : ''}</span></div>` : '';
+    const componentes = `<section class="fi-sec"><div class="fi-cadh">Componentes y acciones <small>${fmtNom}</small></div>${concilia}<div class="fi-cpl">${compHTML}</div>${estimHTML}${fuente('Fuente: Banco de Inversiones, ' + fmtNom + (f?.estim ? ' y Estimación del F12-B' : ''), fSSI)}</section>`;
+    // ---- dónde fue el dinero: devengado por tipo de gasto (específica) y año ----
+    const esp = {}; (f?.espec || []).forEach(([y, cod, des, m]) => { const k = cod + '|' + des; esp[k] = esp[k] || { cod, des, tot: 0, anios: {} }; esp[k].tot += m; esp[k].anios[y] = (esp[k].anios[y] || 0) + m; });
+    const espRows = Object.values(esp).sort((x, y) => y.tot - x.tot);
+    const espEjec = espRows.filter(r => !r.cod.startsWith('2.4')).reduce((t, r) => t + r.tot, 0);
+    const etDev = espRows.filter(r => r.cod.startsWith('2.6.81.3') || /EXPEDIENTE/.test(r.des)).reduce((t, r) => t + r.tot, 0), etCosto = (otros.find(o => /EXPEDIENTE/i.test(o[0])) || [])[1];
+    const dinero = espRows.length ? `<section class="fi-sec"><div class="fi-cadh">Dónde fue el dinero <small>devengado por tipo de gasto, todos los años</small></div>
+      <div class="fi-esp">${espRows.map(r => `<div class="fi-er ${r.cod.startsWith('2.4') ? 'tr' : ''}"><span class="fi-en">${esc(r.des.toLowerCase().replace(/^\w/, ch => ch.toUpperCase()))}<small>${r.cod}${r.cod.startsWith('2.4') ? ' · transferencia a otra unidad: no se suma al gasto del ejecutor' : ''} · ${Object.keys(r.anios).sort().map(y => `${y}: ${F0(r.anios[y])}`).join(' · ')}</small></span><span class="fi-eb"><i style="width:${espEjec ? Math.min(100, 100 * r.tot / espEjec) : 0}%"></i></span><b>${F0(r.tot)}</b></div>`).join('')}</div>
+      ${etDev && etCosto ? `<p class="fi-nota">Elaboración del expediente técnico: ${F0(etCosto)} en la sección C del Formato 08-A · ${F0(etDev)} devengados en "elaboración de expedientes técnicos"${Math.abs(etDev - etCosto) <= Math.max(1000, etCosto * .02) ? ': coinciden' : ': orden de magnitud, pudo pagarse en otro año o con otro código'}.</p>` : ''}
+      <p class="fi-nota">Este cuadro es lo que registra el SIAF por tipo de gasto; la ejecución por componente es lo que declara la entidad en la Estimación del F12-B. Son dos miradas del mismo dinero y no coinciden una a una.</p>
+      ${fuente('Fuente: Transparencia Económica (SIAF) vía Banco de Inversiones', fSSI)}</section>` : '';
+    // ---- control: Contraloría, paralizaciones, INFOBRAS ----
+    const ctlHTML = [
+      oci.length ? `<div class="fi-ctl"><h5>${ico('shield')}Contraloría General · ${oci.length} informe${oci.length === 1 ? '' : 's'} de control</h5><ol class="fi-oci">${[...oci].sort((x, y) => (y[2] || '').localeCompare(x[2] || '')).map(o => `<li><span>${fCorta(o[2])}</span><span>${esc(o[1] ? o[1].toLowerCase().replace(/^\w/, ch => ch.toUpperCase()) : 'Informe')} <b>${esc(o[0])}</b></span>${o[3] ? `<a href="${esc(o[3])}" target="_blank" rel="noopener">ver PDF ↗</a>` : ''}</li>`).join('')}</ol></div>` : '',
+      (f?.paraliza || []).length ? `<div class="fi-ctl bad"><h5>${ico('barrier')}Paralización declarada</h5>${f.paraliza.map(p => `<p><b>${fCorta(p[0])}</b>${p[2] ? ` · estado: ${esc(p[2])}` : ''}${p[3] != null ? ` · avance físico al paralizar ${p[3]} %` : ''}<br>${esc(p[1] || '')}</p>`).join('')}</div>` : '',
+      infobras.length ? `<div class="fi-ctl"><h5>${ico('crane')}INFOBRAS · ${infobras.length} obra${infobras.length === 1 ? '' : 's'} registrada${infobras.length === 1 ? '' : 's'}</h5>${infobras.map(o => `<p><b>Obra ${esc(o.cod)}</b>${o.inicio ? ` · inicio ${fCorta(o.inicio)}` : ''}${o.modalidad ? ` · ${esc(o.modalidad)}` : ''}<br>monto aprobado ${F0(o.aprobado)} · contratado ${F0(o.contratado)}</p>`).join('')}</div>` : ''
+    ].filter(Boolean).join('');
+    const control = ctlHTML ? `<section class="fi-sec"><div class="fi-cadh">Control y situación de obra <small>Contraloría · INFOBRAS · Banco de Inversiones</small></div>${ctlHTML}${fuente('Fuentes: Contraloría (SPIC), INFOBRAS y registro de paralizaciones del MEF', fSSI)}</section>` : (f ? `<section class="fi-sec"><div class="fi-cadh">Control y situación de obra <small>Contraloría · INFOBRAS</small></div><p class="vacio">Sin informes de control, paralizaciones ni registro INFOBRAS para este CUI.</p></section>` : '');
+    // ---- derecha ----
+    const FMx = n => n == null ? '—' : Math.abs(n) >= 1e6 ? FM(n) : F0(n);
+    if (c.pim == null && f?.pim) c = { ...c, pim: f.pim, dev: f.anual?.[ANIO] || 0, cert: null };
+    const pim1 = c.pim || 1, pct = v => c.pim ? Math.round((v || 0) * 100 / pim1) + ' %' : '';
+    const presu = c.pim != null ? `<div class="fi-pr"><div class="fi-prh"><span>Presupuesto ${ANIO}</span><b>PIM ${FMx(c.pim)}</b></div><div class="fi-cadb"><span style="width:${Math.min(100, (c.cert || 0) * 100 / pim1)}%;background:var(--azul)"></span><span style="width:${Math.min(100, (c.dev || 0) * 100 / pim1)}%;background:var(--ok-t)"></span></div><div class="fi-prl">${c.cert != null ? `<span><i style="background:var(--azul)"></i>Certificado ${pct(c.cert)} <small>${FMx(c.cert)}</small></span>` : ''}<span><i style="background:var(--ok-t)"></i>Devengado ${pct(c.dev)} <small>${FMx(c.dev)}</small></span></div>${fuente('Transparencia Económica', (typeof R !== 'undefined' && R?.corte) ? `al ${R.corte}` : '')}</div>` : '';
+    const fotos = (f?.fotos || []).slice(0, 2).map(([per, url]) => `<figure><img src="${esc(url)}" alt="Foto de la obra ${esc(per || '')}" loading="lazy" referrerpolicy="no-referrer" onerror="this.closest('figure').remove()"><figcaption>${esc(per || '')}</figcaption></figure>`).join('');
+    const f12 = `<div class="fi-f12 ${ef[0]}"><div class="fi-f12h"><span>Formato 12-B</span><b class="fi-sem">${ef[1]}</b></div><small>${ef[2]}</small>
+      ${f?.situ_act ? `<p>${esc(f.situ_act.split('\n')[0].slice(0, 220))}</p>` : ''}${fotos ? `<div class="fi-fotos">${fotos}</div>` : ''}
+      ${(f?.hist || []).length > 1 ? (() => { const h = f.hist, W = 300, Hh = 90, x0 = fecha(h[0][0]), x1 = fecha(h[h.length - 1][0]), sp = Math.max(1, x1 - x0); const X = d => 6 + (W - 12) * (fecha(d) - x0) / sp, Y = v => Hh - 8 - (Hh - 16) * Math.max(0, Math.min(100, v)) / 100; const path = k => h.map((p, i) => `${i ? 'L' : 'M'}${X(p[0]).toFixed(1)},${Y(p[k]).toFixed(1)}`).join(' ');
+        return `<div class="fi-curva"><div class="fi-curvah"><span>Avance declarado mes a mes</span><small>${h.length} declaraciones · ${fecha(h[0][0]).getUTCFullYear()}–${fecha(h[h.length - 1][0]).getUTCFullYear()}</small></div><svg viewBox="0 0 ${W} ${Hh}" role="img" aria-label="Curva de avance físico e inversión declarados"><line x1="6" y1="${Y(100)}" x2="${W - 6}" y2="${Y(100)}"/><line x1="6" y1="${Y(50)}" x2="${W - 6}" y2="${Y(50)}"/><line x1="6" y1="${Y(0)}" x2="${W - 6}" y2="${Y(0)}"/><path class="inv" d="${path(2)}"/><path class="fis" d="${path(1)}"/>${plazoFin && plazoFin >= x0 && plazoFin <= x1 ? `<line class="fin" x1="${X(fISO(plazoFin))}" y1="${Y(100)}" x2="${X(fISO(plazoFin))}" y2="${Y(0)}"/>` : ''}</svg><div class="fi-curval"><span><i style="background:var(--azul)"></i>físico</span><span><i style="background:var(--ok-t)"></i>inversión (Estimación)</span>${plazoFin ? '<span><i style="background:#B42A2A;height:2px"></i>fin de plazo</span>' : ''}</div></div>`; })() : ''}
+      <button type="button" class="fi-seg-hdr fi-dh"><span class="fi-di">${ico('clipboard')}</span><span class="fi-dt">Ver el seguimiento completo <small>situación, problemática, acciones, riesgos y fotos</small></span><span class="fi-dc" aria-hidden="true">↗</span></button>
+      ${fuente('Lo declara la entidad en el Banco de Inversiones · plazo: 10 días hábiles del mes siguiente', fSSI)}</div>`;
+    const desp = (id, ic, t, v, cuerpo, abierto) => `<div class="fi-d ${abierto ? 'on' : ''}" data-d="${id}"><button type="button" class="fi-dh" aria-expanded="${!!abierto}"><span class="fi-di">${ico(ic)}</span><span class="fi-dt">${t}</span><b>${v}</b><span class="fi-dc" aria-hidden="true">›</span></button><div class="fi-db"><div>${cuerpo}</div></div></div>`;
+    const dSea = sp.length ? desp('sea', 'doc', 'Contratación', `${sp.length} proceso${sp.length === 1 ? '' : 's'}`, sp.slice(0, 6).map(p => { const ct = p.contrato; return `<div class="fi-r"><span>${esc(p.bp?.prov || p.estado || 'Proceso')}<small> · ${esc(p.proceso || '')}${ct && (ct.fin_act || ct.fin) ? ` · fin ${ct.fin_act || ct.fin}` : ''}</small></span><b>${F0(ct?.monto_final || ct?.monto || p.vr)}</b></div>`; }).join('') + '<small class="fi-fu">SEACE</small>') : '';
     const benef = f?.beneficiarios || c.beneficiarios;
-    const impactoHTML = benef
-      ? `<div style="background:#EAF1FB;border:1.5px solid #B9D0EC;border-radius:14px;padding:10px 12px;display:flex;align-items:center;gap:10px">
-          <span style="font-size:30px">👥</span>
-          <div style="flex:1;text-align:center"><div style="font-size:23px;font-weight:900;color:#0F2A43;line-height:1">${N(benef)}</div><div style="font-size:10px;font-weight:800;color:#1E5AA8;margin-top:3px">Beneficiarios</div></div>
-        </div>`
-      : '<p class="vacio" style="font-size:11px;text-align:center;padding:14px 0">Sin datos de impacto registrados a nivel nacional.</p>';
-    return `<div style="background:linear-gradient(135deg,#164A8C,#1E5AA8 60%,#2F6FC2);padding:10px 18px 9px;position:relative">
-      <button class="fi-regresar" style="position:absolute;top:12px;right:12px;height:28px;border-radius:14px;border:1.5px solid rgba(255,255,255,.32);background:rgba(255,255,255,.12);cursor:pointer;font-size:10.5px;color:#fff;font-weight:800;letter-spacing:.4px;display:flex;align-items:center;gap:6px;padding:0 14px;font-family:inherit">← Regresar</button>
-      <button class="fi-print" style="position:absolute;bottom:10px;right:12px;height:28px;border-radius:14px;border:none;background:#fff;cursor:pointer;font-size:10.5px;color:#0F2A43;font-weight:900;letter-spacing:.4px;display:flex;align-items:center;gap:5px;padding:0 14px;font-family:inherit;box-shadow:0 2px 8px rgba(0,20,0,.28)">⬇ Descargar Ficha</button>
-      <div style="font-size:13.5px;font-weight:800;color:#fff;letter-spacing:.8px;text-transform:uppercase;margin-bottom:4px">CUI ${cui}</div>
-      <div title="${nombre}" style="font-size:13.5px;font-weight:800;color:#fff;line-height:1.3;margin-bottom:8px;text-shadow:0 1px 3px rgba(0,20,0,.28);max-width:72%">${nombre}</div>
-      <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;padding-right:150px">
-        ${tipo ? `<span style="padding:3px 10px;border-radius:10px;font-size:10px;font-weight:800;background:#fff;color:${tipoCol};box-shadow:0 1px 3px rgba(0,0,0,.18);letter-spacing:.4px">${tipo}</span>` : ''}
-        <span style="padding:3px 10px;border-radius:10px;font-size:10px;font-weight:800;background:#fff;color:${cerrado ? '#C62828' : '#2E7D32'};box-shadow:0 1px 3px rgba(0,0,0,.18)">${cerrado ? '○ CERRADO' : '● ACTIVO'}</span>
-        ${dpto ? `<span style="padding:3px 10px;border-radius:10px;font-size:10px;font-weight:700;background:#fff;color:#0F2A43;box-shadow:0 1px 3px rgba(0,0,0,.18)">📍 ${dpto}</span>` : ''}
-        ${f?.modalidad ? `<span style="padding:3px 10px;border-radius:10px;font-size:10px;font-weight:600;background:rgba(255,255,255,.92);color:#455A64;box-shadow:0 1px 3px rgba(0,0,0,.15)">${f.modalidad}</span>` : ''}
-        <span style="padding:3px 12px;border-radius:10px;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.18);display:inline-flex;align-items:center;gap:6px">
-          <span style="width:8px;height:8px;border-radius:50%;background:${colObra};box-shadow:0 0 0 2.5px ${colObra}26"></span>
-          <span style="font-size:10px;font-weight:900;color:${colObra};letter-spacing:.4px">${estObra}</span>
-        </span>
-      </div>
-    </div>
-    <div style="display:grid;grid-template-columns:22% 17% 19% 24% 18%;background:#fff;border:1px solid #E5E9EF;border-top:none;overflow:hidden">
-      <div style="border-right:1px solid #DCE7F5;padding:8px 14px;display:flex;flex-direction:column;gap:6px;justify-content:center;background:linear-gradient(180deg,#EAF1FB 0%,#FAFBFE 100%)">
-        ${secHdrFi('💰', '#DCE7F5', 'Presupuesto de Inversión')}
-        <div style="display:flex;flex-direction:column;gap:3px">
-          <div style="display:flex;justify-content:space-between;align-items:baseline;gap:6px;background:#F8FFFE;border:1px solid #CFD8DC;border-radius:8px;padding:3px 8px">
-            <span style="font-size:8.5px;font-weight:800;color:#596577;text-transform:uppercase;letter-spacing:.4px">● Perfil Viable</span>
-            <span style="font-size:11px;font-weight:900;color:#37474F;white-space:nowrap">${F(f?.viable)}</span>
-          </div>
-          <div style="display:flex;justify-content:space-between;align-items:baseline;gap:6px;padding:1.5px 2px">
-            <span style="font-size:8px;font-weight:800;color:#596577;text-transform:uppercase;letter-spacing:.3px;white-space:nowrap">Costo inversión act. <span style="color:#596577">(a)</span></span>
-            <span style="font-size:9.5px;font-weight:800;color:#455A64;white-space:nowrap">${F(f?.costo)}</span>
-          </div>
-          <div style="display:flex;justify-content:space-between;align-items:baseline;gap:6px;padding:1.5px 2px">
-            <span style="font-size:8px;font-weight:800;color:#596577;text-transform:uppercase;letter-spacing:.3px;white-space:nowrap">Control concurrente <span style="color:#596577">(b)</span></span>
-            <span style="font-size:9.5px;font-weight:800;color:#455A64;white-space:nowrap">${F(f?.cc_eje)}</span>
-          </div>
-          <div style="display:flex;justify-content:space-between;align-items:baseline;gap:6px;padding:1.5px 2px">
-            <span style="font-size:8px;font-weight:800;color:#596577;text-transform:uppercase;letter-spacing:.3px;white-space:nowrap">Controversias <span style="color:#596577">(c)</span></span>
-            <span style="font-size:9.5px;font-weight:800;color:#455A64;white-space:nowrap">${F(f?.contro)}</span>
-          </div>
-          <div style="display:flex;justify-content:space-between;align-items:baseline;gap:6px;padding:1.5px 2px">
-            <span style="font-size:8px;font-weight:800;color:#596577;text-transform:uppercase;letter-spacing:.3px;white-space:nowrap">Carta fianza <span style="color:#596577">(d)</span></span>
-            <span style="font-size:9.5px;font-weight:800;color:#455A64;white-space:nowrap">${F(f?.carta)}</span>
-          </div>
-          <div style="display:flex;justify-content:space-between;align-items:baseline;gap:6px;background:#EAF1FB;border:1.5px solid #B9D0EC;border-radius:8px;padding:4px 8px" title="Costo total de la inversión actualizado = (a)+(b)+(c)+(d)">
-            <span style="font-size:8.5px;font-weight:900;color:#1E5AA8;text-transform:uppercase;letter-spacing:.4px">● Costo Total <span style="color:#596577">(a+b+c+d)</span></span>
-            <span style="font-size:11px;font-weight:900;color:#0F2A43;white-space:nowrap">${F(f?.costo_total || f?.costo)}</span>
-          </div>
+    // revisión sugerida (mismas reglas que la vista de alertas de la UE, window.SUG en index.html): qué verificar y qué norma lo exige
+    const sugs = window.SUG && c && c.cui ? Object.entries(window.SUG).filter(([, r]) => { try { return r.f(c); } catch (e) { return false; } }) : [];
+    const sugHTML = sugs.length ? `<div class="fi-sug" id="fi-sug-cuerpo" hidden><div class="fi-sugh">${ico('spark')}<b>Revisión sugerida</b><small>no son alertas: conviene verificar y, si corresponde, completar el registro</small></div>${sugs.map(([k, r]) => `<div class="fi-sugi" style="--c:${r.c}"><span class="fi-si">${ico(r.ic)}</span><div><b>${r.l.replace(/^\w/, ch => ch.toUpperCase())}</b><p>${r.def}</p><p class="fi-sugn">${ico('scale')} ${r.norma}</p><p class="fi-suga">${ico('arrow')} ${r.acc}</p></div></div>`).join('')}</div>` : '';
+    const sinCab = h => h.replace(/^<section class="fi-sec"><div class="fi-cadh">[\s\S]*?<\/div>/, '<section class="fi-sec">');   // la cabecera pasa al desplegable
+    return `<div class="fi">
+      <div class="pd-hdr fi-hdr"><div class="pd-cui"><span>CUI ${cui}</span>${meta.map(m => `<span>· ${esc(m)}</span>`).join('')}</div>
+        <div class="pd-title ${nombre.length > 110 ? 'larga' : ''}">${esc(nombre)}</div>
+        <div class="fi-acts"><span class="fi-est" style="--c:${colObra}">${estObra}</span>${benef ? `<span class="fi-benh">${N(benef)} beneficiarios</span>` : ''}<span class="sp"></span>${sugs.length ? `<button type="button" class="btn fi-sugbtn" title="Señales de registro o consistencia que conviene verificar, con la norma que lo exige">${ico('spark')} Revisión sugerida <b>${sugs.length}</b></button>` : ''}<button type="button" class="btn fi-print">Imprimir</button><button type="button" class="ov-volver fi-regresar"><span class="ov-fl" aria-hidden="true">←</span>Volver</button></div></div>
+      ${veredicto}${sugHTML}
+      <div class="fi-cols">
+        <div class="fi-a">
+          <section class="fi-sec"><div class="fi-cadh">De lo aprobado a lo ejecutado <small>qué se aprobó, qué se contrató y qué se gastó</small></div>${tres}</section>
+          ${linea ? desp('tl', 'calendar', 'Línea de tiempo', `${ev.length} hitos · ${fCorta(ev[0][0])} → ${fCorta(ev[ev.length - 1][0])}`, linea) : ''}
+          ${desp('comp', 'layers', `Componentes y acciones <small>${fmtNom}</small>`, comp.length ? `${comp.length} componente${comp.length === 1 ? '' : 's'} · ${F0(compTot + otrosTot)}` : 'sin registro', sinCab(componentes))}
+          ${dinero ? desp('esp', 'cash', 'Dónde fue el dinero <small>devengado por tipo de gasto, todos los años</small>', `${espRows.length} tipo${espRows.length === 1 ? '' : 's'} de gasto · ${F0(espEjec)}`, sinCab(dinero)) : ''}
+          ${control ? desp('ctl', 'shield', 'Control y situación de obra <small>Contraloría · INFOBRAS · Banco de Inversiones</small>', ctlHTML ? [oci.length ? `${oci.length} informe${oci.length === 1 ? '' : 's'} CGR` : '', (f?.paraliza || []).length ? `${f.paraliza.length} paralización${f.paraliza.length === 1 ? '' : 'es'}` : '', infobras.length ? `${infobras.length} obra${infobras.length === 1 ? '' : 's'} INFOBRAS` : ''].filter(Boolean).join(' · ') : 'sin informes', sinCab(control)) : ''}
         </div>
-      </div>
-      <div style="border-right:1px solid #DCE7F5;display:flex;flex-direction:column;gap:7px;align-items:center;justify-content:center;padding:6px;background:linear-gradient(180deg,#EAF1FB 0%,#FAFBFE 100%)">
-        <div style="width:100%;box-sizing:border-box;background:${f?.pmi === 'SI' ? '#F0FBF0' : f?.pmi === 'NO' ? '#FFF5F5' : '#F8FAFB'};border:1.5px solid ${f?.pmi === 'SI' ? '#A5D6A7' : f?.pmi === 'NO' ? '#FFCDD2' : '#E0E0E0'};border-radius:9px;padding:4px 8px;display:flex;align-items:center;justify-content:center;gap:6px">
-          <span style="width:16px;height:16px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:${f?.pmi === 'SI' ? 'rgba(16,80,0,.12)' : f?.pmi === 'NO' ? 'rgba(183,28,28,.1)' : 'rgba(120,120,120,.12)'};font-size:9px;flex-shrink:0">${f?.pmi === 'SI' ? '✓' : f?.pmi === 'NO' ? '✗' : '?'}</span>
-          <span style="font-size:9.5px;font-weight:900;color:${f?.pmi === 'SI' ? '#0F2A43' : f?.pmi === 'NO' ? '#B71C1C' : '#78909C'};letter-spacing:.2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${f?.pmi === 'SI' ? 'PROGRAMADO EN EL PMI' : f?.pmi === 'NO' ? 'NO PROGRAMADO EN EL PMI' : 'SIN DATO DE PMI'}</span>
-        </div>
-        <div style="display:flex;gap:5px;justify-content:center">
-          ${donutTick(f?.av_fis, '#0D47A1', 'Av. Físico')}
-          ${donutTick(f?.av_ejec, '#00766B', 'Av. Financiero')}
-        </div>
-      </div>
-      <div style="border-right:1px solid #DCE7F5;display:flex;flex-direction:column;justify-content:center;padding:6px 10px;gap:4px;background:linear-gradient(180deg,#EAF1FB 0%,#FAFBFE 100%)">
-        ${tarjeta('PIM ' + ANIO, c.pim, '#1E5AA8', '#EAF1FB', '#B9D0EC', '#0F2A43')}
-        ${tarjeta('Certificación ' + ANIO, c.cert, '#6A1B9A', '#F7F0FB', '#CE93D8', '#4A148C')}
-        ${tarjeta('Devengado ' + ANIO, c.dev, '#B84300', '#FFF8F0', '#FFCC80', '#BF360C')}
-      </div>
-      <div style="border-right:1px solid #DCE7F5;display:flex;flex-direction:column;gap:7px;padding:8px 8px;background:linear-gradient(180deg,#EAF1FB 0%,#FAFBFE 100%)">
-        <div class="fi-seg-hdr" style="flex:1;background:#EDF3FB;border:1.5px solid #B9D0EC;border-radius:12px;padding:8px 11px;display:flex;flex-direction:column;justify-content:center;cursor:pointer">
-          <div style="font-size:12px;font-weight:900;color:#0F2A43;text-transform:uppercase;letter-spacing:.6px;display:flex;align-items:center;gap:8px"><span style="width:30px;height:30px;border-radius:9px;background:linear-gradient(135deg,#164A8C,#2F6FC2);display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0">📡</span>Seguimiento</div>
-          <div style="font-size:10px;color:#596577;font-weight:700;margin-top:4px;padding-left:38px">Clic para ver · Formato 12-B</div>
-        </div>
-        <div style="flex:1;background:#EDF3FB;border:1.5px solid #B9D0EC;border-radius:12px;padding:8px 11px;display:flex;flex-direction:column;justify-content:center">
-          <div style="font-size:12px;font-weight:900;color:#0F2A43;text-transform:uppercase;letter-spacing:.6px;display:flex;align-items:center;gap:8px"><span style="width:30px;height:30px;border-radius:9px;background:linear-gradient(135deg,#0D47A1,#1976D2);display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0">🚀</span>Puesta en Marcha</div>
-          <div style="font-size:10px;color:#596577;font-weight:600;margin-top:4px;padding-left:38px">Información en preparación</div>
-        </div>
-      </div>
-      <div style="padding:6px;display:flex;flex-direction:column;justify-content:center;background:linear-gradient(180deg,#FAFBFE 0%,#EAF1FB 100%)">
-        <div style="position:relative;width:100%;aspect-ratio:3/2;border-radius:8px;border:1.5px solid #B9D0EC;background:#EEF2F8;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;text-align:center;padding:4px">
-          <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="#A9BEDC" stroke-width="1.5"><rect x="3" y="5" width="18" height="14" rx="2"/><circle cx="8.5" cy="10" r="1.6"/><path d="M3 16l5-5 4 4 3-3 6 6"/></svg>
-          <div style="font-size:9px;font-weight:700;color:#596577;text-transform:uppercase;letter-spacing:.3px;line-height:1.3">Fotografía de obra<br>en preparación</div>
-        </div>
-      </div>
-    </div>
-    <div style="display:grid;grid-template-columns:1.55fr 1.05fr 0.52fr;gap:10px;padding:10px 0 0">
-      <div tabindex="0" style="background:#fff;border:1px solid #E5E9EF;border-radius:14px;padding:14px 16px;overflow-y:auto">
-        ${secHdrFi('🧩', '#DCE7F5', 'Componentes y Acciones Programados')}
-        <div>${compAccHTML}</div>
-      </div>
-      <div tabindex="0" style="background:#fff;border:1px solid #E5E9EF;border-radius:14px;padding:14px 16px;overflow-y:auto">
-        ${secHdrFi('📊', '#DCE7F5', 'Ejecución por Actividad', 'Por componente de inversión')}
-        ${actividadHTML}${footerHTML}
-      </div>
-      <div tabindex="0" style="background:#fff;border:1px solid #E5E9EF;border-radius:14px;padding:14px 16px;overflow-y:auto">
-        ${secHdrFi('💰', '#FEF3E0', 'Impacto de la Inversión', 'Entregables y población beneficiada')}
-        ${impactoHTML}
+        <div class="fi-b"><div class="fi-ds">${presu ? desp('pr', 'wallet', `Presupuesto ${ANIO}`, `PIM ${FMx(c.pim)}${c.pim ? ` · devengado ${pct(c.dev)}` : ''}`, presu) : ''}${desp('f12', 'clipboard', 'Formato 12-B', `<span class="fi-sem ${ef[0]}">${ef[1]}</span>`, f12)}${dSea}</div></div>
       </div>
     </div>`;
   }
@@ -742,9 +729,21 @@
     el.innerHTML = fichaInversionHTML(cui, f, c, sp);
     if (onVolver) el.querySelectorAll('.fi-regresar').forEach(x => x.onclick = onVolver);
     el.querySelectorAll('.fi-print').forEach(x => x.onclick = () => CR.exportar((c && c.ue) || (E && E._ue && E._ue.cod), (c && c.ue_nombre) || (E && E._ue && E._ue.nombre), () => window.print()));
-    el.querySelectorAll('.fi-comp-hdr').forEach(x => x.onclick = () => { const d = x.nextElementSibling; d.style.display = d.style.display === 'none' ? 'block' : 'none'; });
     const nombre = f?.nombre || c?.nombre || null;
-    el.querySelectorAll('.fi-seg-hdr').forEach(x => x.onclick = () => mostrarSeguimientoModal(cui, nombre, buildSituDet(f, c, sp)));
+    el.querySelectorAll('.fi-seg-hdr').forEach(x => x.onclick = () => mostrarSeguimientoModal(cui, nombre, buildSituDet(f, c, sp), el.closest('dialog')));
+    el.querySelectorAll('.fi-d[data-d] > .fi-dh').forEach(h => h.onclick = () => { const d = h.parentElement, on = !d.classList.contains('on'); d.classList.toggle('on', on); h.setAttribute('aria-expanded', String(on)); });
+    el.querySelectorAll('.fi-t').forEach(x => x.onclick = () => { const on = !x.classList.contains('on'); el.querySelectorAll('.fi-t').forEach(y => { y.classList.toggle('on', on); y.setAttribute('aria-expanded', String(on)); }); });
+    const sb = el.querySelector('.fi-sugbtn'), sc = el.querySelector('#fi-sug-cuerpo');
+    if (sb && sc) sb.onclick = () => { const ico = n => window.Ico ? Ico(n) : '', esc = v => String(v == null ? '' : v).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+      const raiz = el.closest('dialog') || document.body;   // dentro de la ventana de ficha (top layer) el emergente debe colgar del propio dialog
+      let ov = document.getElementById('sug-ov'); if (!ov) { ov = document.createElement('div'); ov.id = 'sug-ov'; ov.className = 'sug-ov'; raiz.appendChild(ov); }
+      ov.innerHTML = `<div class="sug-card" role="dialog" aria-modal="true" aria-labelledby="sug-tit" tabindex="-1"><div class="pd-hdr sug-hdr"><div class="pd-cui"><span>${ico('spark')} REVISIÓN SUGERIDA · CUI ${esc(String(cui))}</span></div><div class="pd-title" id="sug-tit">${esc(nombre || '')}</div><div class="fi-acts"><span class="sug-nota">No son alertas: señales de registro o consistencia que conviene verificar. Cada una indica la norma que lo exige y la acción.</span><span class="sp"></span><button type="button" class="ov-volver" id="sug-cerrar"><span class="ov-fl" aria-hidden="true">←</span>Volver</button></div></div><div class="sug-body">${sc.innerHTML}</div></div>`;
+      const cerrar = () => { ov.remove(); sb.focus({ preventScroll: true }); };
+      ov.onclick = ev => { if (ev.target === ov) cerrar(); }; ov.querySelector('#sug-cerrar').onclick = cerrar;
+      ov.querySelector('.sug-card').onkeydown = ev => { if (ev.key === 'Escape') { ev.preventDefault(); ev.stopPropagation(); cerrar(); } }; ov.querySelector('.sug-card').focus();
+    };
+    el.querySelectorAll('.fi-cc').forEach(x => x.onkeydown = e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); x.click(); } });
+    el.querySelectorAll('.fi-cc').forEach(x => x.onclick = () => { const on = !x.classList.contains('on'); el.querySelectorAll('.fi-cc.on').forEach(y => { y.classList.remove('on'); y.setAttribute('aria-expanded', 'false'); }); x.classList.toggle('on', on); x.setAttribute('aria-expanded', String(on)); x.querySelector('.fi-cpa i').textContent = on ? 'ocultar ‹' : 'ver acciones ›'; if (on) x.scrollIntoView({ block: 'nearest', behavior: 'smooth' }); });
   }
   window.FichaInversion = { render: fichaInversionRender, html: fichaInversionHTML };
   function cerrarFicha() { const ov = $('inv-overlay'); if (ov) ov.remove(); abiertos.inv = null; cuerpo(); }

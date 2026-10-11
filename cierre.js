@@ -223,7 +223,7 @@ abbr[title]{text-decoration:underline dotted;cursor:help}
       const c = st.abierta && mod.find(x => x.id === st.abierta);
       el.innerHTML = `<div class="cg${c ? ' abierta' : ''}">
         <div class="cg-h"><h2>Cierre de gestión 2026</h2><span class="cg-cd" aria-live="polite">${cd}</span><span class="sp"></span>
-          <button type="button" class="btn p" id="cg-prep">Preparar texto para el informe</button>${ctx.onAtras ? '<button type="button" class="btn" id="cg-atras">‹ Atrás</button>' : ''}</div>
+          <button type="button" class="btn p" id="cg-prep">Preparar texto para el informe</button>${ctx.onAtras ? '<button type="button" class="ov-volver" id="cg-atras"><span class="ov-fl" aria-hidden="true">←</span>Volver</button>' : ''}</div>
         ${tl}
         <section class="cg-c" aria-label="Pendientes por ordenar">${c ? detalle(c, st.todo, fuente) : mod.map(tarjeta).join('')}</section>
         <div class="cg-pie"><b>Herramienta de apoyo, no oficial. No reemplaza el aplicativo de la Contraloría ni constituye opinión de control. El informe de transferencia es declaración jurada: lo que no se pueda regularizar debe declararse.</b><br>

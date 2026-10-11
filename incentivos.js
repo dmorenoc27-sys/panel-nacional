@@ -133,7 +133,7 @@
     if (abiertoN !== null) {
       const c = PI.compromisos.find(x => x.n === abiertoN);
       el.innerHTML = `<div style="padding:8px">
-       <div style="display:flex;align-items:center;gap:12px;margin-bottom:8px"><button class="btn" data-atras-pi>‹ Volver a las metas</button><div class="pd-lbl" style="margin:0">${c.n}. ${c.corto}</div></div>
+       <div style="display:flex;align-items:center;gap:12px;margin-bottom:8px;flex-direction:row-reverse;justify-content:flex-end"><button type="button" class="ov-volver" data-atras-pi title="Volver a las metas"><span class="ov-fl" aria-hidden="true">←</span>Volver</button><div class="pd-lbl" style="margin:0">${c.n}. ${c.corto}</div></div>
        <div class="card" style="padding:0 14px 14px">${tarjeta(c, S, E, META, corte, true)}</div></div>`;
       el.querySelector('[data-atras-pi]').onclick = () => { abiertoN = null; render(el, E, META, ue, onExp); };
     } else {
@@ -182,5 +182,36 @@
   // ponytail: 'atras' solo contrae la tarjeta abierta; devuelve true si hizo algo
   // resumen para la vista alcalde: un semáforo por compromiso aplicable
   function resumen(E, META, ue) { const S = st.get(ue); MCUR = metasDe(ue); if (!METAS) cargarMetas(); return PI.compromisos.filter(c => aplicaA(c, S, MCUR)).map(c => { const e = S['estado' + c.n] || 'pend', ev = evaluarSIAF(c, E, META), d = diagnostico(c, ev, S, E); return { n: c.n, corto: c.corto, col: e === 'ok' ? 'ok' : e === 'no' ? 'bad' : d.color, titulo: e === 'ok' ? 'Cumplido' : e === 'no' ? 'No cumplido' : d.titulo, accion: d.accion || d.frases[0] || '' }; }); }
-  window.Incentivos = { render, resumen, PI, atras: () => { if (abiertoN === null || !ultimo) return false; abiertoN = null; render(...ultimo); return true; } };
+
+  // ---- vista pública del Plan de Incentivos (sin SIAF): tarjetas de compromiso con icono, línea de tiempo del MEF y detalle desplegable ----
+  const ICO_PI = { 1: 'users', 2: 'coins', 3: 'clipboard', 4: 'drop', 5: 'shield', 6: 'road', 7: 'doc' };
+  const COL_PI = { 1: '#B42A2A', 2: '#7A5B12', 3: '#1E5AA8', 4: '#0F6E8C', 5: '#0F2A43', 6: '#2F69B3', 7: '#147A45' };
+  const esc = v => String(v == null ? '' : v).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  const fD = f => { const [y, m, d] = String(f).split('-'); return d ? `${d}/${m}/${y}` : f; };
+  function publico(el, opts) {
+    opts = opts || {}; const hoy = new Date().toISOString().slice(0, 10); let abierto = null;
+    const ico = n => window.Ico ? Ico(n) : '';
+    const RM = matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const pintar = () => {
+      const cal = PI.calendario, pos = f => { const i = cal.findIndex(([x]) => x >= f); return i < 0 ? 100 : (f === cal[i][0] ? 18 + i * 32 : Math.max(2, 18 + i * 32 - 14)); };   // hitos a espacios iguales; 'hoy' antes del próximo
+      const prox = cal.find(([f]) => f >= hoy);
+      el.innerHTML = `<div class="pi">
+        <header class="pi-h"><div><div class="pi-k">Programa de Incentivos a la Mejora de la Gestión Municipal</div><h2>Plan de Incentivos ${PI.anio}</h2><p>${esc(PI.norma)}</p></div>
+          <div class="pi-cal" role="group" aria-label="Calendario del MEF"><div class="pi-calh">Calendario del MEF${prox ? ` <small>· faltan ${Math.round((new Date(prox[0]) - new Date(hoy)) / 864e5)} días para ${prox[1].toLowerCase()}</small>` : ''}</div>
+            <div class="pi-tl"><div class="pi-tlp" style="width:${pos(hoy)}%"></div>${cal.map(([f, t]) => `<i class="${f <= hoy ? 'ok' : ''}" style="left:${pos(f)}%" title="${fD(f)} · ${esc(t)}"></i>`).join('')}<b class="pi-hoy" style="left:${pos(hoy)}%"><span>hoy</span></b></div>
+            <div class="pi-tlx">${cal.map(([f, t]) => `<div style="left:${pos(f)}%"><b>${fD(f)}</b>${esc(t)}</div>`).join('')}</div></div></header>
+        <section class="pi-g" aria-label="Compromisos ${PI.anio}">${PI.compromisos.map(c => { const on = abierto === c.n, col = COL_PI[c.n] || '#0F2A43', venc = c.hitos.filter(([f]) => f < hoy).length;
+          return `<article class="pi-c ${on ? 'on' : ''}" style="--c:${col}"><button type="button" class="pi-cb" data-n="${c.n}" aria-expanded="${on}"><span class="pi-ci">${ico(ICO_PI[c.n] || 'target')}</span><span class="pi-cn">${c.n}</span><span class="pi-ct"><b>${esc(c.corto)}</b><small>${esc(c.ente)}</small></span><span class="pi-cm"><span class="pi-ring" style="--p:${c.hitos.length ? Math.round(100 * venc / c.hitos.length) : 0}"><b>${venc}/${c.hitos.length}</b></span><small>hitos vencidos</small></span><span class="pi-ca" aria-hidden="true">${on ? '−' : '+'}</span></button>
+            ${on ? `<div class="pi-d"><p class="pi-dn">${esc(c.nombre)}${c.aplica ? ` <span>· aplica a ${esc(c.aplica)}</span>` : ''}</p><div class="pi-dg">
+              <div><h4>${ico('target')} Indicadores</h4>${c.indicadores.map(([k, t]) => `<div class="pi-r"><b>${esc(k)}</b><span>${esc(t)}</span></div>`).join('')}</div>
+              <div><h4>${ico('calendar')} Hitos y plazos</h4><ol class="pi-hit">${c.hitos.map(([f, t]) => `<li class="${f < hoy ? 'ok' : ''}"><b>${fD(f)}</b><span>${esc(t)}</span></li>`).join('')}</ol></div>
+              <div><h4>${ico('check')} Cómo se verifica</h4><p>${esc(c.verif)}</p>${c.siaf && c.siaf.nota ? `<h4>${ico('bank')} Qué muestra el SIAF</h4><p>${esc(c.siaf.nota)}</p>` : ''}</div></div></div>` : ''}</article>`; }).join('')}</section>
+        <div class="pi-f"><a href="#/entidad" class="pi-cta">${ico('lock')}<span><b>Diagnóstico en vivo por meta</b><small>cruzado con el SIAF, en Mi entidad</small></span></a><span class="pi-src">Fuente: MEF, Programa de Incentivos ${PI.anio}. Herramienta de apoyo, no oficial.</span></div>
+      </div>`;
+      el.querySelectorAll('.pi-cb').forEach(b => b.onclick = () => { abierto = abierto === +b.dataset.n ? null : +b.dataset.n; pintar(); const t = el.querySelector(`.pi-cb[data-n="${b.dataset.n}"]`); if (t) { t.focus({ preventScroll: true }); if (abierto) t.closest('.pi-c').scrollIntoView({ block: 'nearest', behavior: RM ? 'auto' : 'smooth' }); } });
+      if (!RM && !el.dataset.animado) { el.dataset.animado = 1; el.querySelectorAll('.pi-c,.pi-cal').forEach((x, i) => x.animate && x.animate([{ opacity: 0, transform: 'translateY(8px)' }, { opacity: 1, transform: 'none' }], { duration: 480, delay: 80 + i * 60, easing: 'cubic-bezier(.2,.8,.2,1)', fill: 'backwards' })); }
+    };
+    pintar();
+  }
+  window.Incentivos = { render, resumen, PI, publico, atras: () => { if (abiertoN === null || !ultimo) return false; abiertoN = null; render(...ultimo); return true; } };
 })();

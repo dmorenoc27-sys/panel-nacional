@@ -248,12 +248,5 @@
   }
   function cerrar() { const el = document.getElementById('cn'); if (el) el.remove(); document.body.style.overflow = ''; }
   window.Conoce = { abrir, cerrar };
-  // ponytail: primera visita a la portada -> recorrido; luego solo desde "Conoce el panel" (menú) o el pie
-  addEventListener('load', () => {
-    let v = '1'; try { v = localStorage.getItem('conoce_visto'); } catch (e) { }
-    if (v || (location.hash && location.hash !== '#/' && location.hash !== '#')) return;
-    const listo = () => typeof R !== 'undefined' && R && R.pais && document.querySelector('#mapa path');
-    const esperar = n => (listo() || n > 12) ? abrir() : setTimeout(() => esperar(n + 1), 400);   // espera a que el panel cargue (max ~5 s) para usar cifras y mapa reales
-    esperar(0);
-  });
+  // la presentación ya no se abre sola: la portada presenta Acierta; se abre desde el menú "Conoce Acierta" o el pie
 })();
