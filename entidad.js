@@ -24,7 +24,10 @@
   }
 
   // ponytail: sesion recordada = {ue, k: llave derivada} en localStorage; nunca la clave. Una sesion vieja con clave en claro se borra. Si cambia la clave o el salt, el descifrado falla y se vuelve al formulario.
-  const SES = { get() { try { const s = JSON.parse(localStorage.getItem('ent_sesion') || 'null'); if (s && !s.k) { localStorage.removeItem('ent_sesion'); return null; } return s; } catch (e) { return null; } }, set(ue, k) { try { localStorage.setItem('ent_sesion', JSON.stringify({ ue, k })); } catch (e) { } }, clear() { try { localStorage.removeItem('ent_sesion'); } catch (e) { } } };
+  // "Mantener la sesión" -> localStorage (sobrevive al cierre del navegador); si no, sessionStorage (dura mientras la pestaña esté abierta, resiste F5)
+  const SES = { get() { for (const st of [localStorage, sessionStorage]) { try { const s = JSON.parse(st.getItem('ent_sesion') || 'null'); if (s && !s.k) { st.removeItem('ent_sesion'); continue; } if (s) return s; } catch (e) { } } return null; },
+    set(ue, k, rec) { const v = JSON.stringify({ ue: String(ue), k }); try { (rec ? localStorage : sessionStorage).setItem('ent_sesion', v); if (rec) sessionStorage.removeItem('ent_sesion'); } catch (e) { } },
+    clear() { try { localStorage.removeItem('ent_sesion'); sessionStorage.removeItem('ent_sesion'); } catch (e) { } } };
   function salir() { E = null; SES.clear(); login(); }
   async function login() {
     const el = $('ent'); let lista = [];
@@ -33,10 +36,10 @@
      <div style="padding:16px 18px"><p style="margin:0 0 10px;font-size:12.5px;color:var(--ink2)">Aquí la entidad ve lo que Transparencia no muestra: expediente por expediente, proveedor, documento, glosa y la fase en que está cada pago. La información es de la entidad: se publica cifrada y solo se abre con su clave.</p>
      ${lista.length ? `<label class="mutx" style="font-size:11px" for="ent-ue">Entidad</label><select id="ent-ue" style="width:100%;margin:4px 0 10px">${lista.map(x => `<option value="${x.ue}">${x.nombre || 'UE ' + x.ue} · ${x.publico ? 'datos MEF' : 'SIAF'} al ${x.corte || ''}</option>`).join('')}</select>` : '<p class="mutx">Aún no hay entidades publicadas.</p>'}
      <label class="mutx" style="font-size:11px" for="ent-clave">Clave de acceso</label><input type="password" id="ent-clave" style="width:100%;padding:8px 10px;border:1.5px solid var(--line);border-radius:8px;font:inherit;margin:4px 0 12px" placeholder="••••••••" autocomplete="current-password">
-     <label style="display:flex;gap:6px;align-items:center;font-size:12px;color:var(--ink2);margin:-4px 0 12px"><input type="checkbox" id="ent-rec"> Mantener la sesión abierta en este equipo (no lo marques en computadoras compartidas)</label>
+     <label style="display:flex;gap:6px;align-items:center;font-size:12px;color:var(--ink2);margin:-4px 0 12px"><input type="checkbox" id="ent-rec" checked> Mantener la sesión abierta en este equipo (desmárcalo en computadoras compartidas)</label>
      <div style="display:flex;gap:8px;align-items:center"><button class="btn p" id="ent-ir">Entrar</button><span class="mutx" id="ent-msg" style="font-size:12px"></span></div></div></div>`;
     const ir = async () => { const ue = $('ent-ue')?.value, clave = $('ent-clave').value, rec = $('ent-rec')?.checked; if (!ue || !clave) return; $('ent-msg').textContent = 'Descifrando…';
-      try { E = await descifrar(ue, clave); if (rec) SES.set(ue, ultimaLlave); await preparar(ue); tabE = 'inv'; abiertos.invLista = false; render(); } catch (e) { console.warn(e); $('ent-msg').textContent = 'Clave incorrecta o archivo no disponible.'; } };
+      try { E = await descifrar(ue, clave); SES.set(ue, ultimaLlave, !!rec); await preparar(ue); tabE = 'inv'; abiertos.invLista = false; render(); } catch (e) { console.warn(e); $('ent-msg').textContent = 'Clave incorrecta o archivo no disponible.'; } };
     $('ent-ir').onclick = ir; $('ent-clave').onkeydown = e => { if (e.key === 'Enter') ir(); }; $('ent-clave').focus();
   }
 
@@ -249,7 +252,9 @@
   // ponytail: total de beneficiarios = suma del campo "BENEFICIARIO" que trae el SSI por cada CUI (mismo shard cacheado que usa la ficha individual); se calcula una vez por entidad y se guarda aquí
   const benefCache = {};
   async function totalBeneficiarios(items, key) {
-    const res = await Promise.all(items.map(it => ssi(it.act_proy).catch(() => null)));
+    // ponytail: la ficha de la UE ya trae beneficiarios por CUI; solo se consulta el SSI para los que no lo traen, y como máximo 200 (Lima tiene miles)
+    const sin = items.filter(it => it.c?.beneficiarios == null).slice(0, 200);
+    const res = items.map(it => it.c?.beneficiarios != null ? { beneficiarios: it.c.beneficiarios } : null).filter(Boolean).concat(await Promise.all(sin.map(it => ssi(it.act_proy).catch(() => null))));
     const total = res.reduce((s, f) => Math.max(s, f?.beneficiarios || 0), 0), conDato = res.filter(f => f?.beneficiarios).length;   // C8: 'hasta X', no suma
     return benefCache[key] = { total, conDato };
   }
@@ -454,8 +459,9 @@
     // ---- ir al detalle: lista de enlaces, sin cajas ----
     const GO = [['pi', ...(opts.nivel === 'R' ? ['FED', 'Fondo de Estímulo al Desempeño', 'medal', '#7A5B12'] : opts.nivel === 'E' ? ['Metas', 'metas e indicadores', 'target', '#7A5B12'] : ['Plan de Incentivos', 'compromisos municipales', 'medal', '#7A5B12']), ''], ['sea', 'Contrataciones', 'procesos y contratos en el SEACE', 'doc', '#1E5AA8', ''], ['al', 'Alertas', 'lo que requiere decisión', 'siren', '#B42A2A', nAl ? N(nAl) : '']];
     if (opts.cierre) GO.push(['cierre', 'Cierre de gestión', 'transferencia 2026', 'building', '#0F2A43', '']);
+    if (opts.siaf) GO.unshift(['rep', 'Reportes SIAF', 'deuda a proveedores, velocidad de pago, contratos, reservas, cierre e ingresos', 'chart', '#0F2E57', '']);
     const mayores = items.filter(it => it.c.pim > 0).sort((a, b2) => (b2.c.pim || 0) - (a.c.pim || 0)).slice(0, 6);
-    const detalle = `<nav class="ri-go" aria-label="Ir al detalle"><div class="ri-goh">Ir al detalle</div>${GO.map(([id, t, d, ic, col, n]) => `<button type="button" class="ri-gob" data-go="${id}" style="--c:${col}"><span class="ri-goi">${ico(ic)}</span><span class="ri-got"><b>${t}</b><small>${d}</small></span>${n ? `<span class="ri-gon">${n}</span>` : ''}<span class="ri-goa" aria-hidden="true">›</span></button>`).join('')}</nav>`;
+    const detalle = `<nav class="ri-go" aria-label="Ir al detalle"><div class="ri-goh">Ir al detalle</div>${GO.map(([id, t, d, ic, col, n]) => `<button type="button" class="ri-gob${id === 'rep' ? ' ri-prem' : ''}" data-go="${id}" style="--c:${col}"><span class="ri-goi">${ico(ic)}</span><span class="ri-got"><b>${t}</b><small>${d}</small></span>${n ? `<span class="ri-gon">${n}</span>` : ''}<span class="ri-goa" aria-hidden="true">›</span></button>`).join('')}</nav>`;
     // ---- cartera de inversiones: tarjetas con filtro por estado, orden y búsqueda; cada tarjeta abre su ficha ----
     const ORD = { pim: ['PIM', (x, y) => (y.c.pim || 0) - (x.c.pim || 0)], dev: ['Devengado', (x, y) => (y.c.dev || 0) - (x.c.dev || 0)], fis: ['Avance físico', (x, y) => (y.c.avance_fisico ?? -1) - (x.c.avance_fisico ?? -1)], nom: ['Nombre', (x, y) => String(x.c.nombre || '').localeCompare(String(y.c.nombre || ''))] };
     let orden = 'pim', busca = '';
@@ -467,7 +473,7 @@
     const btnCadena = `<button type="button" class="ri-gob ri-cadb" data-cadena style="--c:#0F2A43"><span class="ri-goi">${ico('wallet')}</span><span class="ri-got"><b>Cadena del gasto</b><small>PIM ${FM(T.pim)} · devengado ${pct(T.dev)} %</small></span><span class="ri-goa" aria-hidden="true">›</span></button>`;
     b.innerHTML = `<div class="ri">
       <dialog class="gx-dlg" aria-label="Cadena del gasto ${ANIO}"><button type="button" class="ov-volver gx-cerrar" data-cadena-cerrar><span class="ov-fl" aria-hidden="true">←</span>Volver</button>${cadena}</dialog>
-      <div class="ri-mapa ri-cart"><div class="ri-mh"><span>${N(items.length)} inversiones en la cartera${estSel ? ` <small>· ${N(est[estSel].length)} ${ESTINV[estSel][0].toLowerCase()}</small>` : ''}</span>
+      <div class="ri-mapa ri-cart"><div class="ri-mh"><h2 class="ca-tit">Inversiones públicas <small>${N(items.length)} en la cartera${estSel ? ` · ${N(est[estSel].length)} ${ESTINV[estSel][0].toLowerCase()}` : ''}</small></h2>
           <span class="ca-tools"><label class="ca-busca">${ico('search')}<input type="search" placeholder="CUI o nombre…" aria-label="Buscar en la cartera"></label></span></div>
         ${filtroChips}<div class="ca-grid" id="ca-grid">${cartGrid()}</div></div>
       <aside class="ri-der">${btnCadena}${detalle}<button type="button" class="ri-ppt" data-ppt>${ico('download')}<span><b>Reporte PPT</b><small>presentación oficial a la fecha de corte</small></span></button></aside>
@@ -865,8 +871,8 @@
         const ueKey = E._ue.cod, bc = benefCache[ueKey];
         const nAl = (E.alertas?.dev_sin_girar?.length || 0) + (E.alertas?.comp_sin_devengar?.length || 0) + (E.alertas?.cert_sin_comp?.length || 0);
         resumenInversion(b, T, items, {
-          nivel: E._ue.nivel, fts, beneficiarios: bc, nAlertas: nAl, estSel: abiertos.invEstado, nombreFallback: nombreMeta, cierre: E._ue.nivel === 'M' || E._ue.nivel === 'R',
-          onNav: id => { tabE = id === 'cierre' ? 'cie' : id; render(); },
+          nivel: E._ue.nivel, fts, beneficiarios: bc, nAlertas: nAl, estSel: abiertos.invEstado, nombreFallback: nombreMeta, cierre: E._ue.nivel === 'M' || E._ue.nivel === 'R', siaf: !E.publico && !!window.ReportesSIAF,
+          onNav: id => { if (id === 'rep') { window.ReportesSIAF.abrir(E); return; } tabE = id === 'cierre' ? 'cie' : id; render(); },
           onEstSel: k => { abiertos.invEstado = k; cuerpo(); },
           onCuiGoto: cui => { abiertos.inv = cui; cuerpo(); },
           onKpi: (id, T2, extra) => {
@@ -966,8 +972,8 @@
     pila.pop(); [tabE, filtroMeta, modoInv, q] = pila[pila.length - 1].split('|'); modoInv = modoInv === 'true'; restaurando = true; render(); return true;
   }
   window.Entidad = { atras, abrir: async (ue) => {
-    if (E && (!ue || E.ue === ue)) { render(); return; }
+    if (E && (!ue || String(E.ue) === String(ue))) { render(); return; }   // mismo tipo: E.ue puede venir numérico y ue del hash como texto
     const s = SES.get();
-    if (s && (!ue || s.ue === ue)) { try { E = await descifrar(s.ue, null, s.k); await preparar(s.ue); tabE = 'inv'; abiertos.invLista = false; render(); return; } catch (e) { console.warn('sesion guardada invalida', e); SES.clear(); } }
+    if (s && (!ue || String(s.ue) === String(ue))) { try { E = await descifrar(s.ue, null, s.k); await preparar(s.ue); tabE = 'inv'; abiertos.invLista = false; render(); return; } catch (e) { console.warn('sesion guardada invalida', e); SES.clear(); } }
     await login(); if (ue && $('ent-ue')) $('ent-ue').value = ue; } };
 })();

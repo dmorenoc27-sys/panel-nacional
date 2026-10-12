@@ -38,7 +38,8 @@
   };
   const F = n => n == null ? '—' : 'S/ ' + Number(n).toLocaleString('es-PE', { maximumFractionDigits: 0 });
   let METAS = null, MCUR = null;   // metas por municipalidad (Anexo C del PI 2026, cuadros 2026_M_C1..C7 del MEF) -> Web/data/pi_metas.json
-  function cargarMetas(cb) { if (METAS) return; METAS = {}; fetch('data/pi_metas.json').then(r => r.json()).then(j => { METAS = j; cb && cb(); }).catch(() => { }); }
+  const fetchMetas = () => fetch('pi/pi_metas.json').then(r => { if (!r.ok) throw 0; return r.json(); }).catch(() => fetch('data/pi_metas.json').then(r => r.json()));
+  function cargarMetas(cb) { if (METAS) return; METAS = {}; fetchMetas().then(j => { METAS = j; cb && cb(); }).catch(() => { }); }
   function metasDe(ue) { const ux = (typeof UES !== 'undefined' ? UES : []).find(u => u.cod === ue); return ux && METAS && METAS[ux.dist] || null; }
   const aplicaA = (c, S, m) => S['aplica' + c.n] !== undefined ? S['aplica' + c.n] : m ? !!m['c' + c.n] : true;
   const st = { get(ue) { try { return JSON.parse(localStorage.getItem('pi_' + ue) || '{}'); } catch (e) { return {}; } }, set(ue, v) { try { localStorage.setItem('pi_' + ue, JSON.stringify(v)); } catch (e) { } } };
@@ -188,8 +189,89 @@
   const COL_PI = { 1: '#B42A2A', 2: '#7A5B12', 3: '#1E5AA8', 4: '#0F6E8C', 5: '#0F2A43', 6: '#2F69B3', 7: '#147A45' };
   const esc = v => String(v == null ? '' : v).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
   const fD = f => { const [y, m, d] = String(f).split('-'); return d ? `${d}/${m}/${y}` : f; };
+  // ---- Plan de Incentivos de UNA municipalidad: su tipo, las metas que le tocan, qué debe lograr, cómo va con los datos públicos y qué hacer ----
+  // Aplicabilidad por tipo (DS 003-2026-EF, art. 5 y Anexo): 'si' = le corresponde por su tipo; 'lista' = depende de la lista nominal del MEF
+  // (distritos priorizados, 501 RIS, 580 seguridad, 252 vial, 107 trámites); 'no' = no le corresponde por su tipo. pi_metas.json (Anexo C) manda si existe.
+  const APL = { 1: { A:'lista',B:'lista',C:'lista',D:'lista',E:'lista',F:'lista',G:'lista' }, 2: { A:'si',B:'si',C:'si',D:'si',E:'si',F:'si',G:'si' },
+    3: { A:'lista',B:'lista',C:'lista',D:'lista',E:'lista',F:'lista',G:'lista' }, 4: { A:'no',B:'lista',C:'no',D:'lista',E:'si',F:'si',G:'si' },
+    5: { A:'si',B:'si',C:'si',D:'si',E:'lista',F:'no',G:'no' }, 6: { A:'lista',B:'lista',C:'lista',D:'lista',E:'no',F:'no',G:'no' }, 7: { A:'lista',B:'lista',C:'no',D:'no',E:'no',F:'no',G:'no' } };
+  // función presupuestal del gasto asociado a cada meta (señal pública: Consulta Amigable por función), y qué significa
+  const FUN = { 1: ['SALUD', 'salud (visitas domiciliarias, sesiones demostrativas)'], 4: ['SANEAMIENTO', 'saneamiento (agua rural, producto 3000882)'], 5: ['ORDEN PUBLICO Y SEGURIDAD', 'orden público y seguridad (patrullaje, serenazgo, cámaras)'], 6: ['TRANSPORTE', 'transporte (señalización, reductores, espacios peatonales)'] };
+  const LISTA = { 1: 'los 1,059 distritos priorizados por el MINSA', 3: 'las 501 municipalidades convocadas por el MIDIS', 4: 'las 1,654 municipalidades con sistemas de agua rural (PNSR)', 5: 'los 580 gobiernos locales convocados por el MININTER', 6: 'los 252 gobiernos locales convocados por el MTC', 7: 'las 107 municipalidades convocadas por la PCM' };
+  const PIT = { A:'provincial de ciudad principal', B:'provincial no perteneciente a ciudad principal', C:'distrital de Lima Metropolitana', D:'distrital de otra ciudad principal', E:'distrital, más de 70 % de población urbana', F:'distrital, 35–70 % de población urbana', G:'distrital, menos de 35 % de población urbana' };
+  const Pm = n => 'S/ ' + (Math.abs(n) >= 1e6 ? (n / 1e6).toFixed(1) + ' M' : Math.round(n).toLocaleString('es-PE'));
+  let IPV = null; const cargarIpinv = cb => { if (IPV) return cb(); fetch('data/ipinv.json').then(r => r.json()).then(j => { IPV = j; cb(); }).catch(() => { IPV = {}; cb(); }); };
+  function municipal(el, ux, U, opts) {
+    const hoy = new Date().toISOString().slice(0, 10), mes = new Date().getMonth() + 1, esp = Math.round(100 * mes / 12);
+    const ico = n => window.Ico ? Ico(n) : '', RM = matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const m = metasDe(ux.cod), tp = (m && m.tipo) || ux.pi || '', ip = IPV && IPV[ux.cod];   // el Anexo C manda sobre ues.json
+    const fun = n => (U && U.funciones || []).find(f => (f.nombre || '').toUpperCase().replace(/Ú/g, 'U') === n);
+    const cuis = (U && U.cuis || []).filter(c => c.estado === 'ACTIVO' && !/IRI|PROGRAMA/.test(c.tipo || ''));
+    // --- meta de inversiones (Ley 32513, art. 36): siempre, con el indicador que le toca por tipo ---
+    const inv = (() => {
+      if (!ip) return null; const nom = (typeof IPN !== 'undefined' && IPN[ip.i]) ? IPN[ip.i][0] : 'indicador ' + ip.i;
+      const k = ip.p ? (ip.ok ? 'ok' : ip.p <= Math.ceil(0.6 * ip.n) ? 'warn' : 'bad') : 'p';
+      const eleg = cuis.filter(c => c.pim > 0 && (c.f8 === 'SI' || c.et_fecha)).map(c => ({ c, av: 100 * (c.dev || 0) / c.pim, saldo: c.pim - (c.dev || 0) })).sort((a, b) => b.saldo - a.saldo);
+      const peor = eleg.filter(x => x.av < (ip.c40 || 50)).slice(0, 3);
+      const sug = !ip.p ? (ip.i === 5 ? 'El MEF mide este indicador en el Banco de Inversiones: mantén al día el PMI, el F12-B de cada mes, el F8 al cerrar expedientes y el F9 al culminar.' : 'Sin inversiones elegibles: registra el expediente técnico (F8) de las inversiones con PIM para que cuenten.')
+        : ip.ok ? `Hoy está en el puesto ${ip.p} de ${ip.n}: dentro del 40 % que cobra. Sostén el ritmo de devengado mes a mes; la medición final es al 31 de diciembre.`
+        : `Debe subir de ${ip.v.toFixed(1)} % a ${ip.c40.toFixed(1)} % para entrar al 40 % superior (puesto ${ip.p} de ${ip.n}). ${peor.length ? 'Dónde está el saldo: ' + peor.map(x => `CUI ${x.c.cui} (${x.av.toFixed(0)} % ejecutado, ${Pm(x.saldo)} por devengar)`).join(' · ') + '.' : ''}`;
+      return { k, titulo: 'Ejecución de inversiones', sub: `Ley 32513, art. 36 · indicador ${ip.i} para el tipo ${ip.t}`, meta: `${nom}: estar en el 40 % superior de las municipalidades tipo ${ip.t} al 31 de diciembre`, va: ip.v != null ? `${ip.v.toFixed(1)} %${ip.p ? ` · puesto ${ip.p} de ${ip.n} · corte del 40 %: ${ip.c40.toFixed(1)} %` : ''}` : 'sin medición', pct: ip.v, sug, ico: 'trend', col: '#0F2A43' };
+    })();
+    // --- las 7 metas del Programa de Incentivos ---
+    const metas = PI.compromisos.map(c => {
+      const ap = m ? (m['c' + c.n] ? 'si' : 'no') : (APL[c.n][tp] || 'lista');   // con Anexo C (pi_metas.json) la lista nominal manda
+      if (ap === 'no') return null;
+      const venc = c.hitos.filter(([f]) => f < hoy), prox = c.hitos.find(([f]) => f >= hoy);
+      const mc = m && m['c' + c.n] && typeof m['c' + c.n] === 'object' ? m['c' + c.n] : null;
+      let ind = c.indicadores; if (mc) ind = ind.filter(([k]) => mc[k] != null); else if (c.n === 2) ind = ind.filter(([k]) => k === '2.1' ? 'ABCDE'.includes(tp) : 'EFG'.includes(tp)); if (!ind.length) ind = c.indicadores;
+      const um = '';
+      let k = 'p', va = '', sug = '', pct = null;
+      const f = FUN[c.n] && fun(FUN[c.n][0]);
+      if (f && f.pim) { pct = 100 * (f.dev || 0) / f.pim; const nc = cuis.filter(x => (x.funcion || '').toUpperCase().replace(/Ú/g, 'U') === FUN[c.n][0]).length;
+        va = `Gasto en ${FUN[c.n][1]}: ${Pm(f.dev || 0)} devengados de ${Pm(f.pim)} (${pct.toFixed(1)} %)${nc ? ` · ${nc} inversión(es) activa(s)` : ''}`;
+        k = pct >= esp - 15 ? 'ok' : pct >= esp - 40 ? 'warn' : 'bad'; }
+      else if (FUN[c.n]) { va = `Sin presupuesto en la función ${FUN[c.n][0].toLowerCase()} este año.`; k = 'bad'; }
+      else if (c.n === 2) { va = 'La recaudación del predial la mide el MEF en el SIAF; aquí no es pública. Con la clave de Mi entidad se ve la recaudación mes a mes y la proyección a diciembre.'; k = 'p'; }
+      else va = 'Se verifica en las plataformas del sector, no en el presupuesto.';
+      if (venc.length && k !== 'bad') k = k === 'ok' ? 'warn' : k;
+      // sugerencia: siempre concreta, con plazo y con lo que exige la ficha técnica
+      const S = {
+        1: `Registra en el Padrón Nominal y en el aplicativo de visitas cada visita domiciliaria a niños de 4 a 12 meses; la meta se mide por niños de 6 y 12 meses sin anemia (HIS-MINSA). ${pct != null && pct < 25 ? 'El gasto en salud está casi sin ejecutar: habilita presupuesto para actores sociales y sesiones demostrativas (PP 0001).' : pct != null && pct < esp - 15 ? 'El gasto en salud va por debajo del ritmo del año: asegura el pago de actores sociales y las sesiones demostrativas (PP 0001).' : ''}`,
+        2: 'ABCDE'.includes(tp) ? 'Indicador 2.1: efectividad de recaudación del predial corriente. Emite las cuotas en enero, notifica antes de cada vencimiento (feb, may, ago, nov) y registra emisión y cobranza en SISREPRE; el MEF toma la recaudación del SIAF del 1 de enero al 31 de diciembre.' : 'Indicador 2.2: recaudar en 2026 más que en 2025. Actualiza el padrón de predios, emite las cuatro cuotas y registra la cobranza en SISREPRE; el MEF compara la recaudación 2026 contra 2025 en el SIAF.',
+        3: 'Mantén operativa la Unidad Local de Empadronamiento: aplica fichas S100, envía los expedientes a OFIS y asiste a los talleres (feb–oct). El corte de clasificación socioeconómica vigente es el 28 de diciembre.',
+        4: `Ficha 4.1: certificar 80 % y devengar 60 % del producto 3000882 al 30 de setiembre, y devengar 80 % al 18 de diciembre (sobre el PIM al 31 de julio); además, cloro residual mensual y operador seleccionado en cada sistema. ${pct != null && pct < 60 ? 'El devengado en saneamiento va por debajo del 60 %: prioriza las órdenes de compra de cloro y el pago de operadores.' : ''}`,
+        5: 'Registra el patrullaje municipal e integrado todos los días en SIPCOP-M (≥ 75 % válido, ≥ 50 % de días con patrullaje integrado, km mínimos) y mantén las cámaras interconectadas con la PNP. El gasto en seguridad (PP 0030) es la señal de que hay combustible, serenos y cámaras.',
+        6: `Acción 3 hasta el 13 de noviembre: demarcación, señalización, reductores y espacios peatonales en las zonas escolares, intersecciones y establecimientos de salud seleccionados. Sube fotos y videos a la Plataforma de Seguridad Vial. ${pct != null && pct < 50 ? 'El gasto en transporte va lento: la ejecución debe verse como devengado antes de esa fecha.' : ''}`,
+        7: 'Elimina barreras burocráticas de forma voluntaria ante INDECOPI (hasta el 31 de octubre), aprueba y publica el TUPA estandarizado y pon en operación el Sistema de Gestión Documental antes del 31 de diciembre.'
+      };
+      sug = S[c.n] + (prox ? ` Próximo plazo: ${fD(prox[0])}, ${prox[1].charAt(0).toLowerCase() + prox[1].slice(1)}.` : '');
+      return { n: c.n, k, ap, titulo: c.corto, sub: c.ente, meta: ind.map(([a, t]) => `${a} ${t}` + (mc && Array.isArray(mc[a]) ? ` → su meta: umbral mínimo ${mc[a][0]} %, meta máxima ${mc[a][1]} %` : '')).join(' · '), va, pct, sug, ico: ICO_PI[c.n], col: COL_PI[c.n], venc: venc.length, tot: c.hitos.length, verif: c.verif, hitos: c.hitos, prox };
+    }).filter(Boolean);
+    const noAp = PI.compromisos.filter(c => !metas.find(x => x.n === c.n));
+    const todas = [inv, ...metas].filter(Boolean), nOk = todas.filter(x => x.k === 'ok').length, nMal = todas.filter(x => x.k === 'bad').length;
+    const SEM = { ok: 'En camino', warn: 'Con riesgo', bad: 'Atrasada', p: 'Sin medición pública' };
+    const cal = PI.calendario, prox = cal.find(([f]) => f >= hoy);
+    el.innerHTML = `<div class="pi pm">
+      <header class="pi-h pm-h"><div><div class="pi-k">Plan de Incentivos ${PI.anio} · ${esc(PI.norma)}</div><h2>${esc(ux.nombre)}</h2>
+        <p>${tp ? `<span class="pm-tipo">Tipo ${esc(tp)}</span> Municipalidad ${esc(PIT[tp] || '')}` : 'Tipo de municipalidad no registrado en la clasificación del MEF'} · ${todas.length} meta${todas.length === 1 ? '' : 's'} que le corresponden${m ? ' (Anexo C del MEF)' : ''} · ${nOk} en camino, ${nMal} atrasada${nMal === 1 ? '' : 's'}</p></div>
+        <div class="pi-cal"><div class="pi-calh">Calendario del MEF${prox ? ` <small>· faltan ${Math.round((new Date(prox[0]) - new Date(hoy)) / 864e5)} días para ${prox[1].toLowerCase()}</small>` : ''}</div>
+          <ol class="pm-cal">${cal.map(([f, t]) => `<li class="${f <= hoy ? 'ok' : ''}"><b>${fD(f)}</b><span>${esc(t)}</span></li>`).join('')}</ol></div></header>
+      <section class="pm-g" aria-label="Metas de la municipalidad">${todas.map(x => `<article class="pm-c ${x.k}" style="--c:${x.col}">
+        <div class="pm-ch"><span class="pm-ci">${ico(x.ico)}</span><div class="pm-ct"><b>${x.n ? x.n + '. ' : ''}${esc(x.titulo)}</b><small>${esc(x.sub)}${x.ap === 'lista' ? ` · <em>solo si figura en ${esc(LISTA[x.n] || 'la lista del MEF')}</em>` : ''}</small></div><span class="pm-sem ${x.k}">${SEM[x.k]}</span></div>
+        <div class="pm-r"><span class="pm-l">${ico('target')}Qué debe lograr</span><p>${esc(x.meta)}</p></div>
+        <div class="pm-r"><span class="pm-l">${ico('chart')}Cómo va</span><p>${esc(x.va)}${x.pct != null ? `<span class="pm-bar" title="esperado a esta altura del año: ${esp} %"><i style="width:${Math.min(100, x.pct).toFixed(1)}%"></i><b style="left:${esp}%"></b></span>` : ''}${x.tot ? `<small class="pm-hv">${x.venc} de ${x.tot} plazos ya vencieron · verifícalos en ${esc(x.verif)}</small>` : ''}</p></div>
+        <div class="pm-r pm-s"><span class="pm-l">${ico('spark')}Qué hacer</span><p>${esc(x.sug)}</p></div></article>`).join('')}</section>
+      ${noAp.length ? `<p class="pm-no">${m ? 'No le corresponden según el Anexo C del MEF' : 'No le corresponden por su tipo'}: ${noAp.map(c => `${c.n}. ${esc(c.corto)}`).join(' · ')}.</p>` : ''}
+      <div class="pi-f"><a href="#/entidad" class="pi-cta">${ico('lock')}<span><b>Diagnóstico en vivo con el SIAF</b><small>recaudación del predial, producto 3000882 y programas 0001, 0030 y 0138, en Mi entidad</small></span></a><span class="pi-src">Fuente: MEF (DS 003-2026-EF, RD 0003-2026-EF/50.01, fichas técnicas), Consulta Amigable y Banco de Inversiones. Herramienta de apoyo, no oficial.</span></div>
+    </div>`;
+    if (!RM && !el.dataset.animado) { el.dataset.animado = 1; el.querySelectorAll('.pm-c,.pi-cal').forEach((x, i) => x.animate && x.animate([{ opacity: 0, transform: 'translateY(8px)' }, { opacity: 1, transform: 'none' }], { duration: 480, delay: 80 + i * 60, easing: 'cubic-bezier(.2,.8,.2,1)', fill: 'backwards' })); }
+  }
   function publico(el, opts) {
-    opts = opts || {}; const hoy = new Date().toISOString().slice(0, 10); let abierto = null;
+    opts = opts || {};
+    const ux = opts.ue && (typeof UES !== 'undefined' ? UES : []).find(u => u.cod === opts.ue);
+    if (ux && ux.nivel === 'M') { const U_ = (typeof U !== 'undefined' && U && U.cod === ux.cod) ? U : null; const go = () => cargarIpinv(() => municipal(el, ux, U_, opts)); if (METAS) go(); else { METAS = {}; fetchMetas().then(j => { METAS = j; }).catch(() => { }).finally(go); } return; }
+    const hoy = new Date().toISOString().slice(0, 10); let abierto = null;
     const ico = n => window.Ico ? Ico(n) : '';
     const RM = matchMedia('(prefers-reduced-motion: reduce)').matches;
     const pintar = () => {
