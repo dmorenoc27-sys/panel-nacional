@@ -6,15 +6,15 @@
   const MESES = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Setiembre', 'Octubre', 'Noviembre', 'Diciembre'];
   const ABR = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Set', 'Oct', 'Nov', 'Dic'];
   const NAVY = '0F2A43', AZUL = '1E5AA8', ORO = 'B8860B', GRIS = '5B6B7B', ROJO = 'B42A2A', VERDE = '0F6E4F', CLARO = 'EAF1FB', FONDO = 'F6F8FB';
-  const EXCELJS = { src: 'https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.4.0/exceljs.min.js', sri: 'sha384-Pqp51FUN2/qzfxZxBCtF0stpc9ONI6MYZpVqmo8m20SoaQCzf+arZvACkLkirlPz' };
-  const PPTX = { src: 'https://cdn.jsdelivr.net/npm/pptxgenjs@3.12.0/dist/pptxgen.bundle.js', sri: 'sha384-Cck14aA9cifjYolcnjebXRfWGkz5ltHMBiG4px/j8GS+xQcb7OhNQWZYyWjQ+UwQ' };
+  const EXCELJS = { src: 'https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.4.0/exceljs.min.js', integrity: 'sha384-Pqp51FUN2/qzfxZxBCtF0stpc9ONI6MYZpVqmo8m20SoaQCzf+arZvACkLkirlPz' };
+  const PPTX = { src: 'https://cdn.jsdelivr.net/npm/pptxgenjs@3.12.0/dist/pptxgen.bundle.js', integrity: 'sha384-Cck14aA9cifjYolcnjebXRfWGkz5ltHMBiG4px/j8GS+xQcb7OhNQWZYyWjQ+UwQ' };
   const S = v => (v || 0).toLocaleString('es-PE', { maximumFractionDigits: 0 });
   const M = v => (Math.abs(v || 0) >= 1e6 ? (v / 1e6).toLocaleString('es-PE', { maximumFractionDigits: 1 }) + ' M' : (Math.abs(v || 0) >= 1e3 ? (v / 1e3).toLocaleString('es-PE', { maximumFractionDigits: 0 }) + ' mil' : S(v)));
   const titulo = s => String(s || '').toLowerCase().replace(/(^|\s)\S/g, c => c.toUpperCase()).replace(/\s(De|Del|Y|La|Los|Las|El)\s/g, m => m.toLowerCase());
   const fDMY = s => { const m = String(s || '').match(/^(\d{4})-(\d{2})-(\d{2})/); return m ? `${m[3]}/${m[2]}/${m[1]}` : String(s || ''); };
   const ahora = () => { const d = new Date(), p = n => String(n).padStart(2, '0'); return { txt: `${p(d.getDate())}/${p(d.getMonth() + 1)}/${d.getFullYear()} ${p(d.getHours())}:${p(d.getMinutes())}`, tag: `${d.getFullYear()}${p(d.getMonth() + 1)}${p(d.getDate())}_${p(d.getHours())}${p(d.getMinutes())}` }; };
 
-  function lib(l, test) { return test() ? Promise.resolve() : new Promise((ok, err) => { const s = document.createElement('script'); s.src = l.src; s.integrity = l.sri; s.crossOrigin = 'anonymous'; s.onload = ok; s.onerror = () => err(new Error('No se pudo cargar la biblioteca')); document.head.appendChild(s); }); }
+  function lib(l, test) { return test() ? Promise.resolve() : new Promise((ok, err) => { const s = document.createElement('script'); s.src = l.src; s.integrity = l.integrity; s.crossOrigin = 'anonymous'; s.onload = ok; s.onerror = () => err(new Error('No se pudo cargar la biblioteca')); document.head.appendChild(s); }); }
   async function jgz(u) { const r = await fetch(u, { cache: 'no-cache' }); if (!r.ok) throw new Error(u); if (!window.DecompressionStream) throw new Error('Este navegador no puede abrir el archivo; usa Chrome o Edge actualizados'); return JSON.parse(await new Response(r.body.pipeThrough(new DecompressionStream('gzip'))).text()); }
   const CACHE = {};
   async function datos(ue) {
