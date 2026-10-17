@@ -25,10 +25,12 @@
 
   // ponytail: sesion recordada = {ue, k: llave derivada} en localStorage; nunca la clave. Una sesion vieja con clave en claro se borra. Si cambia la clave o el salt, el descifrado falla y se vuelve al formulario.
   // "Mantener la sesión" -> localStorage (sobrevive al cierre del navegador); si no, sessionStorage (dura mientras la pestaña esté abierta, resiste F5)
-  const SES = { get() { for (const st of [localStorage, sessionStorage]) { try { const s = JSON.parse(st.getItem('ent_sesion') || 'null'); if (s && !s.k) { st.removeItem('ent_sesion'); continue; } if (s) return s; } catch (e) { } } return null; },
-    set(ue, k, rec) { const v = JSON.stringify({ ue: String(ue), k }); try { (rec ? localStorage : sessionStorage).setItem('ent_sesion', v); if (rec) sessionStorage.removeItem('ent_sesion'); } catch (e) { } },
+  // seguridad 14/10/2026: la sesión recordada caduca a los 30 días (y se renueva al usarla); así una llave olvidada en un equipo compartido no dura para siempre
+  const SES_DIAS = 30;
+  const SES = { get() { for (const st of [localStorage, sessionStorage]) { try { const s = JSON.parse(st.getItem('ent_sesion') || 'null'); if (s && (!s.k || (s.exp && Date.now() > s.exp))) { st.removeItem('ent_sesion'); continue; } if (s) { if (s.exp) { s.exp = Date.now() + SES_DIAS * 864e5; st.setItem('ent_sesion', JSON.stringify(s)); } return s; } } catch (e) { } } return null; },
+    set(ue, k, rec) { const v = JSON.stringify({ ue: String(ue), k, exp: Date.now() + SES_DIAS * 864e5 }); try { (rec ? localStorage : sessionStorage).setItem('ent_sesion', v); if (rec) sessionStorage.removeItem('ent_sesion'); } catch (e) { } },
     clear() { try { localStorage.removeItem('ent_sesion'); sessionStorage.removeItem('ent_sesion'); } catch (e) { } } };
-  function salir() { E = null; SES.clear(); login(); }
+  function salir() { E = null; ultimaLlave = null; META = {}; LAKE = {}; SES.clear(); login(); }
   async function login() {
     const el = $('ent'); let lista = [];
     try { lista = await j('data/entidad/index.json'); } catch (e) { }
