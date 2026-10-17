@@ -920,3 +920,12 @@ body.portada .brand{position:absolute;width:0;height:0;overflow:hidden;padding:0
 .cal-leg{font-size:11px;color:var(--mut);text-align:right}
 .corte-aviso{display:flex;align-items:center;gap:10px;margin:0 0 12px;padding:9px 14px;border-radius:12px;background:#FFF6DF;border:1px solid #F2DDA6;color:#5A3D00;font-size:13px}.corte-aviso .ico{width:18px;height:18px;color:#8A5A00;flex:none}.corte-aviso b{font-weight:800}.corte-aviso button{margin-left:auto;all:unset;cursor:pointer;font-weight:700;color:var(--p);padding:4px 8px;border-radius:6px}.corte-aviso button:hover{background:rgba(255,255,255,.7)}
 @media(max-width:900px){.corte-btn{width:auto}.corte-btn small{display:none}.cal{width:min(312px,calc(100vw - 16px))}}
+
+/* flujo de caja proyectado (Excel / PPT) bajo el Reporte PPT, 17/10/2026 */
+.ri-flujo{display:flex;flex-direction:column;gap:8px;padding:10px 12px;border-radius:14px;background:#fff;box-shadow:0 0 0 1px rgba(15,42,67,.07),0 1px 2px rgba(15,42,67,.06),0 6px 16px -10px rgba(15,42,67,.25)}
+.ri-fh{display:flex;align-items:center;gap:10px}.ri-fh .ico{width:22px;height:22px;color:var(--navy);flex:none}.ri-fh span{display:flex;flex-direction:column;min-width:0}
+.ri-fh b{font-family:var(--f-display);font-weight:500;font-size:var(--t-4);color:var(--navy)}.ri-fh small{font-size:var(--t-1);color:var(--mut);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ri-fb{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.ri-fbtn{all:unset;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;padding:8px 10px;border-radius:10px;font-weight:700;font-size:var(--t-2);color:var(--navy);background:var(--p-t1,#EAF1FB);border:1px solid var(--p-t3,#C9D9EE);transition:transform .22s var(--ease),box-shadow .22s var(--ease),background .22s}
+.ri-fbtn .ico{width:16px;height:16px;color:var(--oro,#B8860B)}.ri-fbtn:hover{transform:translateY(-1px);background:#fff;box-shadow:0 10px 20px -12px rgba(15,42,67,.5)}.ri-fbtn:active{transform:scale(.98)}.ri-fbtn:disabled{opacity:.6;cursor:progress}
+.ri-fbtn:focus-visible{outline:2px solid var(--ambar);outline-offset:2px}.ri-fw{font-weight:600}
