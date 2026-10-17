@@ -191,15 +191,21 @@
       calendar: '<rect x="3.5" y="5" width="17" height="15" rx="2"/><path d="M3.5 10h17M8 3v4M16 3v4"/>', bank: '<path d="M3 10l9-6 9 6"/><path d="M5 10v8M9.5 10v8M14.5 10v8M19 10v8"/><path d="M3 20h18"/>',
       people: '<circle cx="9" cy="8" r="3"/><circle cx="17" cy="9" r="2.5"/><path d="M3 20c0-3.5 2.7-6 6-6s6 2.5 6 6"/><path d="M15.5 14.5c2.8 0 5.5 2 5.5 5.5"/>',
       link: '<path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1.5 1.5"/><path d="M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1.5-1.5"/>', clock: '<circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/>' };
-    const svg64 = s => 'image/svg+xml;base64,' + btoa(unescape(encodeURIComponent(s)));
-    const icono = n => svg64(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">${ICO[n]}</svg>`);
-    const fondo = (s, c1, c2) => s.addImage({ data: svg64(`<svg xmlns="http://www.w3.org/2000/svg" width="1333" height="750"><defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#${c1}"/><stop offset="1" stop-color="#${c2}"/></linearGradient><radialGradient id="r" cx="0.82" cy="0.25" r="0.5"><stop offset="0" stop-color="#C9A227" stop-opacity="0.22"/><stop offset="1" stop-color="#C9A227" stop-opacity="0"/></radialGradient></defs><rect width="1333" height="750" fill="url(#g)"/><rect width="1333" height="750" fill="url(#r)"/></svg>`), x: 0, y: 0, w: W, h: H });
+    // los SVG se rasterizan a PNG en el navegador (canvas): PptxGenJS en el navegador no logra la vista previa PNG de un SVG y aborta la descarga
+    const svgData = t => 'data:image/svg+xml;base64,' + btoa(unescape(encodeURIComponent(t)));
+    const png = (svg, w, h) => new Promise((ok, no) => { const im = new Image(); im.onload = () => { const c = document.createElement('canvas'); c.width = w; c.height = h; c.getContext('2d').drawImage(im, 0, 0, w, h); ok(c.toDataURL('image/png').replace(/^data:/, '')); }; im.onerror = () => no(new Error('svg')); im.src = svgData(svg); });
+    const svgIco = n => `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">${ICO[n]}</svg>`;
+    const svgFondo = (c1, c2) => `<svg xmlns="http://www.w3.org/2000/svg" width="1333" height="750"><defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#${c1}"/><stop offset="1" stop-color="#${c2}"/></linearGradient><radialGradient id="r" cx="0.82" cy="0.25" r="0.5"><stop offset="0" stop-color="#C9A227" stop-opacity="0.22"/><stop offset="1" stop-color="#C9A227" stop-opacity="0"/></radialGradient></defs><rect width="1333" height="750" fill="url(#g)"/><rect width="1333" height="750" fill="url(#r)"/></svg>`;
+    const IMG = {};
+    await Promise.all([...Object.keys(ICO).map(async n => { IMG[n] = await png(svgIco(n), 256, 256); }), (async () => { IMG.f1 = await png(svgFondo('0F2A43', '163A5C'), 1333, 750); IMG.f2 = await png(svgFondo('163A5C', '0F2A43'), 1333, 750); })()]);
+    const icono = n => IMG[n];
+    const fondo = (s, f) => s.addImage({ data: IMG[f], x: 0, y: 0, w: W, h: H });
     const circulo = (s, x, y, dia, color, glifo, gc) => { if (ICO[glifo]) { s.addShape(P.ShapeType.ellipse, { x, y, w: dia, h: dia, fill: { color }, line: { color, width: 0 } }); s.addImage({ data: icono(glifo), x: x + dia * 0.24, y: y + dia * 0.24, w: dia * 0.52, h: dia * 0.52 }); return; } s.addShape(P.ShapeType.ellipse, { x, y, w: dia, h: dia, fill: { color }, line: { color, width: 0 } }); if (glifo) s.addText(glifo, { x, y, w: dia, h: dia, fontFace: FB, fontSize: Math.round(dia * 22), bold: true, color: gc || 'FFFFFF', align: 'center', valign: 'middle', margin: 0, isTextBox: true }); };
     const tarjeta = (s, x, y, w, h, fill) => s.addShape(P.ShapeType.roundRect, { x, y, w, h, fill: { color: fill || 'FFFFFF' }, line: { color: BORDE, width: 0.75 }, rectRadius: 0.12, shadow: sombra() });
     const dinero = v => 'S/ ' + M(v);
 
     // 1 · PORTADA (oscura): el dato que importa ya está en la primera lámina
-    let s = P.addSlide(); nSlide++; s.background = { color: NAVY }; fondo(s, '0F2A43', '163A5C');
+    let s = P.addSlide(); nSlide++; s.background = { color: NAVY }; fondo(s, 'f1');
     s.addText('ACIERTA', { x: 0.8, y: 0.6, w: 4, h: 0.5, fontFace: FB, fontSize: 18, bold: true, color: 'FFFFFF', charSpacing: 10, margin: 0, isTextBox: true });
     s.addText('Flujo de caja proyectado', { x: 0.8, y: 1.9, w: 7.8, h: 1.3, fontFace: FH, fontSize: 48, bold: true, color: 'FFFFFF', margin: 0, isTextBox: true });
     s.addText(nom, { x: 0.8, y: 3.25, w: 7.8, h: 1.0, fontFace: FB, fontSize: 26, color: 'E9C46A', fit: 'shrink', margin: 0, isTextBox: true });
@@ -297,7 +303,7 @@
     s.addText([{ text: 'Sugerencias, no decisiones oficiales. ', options: { bold: true, color: '8A5A00' } }, { text: 'Este análisis se elaboró con apoyo de inteligencia artificial sobre datos públicos y puede contener errores u omisiones. Es un insumo de trabajo: cada sugerencia se revisa y valida con el área competente de la entidad antes de adoptarla.', options: { color: '6B4E00' } }], { x: 0.8, y: 6.17, w: W - 1.6, h: 0.68, fontFace: FB, fontSize: 12, margin: 0, isTextBox: true, valign: 'middle' });
 
     // 8 · CIERRE (oscuro)
-    s = P.addSlide(); nSlide++; s.background = { color: NAVY }; fondo(s, '163A5C', '0F2A43');
+    s = P.addSlide(); nSlide++; s.background = { color: NAVY }; fondo(s, 'f2');
     s.addText('Decidir con datos, cada mañana.', { x: 0.8, y: 2.3, w: 11.5, h: 1.0, fontFace: FH, fontSize: 40, bold: true, color: 'FFFFFF', margin: 0, isTextBox: true });
     s.addText('El flujo de caja se recalcula cada día con la publicación del MEF. Este archivo corresponde al corte del ' + gen.txt + '; descarga uno nuevo desde la ficha de la entidad en acierta.pe.', { x: 0.8, y: 3.4, w: 11.0, h: 1.2, fontFace: FB, fontSize: 18, color: 'C9D6E5', margin: 0, isTextBox: true });
     s.addText('acierta.pe  ·  ARKA PROYECTOS', { x: 0.8, y: 5.4, w: 11.5, h: 0.5, fontFace: FB, fontSize: 16, bold: true, color: 'E9C46A', margin: 0, isTextBox: true });
