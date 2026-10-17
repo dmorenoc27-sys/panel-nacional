@@ -461,6 +461,7 @@
     // ---- ir al detalle: lista de enlaces, sin cajas ----
     const GO = [['pi', ...(opts.nivel === 'R' ? ['FED', 'Fondo de Estímulo al Desempeño', 'medal', '#7A5B12'] : opts.nivel === 'E' ? ['Metas', 'metas e indicadores', 'target', '#7A5B12'] : ['Plan de Incentivos', 'compromisos municipales', 'medal', '#7A5B12']), ''], ['sea', 'Contrataciones', 'procesos y contratos en el SEACE', 'doc', '#1E5AA8', ''], ['al', 'Alertas', 'lo que requiere decisión', 'siren', '#B42A2A', nAl ? N(nAl) : '']];
     if (opts.cierre) GO.push(['cierre', 'Cierre de gestión', 'transferencia 2026', 'building', '#0F2A43', '']);
+    if (!opts.siaf && window.FlujoCaja && opts.ue) GO.push(['flujo', 'Flujo de caja', 'caja mes a mes hasta diciembre · Excel y PPT', 'wallet', '#147A45', '']);   // 17/10/2026: con SIAF vive dentro de Reportes SIAF
     if (opts.siaf) GO.unshift(['rep', 'Reportes SIAF', 'deuda a proveedores, velocidad de pago, contratos, reservas, cierre e ingresos', 'chart', '#0F2E57', '']);
     const mayores = items.filter(it => it.c.pim > 0).sort((a, b2) => (b2.c.pim || 0) - (a.c.pim || 0)).slice(0, 6);
     const detalle = `<nav class="ri-go" aria-label="Ir al detalle"><div class="ri-goh">Ir al detalle</div>${GO.map(([id, t, d, ic, col, n]) => `<button type="button" class="ri-gob${id === 'rep' ? ' ri-prem' : ''}" data-go="${id}" style="--c:${col}"><span class="ri-goi">${ico(ic)}</span><span class="ri-got"><b>${t}</b><small>${d}</small></span>${n ? `<span class="ri-gon">${n}</span>` : ''}<span class="ri-goa" aria-hidden="true">›</span></button>`).join('')}</nav>`;
@@ -478,7 +479,7 @@
       <div class="ri-mapa ri-cart"><div class="ri-mh"><h2 class="ca-tit">Inversiones públicas <small>${N(items.length)} en la cartera${estSel ? ` · ${N(est[estSel].length)} ${ESTINV[estSel][0].toLowerCase()}` : ''}</small></h2>
           <span class="ca-tools"><label class="ca-busca">${ico('search')}<input type="search" placeholder="CUI o nombre…" aria-label="Buscar en la cartera"></label></span></div>
         ${filtroChips}<div class="ca-grid" id="ca-grid">${cartGrid()}</div></div>
-      <aside class="ri-der">${btnCadena}${detalle}<button type="button" class="ri-ppt" data-ppt>${ico('download')}<span><b>Reporte PPT</b><small>presentación oficial a la fecha de corte</small></span></button>${window.FlujoCaja && opts.ue ? FlujoCaja.bloque(ico) : ''}</aside>
+      <aside class="ri-der">${btnCadena}${detalle}<button type="button" class="ri-ppt" data-ppt>${ico('download')}<span><b>Reporte PPT</b><small>presentación oficial a la fecha de corte</small></span></button></aside>
     </div>`;
     const grid = b.querySelector('#ca-grid'), RMq = matchMedia('(prefers-reduced-motion: reduce)').matches;
     const entra = () => { if (RMq) return; grid.querySelectorAll('.ca-card').forEach((x, i) => { if (i < 24 && x.animate) x.animate([{ opacity: 0, transform: 'translateY(10px)' }, { opacity: 1, transform: 'none' }], { duration: 420, delay: 30 * i, easing: 'cubic-bezier(.2,.8,.2,1)', fill: 'backwards' }); }); };
@@ -486,7 +487,6 @@
     grid.querySelectorAll('.ca-card').forEach(x => x.onkeydown = ev => { if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); x.click(); } });
     b.querySelector('.ca-busca input').oninput = ev => { busca = ev.target.value.trim().toLowerCase(); repinta(); };
     entra();
-    if (window.FlujoCaja && opts.ue) FlujoCaja.wire(b, opts.ue, opts.nombre);   // 17/10/2026: flujo de caja proyectado (Excel / PPT) en todas las entidades
     const ppt = b.querySelector('[data-ppt]'); if (ppt) ppt.onclick = () => { const r = document.getElementById('rep-ppt'); if (r) r.click(); else if (window.CorteReporte) CorteReporte.sinPago(opts.nombre || ''); };
     const dlg = b.querySelector('.gx-dlg');
     const kpi = (id, cb) => b.querySelectorAll(`[data-p="${id}"]`).forEach(el2 => el2.onclick = () => { if (dlg.open) dlg.close(); cb(); });

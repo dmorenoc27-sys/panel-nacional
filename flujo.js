@@ -326,6 +326,22 @@
     return `<div class="ri-flujo" aria-label="Flujo de caja proyectado"><div class="ri-fh">${ico ? ico('wallet') : ''}<span><b>Flujo de caja proyectado</b><small>caja mes a mes hasta diciembre · corte de hoy</small></span></div>
       <div class="ri-fb"><button type="button" class="ri-fbtn" data-flujo="xlsx" title="Excel editable: resumen gerencial, una hoja por fuente, contratos y fuentes">${ico ? ico('download') : ''}<span>Excel</span></button><button type="button" class="ri-fbtn" data-flujo="pptx" title="Presentación ejecutiva para exponer">${ico ? ico('download') : ''}<span>PPT</span></button></div></div>`;
   }
+  // panel "Flujo de caja" (dentro de Reportes SIAF o del detalle de la entidad): resumen + descargas. Reusa las clases rs-* de reportes_siaf.
+  async function llenar(root, ue, nombre) {
+    if (!root) return;
+    const ico = n => window.Ico ? Ico(n) : '', esc = v => String(v == null ? '' : v).replace(/&/g, '&amp;').replace(/</g, '&lt;');
+    root.innerHTML = '<p class="mutx">Calculando el flujo de caja…</p>';
+    let d, idx, mo;
+    try { ({ d, idx } = await datos(ue)); mo = modelo(d); }
+    catch (e) { root.innerHTML = `<div class="rs-acc">${ico('alert')}<div><b>Flujo de caja no disponible todavía</b><p>Los datos de esta entidad se generan con la publicación diaria del MEF; vuelve a intentarlo más tarde.</p></div></div>`; return; }
+    const k = mo.estado === 'verde' ? 'ok' : mo.estado === 'ambar' ? 'warn' : 'bad', D = v => 'S/ ' + M(v);
+    root.innerHTML = `<div class="rs-head ${k}"><span class="rs-hi">${ico('wallet')}</span><div><b>${mo.T.brecha > 1 ? 'Brecha de caja ' + D(mo.T.brecha) : 'Saldo al cierre ' + D(mo.T.fin)}</b><small>${esc(mo.veredicto)}</small></div></div>
+      <div class="rs-kp"><div><b>${D(mo.T.saldo0)}</b><small>saldo inicial estimado · caja propia</small></div><div><b>${D(mo.T.ing)}</b><small>ingresos proyectados · ${esc(mo.periodo)}</small></div><div><b>${D(mo.T.gasto)}</b><small>obligaciones proyectadas · todas las fuentes</small></div><div><b>${D(mo.T.exigible)}</b><small>deuda devengada no girada · se paga primero</small></div><div><b>${D(mo.T.repartido)}</b><small>compromisos sin devengar</small></div><div><b>${D(mo.T.recurrente)}</b><small>gastos recurrentes (planillas, servicios)</small></div></div>
+      <h3>Descargar con corte de hoy</h3>
+      <div class="fc-dl"><button type="button" class="fc-btn" data-flujo="xlsx">${ico('download')}<span><b>Excel</b><small>resumen gerencial, una hoja por fuente, contratos SEACE y fuentes · celdas editables</small></span></button><button type="button" class="fc-btn" data-flujo="pptx">${ico('download')}<span><b>PPT</b><small>presentación ejecutiva de 8 láminas para exponer · con decisiones sugeridas y cuadro técnico</small></span></button></div>
+      <div class="rs-acc">${ico('spark')}<div><b>Referencial, no oficial</b><p>Proyección con datos abiertos del MEF (gasto e ingresos diarios, transferencias) y el portal OCDS del OECE, elaborada con apoyo de inteligencia artificial: puede contener errores u omisiones. El saldo inicial es estimado (saldo de balance + recaudado − girado); Tesorería lo confirma. Ambos archivos indican la fecha y hora de generación.${d.corte_txt ? ' ' + esc(d.corte_txt) + '.' : ''}</p></div></div>`;
+    wire(root, ue, nombre || d.nombre);
+  }
   function wire(root, ue, nombre) { root.querySelectorAll('[data-flujo]').forEach(b => b.onclick = () => descargar(b.dataset.flujo, ue, nombre, b)); }
-  window.FlujoCaja = { descargar, bloque, wire, modelo, datos };
+  window.FlujoCaja = { descargar, bloque, wire, llenar, modelo, datos };
 })();

@@ -64,7 +64,7 @@ details.pd-col{cursor:default}details.pd-col>summary{cursor:pointer;list-style:n
 .ing-top{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:8px;padding:8px 6px}.ing-top>div{background:var(--sup2);border-radius:10px;padding:8px 10px;border:1px solid var(--grid)}.ing-top small{display:block;font-size:9.5px;color:var(--mut);font-weight:700;letter-spacing:.05em}.ing-top b{display:block;font-size:17px;font-weight:800}.ing-top span{display:block;font-size:10.5px;color:var(--ink2);white-space:normal}.mini{display:flex;align-items:flex-end;gap:2px;height:26px;margin-top:5px}.mini i{flex:1;border-radius:2px 2px 0 0;min-height:1px}
 .hero a.chip[data-f]{cursor:pointer}.hero a.chip.on{outline:2px solid #fff;outline-offset:1px}
 </style>
-<link rel="stylesheet" href="acierta.css?v=26101401">
+<link rel="stylesheet" href="acierta.css?v=26101702">
 </head>
 <body>
 <aside class="side" id="side">
@@ -113,14 +113,14 @@ details.pd-col{cursor:default}details.pd-col>summary{cursor:pointer;list-style:n
 <script src="expediente.js?v=10d3f3a"></script>
 <script src="incentivos.js?v=26101009"></script>
 <script src="fed.js?v=fbbc718"></script>
-<script src="entidad.js?v=26101009"></script>
-<script src="reportes_siaf.js?v=26101009"></script>
+<script src="entidad.js?v=20261017c"></script>
+<script src="reportes_siaf.js?v=20261017c"></script>
 <script src="cierre.js?v=26101009"></script>
 <script src="proveedores.js"></script>
 <script src="contrataciones.js?v=26101009"></script>
 <script src="gestion.js?v=26101009"></script>
 <script src="reporte_ue.js"></script>
-<script src="flujo.js?v=20261017b"></script>
+<script src="flujo.js?v=20261017c"></script>
 <script src="acierta.js"></script>
 <script src="conoce.js"></script>
 <script src="motion.js"></script>
@@ -320,6 +320,7 @@ async function paginaUE(ue){uepAb=null;$('uep').innerHTML='<div class="fxb mutx"
   const RU=window.ResumenInversionUtil;
   if(!RU)return;
   if(id==='sea'){RU.verDetalleResumen('📑',`CONTRATACIONES · ${String(U.nombre||'').replace(/</g,'&lt;')} · UE ${U.cod}`,`<div id="ct-slot"></div>`);const obras=`<p class="mutx" style="margin-bottom:10px">${p2info}</p>${p2det()}`;const verCui=cui=>{RU.cerrarDetalleResumen();fichaCUI(cui)};const wireL=el=>el.querySelectorAll('tr.l[data-k^="cui:"]').forEach(tr=>tr.onclick=()=>verCui(tr.dataset.k.slice(4)));if(window.Contrataciones)Contrataciones.ui(document.getElementById('ct-slot'),U,{obras,onCui:verCui,onAtras:RU.cerrarDetalleResumen}).then(()=>wireL(document.getElementById('ct-slot')));else{document.getElementById('ct-slot').innerHTML=obras;wireL(document.getElementById('ct-slot'))}}
+  else if(id==='flujo'){RU.verDetalleResumen('💰',`FLUJO DE CAJA PROYECTADO · ${String(U.nombre||'').replace(/</g,'&lt;')} · UE ${U.cod}`,`<div id="fc-slot"></div>`);if(window.FlujoCaja)FlujoCaja.llenar(document.getElementById('fc-slot'),String(U.cod),U.nombre)}
   else if(id==='ges'){RU.verDetalleResumen('🧭',`GESTIÓN · ${String(U.nombre||'').replace(/</g,'&lt;')} · UE ${U.cod}`,`<div id="gs-slot"></div>`);const verCui=cui=>{RU.cerrarDetalleResumen();fichaCUI(cui)};if(window.Gestion)Gestion.ui(document.getElementById('gs-slot'),U,{onCui:verCui,onAtras:RU.cerrarDetalleResumen})}
   else if(id==='cierre'){RU.verDetalleResumen('🏛',`CIERRE DE GESTIÓN · ${String(U.nombre||'').replace(/</g,'&lt;')} · UE ${U.cod}`,'<div id="cg-slot" style="height:100%"></div>');const sl=document.getElementById('cg-slot');sl.parentElement.style.padding='0';if(window.Cierre)Cierre.ui(sl,{ue:String(U.cod),nombre:U.nombre,nivel:U.nivel,alertas:A,corteAlertas:A&&A.corte,siaf:null,onCui:cui=>{RU.cerrarDetalleResumen();fichaCUI(cui)},onAtras:RU.cerrarDetalleResumen})}
   else if(id==='al'){RU.verDetalleResumen('🎯','ALERTAS · LO QUE REQUIERE DECISIÓN','<div id="al-slot"></div>');const sl=document.getElementById('al-slot');sl.parentElement.style.padding='0';alertasUI(sl,chips,cui=>{RU.cerrarDetalleResumen();fichaCUI(cui)},sugs)}
