@@ -68,6 +68,8 @@
     (pts || []).forEach(([lat, lon, grande]) => { if (lat == null || lon == null) return; out += `<circle cx="${X(lon)}" cy="${Y(lat)}" r="${grande ? r * 1.9 : r}" fill="#${grande ? ROJO : NAVY2}" fill-opacity="${grande ? 1 : 0.75}" stroke="#FFFFFF" stroke-width="${Math.max(1, w / 300)}"/>`; });
     return out + '</svg>';
   }
+  // anillo de avance como imagen: un gráfico nativo tarda ~0.5 s por lámina al empaquetar el PPT; una imagen, 0.02 s. Los gráficos del resumen siguen siendo nativos (editables)
+  const svgAnillo = (p, color) => { const r = 42, c = 2 * Math.PI * r, f = Math.max(0, Math.min(100, p)) / 100; return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="50" cy="50" r="${r}" fill="none" stroke="#E1E6EC" stroke-width="11"/><circle cx="50" cy="50" r="${r}" fill="none" stroke="#${color}" stroke-width="11" stroke-linecap="round" stroke-dasharray="${(c * f).toFixed(2)} ${c.toFixed(2)}" transform="rotate(-90 50 50)"/></svg>`; };
   const coord = (lat, lon) => lat == null ? REG : `${Math.abs(lat).toFixed(3)}° ${lat < 0 ? 'S' : 'N'},  ${Math.abs(lon).toFixed(3)}° ${lon < 0 ? 'O' : 'E'}`;
   const mediana = a => { if (!a.length) return null; const b = a.slice().sort((x, y) => x - y); return b[Math.floor(b.length / 2)]; };
   const AVISO = 'Herramienta de análisis referencial con datos abiertos del MEF. No es una herramienta de decisión ni reemplaza la información oficial de la entidad.';
@@ -207,7 +209,7 @@
     });
     return n + 1;
   }
-  function fichaCUI(px, D, c, f, n, total, mapa) {
+  function fichaCUI(px, D, c, f, n, total, mapa, anillo) {
     f = f || {}; const av = pct(c.dev, c.pim), avF = fis(f.av_fis != null ? f.av_fis : c.avance_fisico), costo = f.costo || c.costo, devAc = f.dev_acum != null ? f.dev_acum : c.dev_acum_ant;
     const pref = /IOARR/i.test(f.tipo || c.tipo || '') ? 'IOARR' : /PROGRAMA/i.test(f.tipo || c.tipo || '') ? 'Programa de inversión' : 'Proyecto de inversión';
     const [fsTxt, fsCol, fsSub] = fase(c, f);
@@ -230,7 +232,7 @@
     panel(0.6, 4.35, 'coins', AZUL, 'Avance financiero acumulado', costo && devAc != null ? pct(devAc, costo) : null, devAc, costo, 'Devengado', 'Costo');
     panel(5.1, 4.35, 'check', VERDE, `Ejecución del año ${D.anio}`, c.pim ? av : null, c.dev, c.pim, 'Devengado', 'PIM');
     tarjeta(s, 9.6, 2.3, 3.13, 1.75);
-    if (avF != null) { dona(s, 9.65, 2.35, 1.65, 1.65, avF, '', sem(avF)); T(s, [{ text: 'Avance físico', options: { bold: true, color: TINTA, fontSize: 13, breakLine: true } }, { text: 'según el último F12-B' + (f.f12b ? ' (' + fecha(f.f12b) + ')' : ''), options: { color: MUT, fontSize: 11 } }], { x: 11.3, y: 2.5, w: 1.35, h: 1.4, valign: 'middle' }); }
+    if (avF != null) { s.addImage({ data: anillo, x: 9.7, y: 2.4, w: 1.55, h: 1.55 }); T(s, f1(avF) + ' %', { x: 9.7, y: 2.4, w: 1.55, h: 1.55, fontFace: FH, fontSize: ajusta(f1(avF) + ' %', 1.1, 22), bold: true, color: TINTA, align: 'center', valign: 'middle' }); T(s, [{ text: 'Avance físico', options: { bold: true, color: TINTA, fontSize: 13, breakLine: true } }, { text: 'según el último F12-B' + (f.f12b ? ' (' + fecha(f.f12b) + ')' : ''), options: { color: MUT, fontSize: 11 } }], { x: 11.3, y: 2.5, w: 1.35, h: 1.4, valign: 'middle' }); }
     else { circulo(s, 9.82, 2.5, 0.5, MUT, 'target'); T(s, 'Avance físico', { x: 10.45, y: 2.5, w: 2.2, h: 0.5, fontSize: 14, color: MUT, valign: 'middle' }); T(s, [{ text: 'Sin registro', options: { fontFace: FH, fontSize: 22, bold: true, color: MUT, breakLine: true } }, { text: 'no consta en el F12-B', options: { fontSize: 11.5, color: MUT } }], { x: 9.82, y: 3.0, w: 2.8, h: 0.9, valign: 'middle' }); }
     // situación actual
     tarjeta(s, 0.6, 4.2, 6.4, 2.65); circulo(s, 0.8, 4.4, 0.45, VERDE, 'list'); T(s, 'Situación actual (Formato 12-B)' + (f.f12b ? '  ·  ' + fecha(f.f12b) : ''), { x: 1.4, y: 4.4, w: 5.4, h: 0.45, fontSize: 14, bold: true, color: NAVY, valign: 'middle' });
@@ -269,16 +271,19 @@
   async function construir(px, D) {
     await imagenes(D);
     const mapaDe = async c => c.lat != null ? await mapaPng(D, [[c.lat, c.lon, 1]], 400, 350) : null;
+    const anilloDe = async (c, f) => { const v = fis((f || {}).av_fis != null ? f.av_fis : c.avance_fisico); return v == null ? null : await png(svgAnillo(v, sem(v)), 320, 320, 'FFFFFF'); };
+    // las imágenes repetidas (logo, íconos) se guardan una sola vez en el archivo: menos peso y la mitad de tiempo de empaquetado
+    const dedupe = () => { const seen = new Map(); (px.slides || []).forEach(sl => (sl._relsMedia || []).forEach(r => { if (!r.data) return; if (seen.has(r.data)) r.Target = seen.get(r.data); else seen.set(r.data, r.Target); })); };
     px.defineLayout({ name: 'W', width: W, height: H }); px.layout = 'W';
     px.author = D.autor || D.marca; px.title = (D.tipo === 'cui' ? 'Ficha ' : 'Expediente ') + titulo(D.ue.nombre);
-    if (D.tipo === 'cui') { const c = D.cuis[0]; portada(px, D); fichaCUI(px, D, c, D.fichas[c.cui], 2, 2, await mapaDe(c)); return 2; }
+    if (D.tipo === 'cui') { const c = D.cuis[0]; portada(px, D); fichaCUI(px, D, c, D.fichas[c.cui], 2, 2, await mapaDe(c), await anilloDe(c, D.fichas[c.cui])); dedupe(); return 2; }
     const fichas = D.cuis.filter(c => D.fichas[c.cui]).slice(0, D.maxFichas || 30);
     const nCart = Math.max(1, Math.ceil(D.cuis.length / 10)), hayFF = !!(D.fuentes.length || D.funciones.length), hayAl = D.alertas && ['rezago', 'f12b', 'por_cerrar'].some(k => (D.alertas[k] || []).length);
     const geo = D.cuis.filter(c => c.lat != null), mapaUE = geo.length ? await mapaPng(D, [...geo.map(c => [c.lat, c.lon, 0]), [mediana(geo.map(c => c.lat)), mediana(geo.map(c => c.lon)), 1]], 720, 720) : null;
     const total = 3 + (hayFF ? 1 : 0) + (mapaUE ? 1 : 0) + nCart + (hayAl ? 1 : 0) + fichas.length;
     portada(px, D); resumen(px, D, 2, total); let n = fuentes(px, D, 3, total); n = ubicacion(px, D, n, total, mapaUE); n = cartera(px, D, n, total); n = alertas(px, D, n, total);
-    for (const c of fichas) fichaCUI(px, D, c, D.fichas[c.cui], n++, total, await mapaDe(c));
-    cierre(px, D, n, total);
+    for (const c of fichas) fichaCUI(px, D, c, D.fichas[c.cui], n++, total, await mapaDe(c), await anilloDe(c, D.fichas[c.cui]));
+    cierre(px, D, n, total); dedupe();
     return total;
   }
   const api = { construir };
