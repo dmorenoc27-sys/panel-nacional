@@ -35,9 +35,10 @@
     calendar: '<rect x="3.5" y="5" width="17" height="15" rx="2"/><path d="M3.5 10h17M8 3v4M16 3v4"/>', bulb: '<path d="M9 18h6"/><path d="M10 21h4"/><path d="M12 3a6 6 0 0 1 3.5 10.9c-.6.5-1 1.2-1 2.1h-5c0-.9-.4-1.6-1-2.1A6 6 0 0 1 12 3z"/>' };
   const svgIco = n => `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">${ICO[n]}</svg>`;
   const svgFondo = (c1, c2) => `<svg xmlns="http://www.w3.org/2000/svg" width="1333" height="750"><defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#${c1}"/><stop offset="1" stop-color="#${c2}"/></linearGradient><radialGradient id="r" cx="0.82" cy="0.25" r="0.5"><stop offset="0" stop-color="#C9A227" stop-opacity="0.22"/><stop offset="1" stop-color="#C9A227" stop-opacity="0"/></radialGradient></defs><rect width="1333" height="750" fill="url(#g)"/><rect width="1333" height="750" fill="url(#r)"/></svg>`;
-  async function png(svg, w, h) {
-    if (typeof document !== 'undefined') return new Promise((ok, no) => { const im = new Image(); im.onload = () => { const c = document.createElement('canvas'); c.width = w; c.height = h; c.getContext('2d').drawImage(im, 0, 0, w, h); ok(c.toDataURL('image/png').replace(/^data:/, '')); }; im.onerror = () => no(new Error('svg')); im.src = 'data:image/svg+xml;base64,' + btoa(unescape(encodeURIComponent(svg))); });
-    const sharp = require('sharp'); return 'image/png;base64,' + (await sharp(Buffer.from(svg)).resize(w, h).png().toBuffer()).toString('base64');
+  // jpg=true para fondos degradados: en PNG pesan ~1 MB cada uno y el PPT tarda 10 s más en empaquetarse; en JPEG, 14 KB
+  async function png(svg, w, h, jpg) {
+    if (typeof document !== 'undefined') return new Promise((ok, no) => { const im = new Image(); im.onload = () => { const c = document.createElement('canvas'); c.width = w; c.height = h; c.getContext('2d').drawImage(im, 0, 0, w, h); ok(c.toDataURL(jpg ? 'image/jpeg' : 'image/png', 0.88).replace(/^data:/, '')); }; im.onerror = () => no(new Error('svg')); im.src = 'data:image/svg+xml;base64,' + btoa(unescape(encodeURIComponent(svg))); });
+    const sharp = require('sharp'), im = sharp(Buffer.from(svg)).resize(w, h); return (jpg ? 'image/jpeg;base64,' : 'image/png;base64,') + (await (jpg ? im.jpeg({ quality: 88 }) : im.png()).toBuffer()).toString('base64');
   }
   // silueta de cordillera (adorno de portada y cierre), blanca y casi transparente
   const svgMontes = () => `<svg xmlns="http://www.w3.org/2000/svg" width="1333" height="220" viewBox="0 0 1333 220"><path d="M0 220V150L90 95l70 40 110-85 80 60 120-100 90 70 110-55 100 80 90-45 120 65 100-70 90 55 173-60V220z" fill="#FFFFFF" fill-opacity="0.07"/><path d="M0 220v-35l120-55 80 45 130-70 100 55 150-85 110 70 120-40 110 60 130-75 100 50 183-50v130z" fill="#FFFFFF" fill-opacity="0.09"/></svg>`;
@@ -60,8 +61,8 @@
   async function imagenes(D) {
     if (IMG) return IMG; const o = {};
     if (!D.geo && typeof fetch !== 'undefined' && typeof document !== 'undefined') { try { D.geo = await (await fetch('geo/peru_departamentos.json', { cache: 'force-cache' })).json(); } catch (e) { D.geo = null; } }
-    await Promise.all([...Object.keys(ICO).map(async n => { o[n] = await png(svgIco(n), 256, 256); }), (async () => { o.f1 = await png(svgFondo(NAVY, NAVY2), 1333, 750); o.f2 = await png(svgFondo(NAVY2, NAVY), 1333, 750); o.montes = await png(svgMontes(), 1333, 220);
-      const A = root.ACIERTA; if (A && A.isoSVG) { const iso = ring => A.isoSVG({ size: 400, ring }).replace('<svg ', '<svg xmlns="http://www.w3.org/2000/svg" '); o.logoW = await png(iso('#FFFFFF'), 400, 400); o.logoN = await png(iso('#' + NAVY), 400, 400); } })()]);
+    await Promise.all([...Object.keys(ICO).map(async n => { o[n] = await png(svgIco(n), 256, 256); }), (async () => { o.f1 = await png(svgFondo(NAVY, NAVY2), 1333, 750, true); o.f2 = await png(svgFondo(NAVY2, NAVY), 1333, 750, true); o.montes = await png(svgMontes(), 1333, 220);
+      const A = root.ACIERTA; if (A && A.isoSVG) { const iso = ring => A.isoSVG({ size: 400, ring }).replace('<svg ', '<svg xmlns="http://www.w3.org/2000/svg" '); o.logoW = await png(iso('#FFFFFF'), 300, 300); o.logoN = await png(iso('#' + NAVY), 300, 300); } })()]);
     return IMG = o;
   }
   const mapaPng = (D, pts, w, h, oscuro) => D.geo ? png(svgMapa(D.geo, D.ue.dpto, pts, w, h, oscuro), w, h) : null;
@@ -241,13 +242,13 @@
 
   async function construir(px, D) {
     await imagenes(D);
-    const mapaDe = async c => c.lat != null ? await mapaPng(D, [[c.lat, c.lon, 1]], 500, 440) : null;
+    const mapaDe = async c => c.lat != null ? await mapaPng(D, [[c.lat, c.lon, 1]], 400, 350) : null;
     px.defineLayout({ name: 'W', width: W, height: H }); px.layout = 'W';
     px.author = D.autor || D.marca; px.title = (D.tipo === 'cui' ? 'Ficha ' : 'Expediente ') + titulo(D.ue.nombre);
     if (D.tipo === 'cui') { const c = D.cuis[0]; portada(px, D); fichaCUI(px, D, c, D.fichas[c.cui], 2, 2, await mapaDe(c)); return 2; }
     const fichas = D.cuis.filter(c => D.fichas[c.cui]).slice(0, D.maxFichas || 30);
     const nCart = Math.max(1, Math.ceil(D.cuis.length / 10)), hayFF = !!(D.fuentes.length || D.funciones.length), hayAl = D.alertas && ['rezago', 'f12b', 'por_cerrar'].some(k => (D.alertas[k] || []).length);
-    const geo = D.cuis.filter(c => c.lat != null), mapaUE = geo.length ? await mapaPng(D, [...geo.map(c => [c.lat, c.lon, 0]), [mediana(geo.map(c => c.lat)), mediana(geo.map(c => c.lon)), 1]], 960, 960) : null;
+    const geo = D.cuis.filter(c => c.lat != null), mapaUE = geo.length ? await mapaPng(D, [...geo.map(c => [c.lat, c.lon, 0]), [mediana(geo.map(c => c.lat)), mediana(geo.map(c => c.lon)), 1]], 720, 720) : null;
     const total = 3 + (hayFF ? 1 : 0) + (mapaUE ? 1 : 0) + nCart + (hayAl ? 1 : 0) + fichas.length;
     portada(px, D); resumen(px, D, 2, total); let n = fuentes(px, D, 3, total); n = ubicacion(px, D, n, total, mapaUE); n = cartera(px, D, n, total); n = alertas(px, D, n, total);
     for (const c of fichas) fichaCUI(px, D, c, D.fichas[c.cui], n++, total, await mapaDe(c));
