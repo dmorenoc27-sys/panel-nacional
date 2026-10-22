@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/ https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.4.0/ https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/ https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/ https://cdn.jsdelivr.net/npm/pptxgenjs@3.12.0/ https://static.cloudflareinsights.com/beacon.min.js; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data: blob: https://*.tile.openstreetmap.org https://ofi5.mef.gob.pe; connect-src 'self' https://cloudflareinsights.com; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self'">
 <meta name="referrer" content="strict-origin-when-cross-origin">
-<script src="diag.js?v=dca6c77"></script>
+<script src="diag.js"></script>
 <script>// ponytail: monitor minimo sin servicio externo: ultimos 20 errores en sessionStorage (acierta_err) y un aviso; track() lista para enchufar analytics (Cloudflare Web Analytics o GA4) cuando exista la cuenta
 window.__errs=[];function pnErr(m,w){try{__errs.push({t:Date.now(),m:String(m).slice(0,200),w});if(__errs.length>20)__errs.shift();sessionStorage.setItem('acierta_err',JSON.stringify(__errs))}catch(x){}const e=document.getElementById('toast');if(e&&!window.__errAviso){window.__errAviso=1;e.textContent='Algo no cargó bien; si persiste, recarga la página (Ctrl+F5)';e.style.display='block';setTimeout(()=>e.style.display='none',4000)}}
 window.addEventListener('error',e=>pnErr(e.message||'error',(e.filename||'').split('/').pop()+':'+e.lineno));window.addEventListener('unhandledrejection',e=>pnErr(e.reason&&e.reason.message||e.reason,'promise'));
@@ -65,7 +65,7 @@ details.pd-col{cursor:default}details.pd-col>summary{cursor:pointer;list-style:n
 .ing-top{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:8px;padding:8px 6px}.ing-top>div{background:var(--sup2);border-radius:10px;padding:8px 10px;border:1px solid var(--grid)}.ing-top small{display:block;font-size:9.5px;color:var(--mut);font-weight:700;letter-spacing:.05em}.ing-top b{display:block;font-size:17px;font-weight:800}.ing-top span{display:block;font-size:10.5px;color:var(--ink2);white-space:normal}.mini{display:flex;align-items:flex-end;gap:2px;height:26px;margin-top:5px}.mini i{flex:1;border-radius:2px 2px 0 0;min-height:1px}
 .hero a.chip[data-f]{cursor:pointer}.hero a.chip.on{outline:2px solid #fff;outline-offset:1px}
 </style>
-<link rel="stylesheet" href="acierta.css?v=1b3fcaf">
+<link rel="stylesheet" href="acierta.css?v=26101702">
 </head>
 <body>
 <aside class="side" id="side">
@@ -109,22 +109,22 @@ details.pd-col{cursor:default}details.pd-col>summary{cursor:pointer;list-style:n
 <div class="tip" id="tip"></div><dialog class="fx" id="fx"></dialog><div class="toast" id="toast"></div>
 <footer><b id="corte-pie" style="color:var(--ink)"></b> <a href="#" onclick="track('conoce');Conoce.abrir();return false" style="color:var(--p);font-weight:700;text-decoration:none">¿Tu entidad quiere Acierta? Conócela en 60 segundos →</a> · Herramienta no oficial con datos abiertos del MEF (Consulta Amigable y Banco de Inversiones), actualizada cada mañana · montos en soles · avance = devengado / PIM · semáforo: verde ≥ 70 %, ámbar 40–70 %, rojo &lt; 40 % · Acierta · Sistema inteligente de gestión pública, con Arkia, la IA de <a href="https://www.arkaproyectos.com.pe">ARKA PROYECTOS</a> · <a href="#/legal">Aviso legal y privacidad</a></footer>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js" integrity="sha384-vtjasyidUo0kW94K5MXDXntzOJpQgBKXmE7e2Ga4LG0skTTLeBi97eFAXsqewJjw" crossorigin="anonymous"></script>
-<script src="iconos.js?v=92f23d5"></script>
-<script src="calendario.js?v=8f73ed8"></script>
-<script src="expediente.js?v=10d3f3a"></script>
-<script src="incentivos.js?v=2554f93"></script>
-<script src="fed.js?v=6e049bd"></script>
-<script src="entidad.js?v=78c2685"></script>
-<script src="reportes_siaf.js?v=24a075c"></script>
-<script src="cierre.js?v=40c9d65"></script>
-<script src="proveedores.js?v=6c3d948"></script>
-<script src="contrataciones.js?v=925df35"></script>
-<script src="gestion.js?v=affb43f"></script>
-<script src="reporte_ue.js?v=1c58747"></script>
-<script src="flujo.js?v=210e7d1"></script>
-<script src="acierta.js?v=4346c01"></script>
-<script src="conoce.js?v=4d6d562"></script>
-<script src="motion.js?v=059c8c0"></script>
+<script src="iconos.js?v=26101009"></script>
+<script src="calendario.js?v=26101402"></script>
+<script src="expediente.js?v=7deb8e1"></script>
+<script src="incentivos.js?v=26101009"></script>
+<script src="fed.js?v=fbbc718"></script>
+<script src="entidad.js?v=20261017c"></script>
+<script src="reportes_siaf.js?v=20261017c"></script>
+<script src="cierre.js?v=26101009"></script>
+<script src="proveedores.js"></script>
+<script src="contrataciones.js?v=26101009"></script>
+<script src="gestion.js?v=26101009"></script>
+<script src="reporte_ue.js"></script>
+<script src="flujo.js?v=20261017d"></script>
+<script src="acierta.js"></script>
+<script src="conoce.js"></script>
+<script src="motion.js"></script>
 <script>
 const M=n=>{const v=(n||0)/1e6;return v.toLocaleString('es-PE',{maximumFractionDigits:Math.abs(v)>=1000?0:1})};
 const N=n=>(n||0).toLocaleString('es-PE');
@@ -666,7 +666,7 @@ async function datosExpediente(maxF){const marca=$('marca').textContent;const NI
  await Promise.all(top.map(async c=>{const f=await ssi(c.cui);if(f)fichas[c.cui]=f}));const al=k=>(A?.[k]||[]).filter(x=>x.ue===estado.ue);
  return {tipo:'ue',marca,autor:'ARKA PROYECTOS',anio:ANIO,corte:R.corte,ue:{cod:u.cod,nombre:U.nombre,nivel:NIVN[U.nivel],dpto:U.dpto||u.dpto,pim:U.pim,cert:U.cert,comp:U.comp,dev:U.dev,gir:U.gir,pia:U.pia,n_cui:U.n_cui},fuentes:U.fuentes||[],funciones:U.funciones||[],cuis,alertas:{rezago:al('rezago'),f12b:al('f12b'),por_cerrar:al('por_cerrar')},fichas,maxFichas:maxF}}
 async function exportarPPT(maxF){const b=$('ppt'),t0=b.textContent;b.textContent='⏳ Generando…';b.disabled=true;
- try{await cargarPptx();const D=await datosExpediente(maxF);const px=new PptxGenJS();const n=Expediente.construir(px,D);const nom=(D.tipo==='cui'?'Ficha_CUI_'+estado.cui:'Expediente_'+D.ue.nombre.replace(/[^\w]+/g,'_').slice(0,60))+'_'+ANIO+'.pptx';await px.writeFile({fileName:nom});toast(`${n} láminas · ${nom}`)}catch(e){console.error(e);toast('No se pudo generar el PPT')}
+ try{await cargarPptx();const D=await datosExpediente(maxF);const px=new PptxGenJS();const n=await Expediente.construir(px,D);const nom=(D.tipo==='cui'?'Ficha_CUI_'+estado.cui:'Expediente_'+D.ue.nombre.replace(/[^\w]+/g,'_').slice(0,60))+'_'+ANIO+'.pptx';await px.writeFile({fileName:nom});toast(`${n} láminas · ${nom}`)}catch(e){console.error(e);toast('No se pudo generar el PPT')}
  b.textContent=t0;b.disabled=false}
 $('ppt').onclick=()=>exportar(()=>{if(estado.sec==='cui'){exportarPPT(1);return}const n=U?.cuis.length||0;const d=$('fx');d.innerHTML=`<div class="fxh"><span class="x" onclick="fx.close()">×</span><h3>Expediente PPT · ${U?.nombre||''}</h3><small class="mutx">Portada, resumen ejecutivo, cartera completa (${n} inversiones), alertas y una lámina por inversión con su ficha del Banco de Inversiones.</small></div><div class="fxb"><p>¿Cuántas fichas de inversión incluir?</p><div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn p" data-n="10">Las 10 más grandes</button><button class="btn" data-n="30">Las 30 más grandes</button><button class="btn" data-n="${n}">Todas (${n})</button><button class="btn" data-n="0">Sin fichas</button></div><p class="mutx" style="font-size:12px;margin-top:12px">Solo se incluyen las inversiones que ya tienen ficha capturada por el vigilante; las demás aparecen en la cartera.</p></div>`;d.querySelectorAll('[data-n]').forEach(x=>x.onclick=()=>{d.close();exportarPPT(+x.dataset.n)});d.showModal()});
 $('share').onclick=()=>{navigator.clipboard?.writeText(location.href).then(()=>toast('Enlace copiado'))};
