@@ -644,11 +644,11 @@ let ULT_U=null;async function go(e){document.getElementById('res-overlay')?.remo
 document.querySelectorAll('#secs a[data-i]').forEach(a=>a.insertAdjacentHTML('afterbegin',Ico(a.dataset.i)));
 if(window.ACIERTA){$('iso').innerHTML=ACIERTA.isoSVG({size:60});ACIERTA.favicon()}
 // menú lateral plegable: se recuerda entre visitas; plegado deja solo los íconos y el tablero (y el mapa) ganan el ancho
-(()=>{const tg=$('side-tg');const pon=min=>{document.body.classList.toggle('side-min',min);tg.setAttribute('aria-expanded',String(!min));tg.title=min?'Mostrar el menú':'Ocultar el menú (más espacio para el mapa)';tg.querySelector('span').textContent=min?'Mostrar menú':'Ocultar menú';try{localStorage.setItem('side_min',min?'1':'')}catch(e){}};
-let v='';try{v=localStorage.getItem('side_min')||''}catch(e){}pon(!!v);tg.onclick=()=>pon(!document.body.classList.contains('side-min'));
+(()=>{const tg=$('side-tg');const pon=min=>{document.body.classList.toggle('side-min',min);tg.setAttribute('aria-expanded',String(!min));tg.title=min?'Mostrar el menú':'Ocultar el menú (más espacio para el mapa)';tg.querySelector('span').textContent=min?'Mostrar menú':'Ocultar menú';};
+pon(false);   // 22/10/2026: por defecto el menú siempre abierto (pedido de David); el pliegue dura solo la visitatg.onclick=()=>pon(!document.body.classList.contains('side-min'));
  // la cadena del gasto (columna derecha del tablero) también se pliega y se recuerda
- const kt=$('kpis-tg');const ponK=min=>{document.body.classList.toggle('kpis-min',min);kt.setAttribute('aria-expanded',String(!min));kt.title=min?'Mostrar la cadena del gasto':'Ocultar la cadena del gasto (más espacio para el mapa)';try{localStorage.setItem('kpis_min',min?'1':'0')}catch(e){}};
- let k='1';try{k=localStorage.getItem('kpis_min')??'1'}catch(e){}ponK(k!=='0');   // 11/10/2026: plegada por defecto (mapa grande); solo se abre si el usuario la abrio
+ const kt=$('kpis-tg');const ponK=min=>{document.body.classList.toggle('kpis-min',min);kt.setAttribute('aria-expanded',String(!min));kt.title=min?'Mostrar la cadena del gasto':'Ocultar la cadena del gasto (más espacio para el mapa)';};
+ ponK(true);   // 22/10/2026: cadena del gasto siempre plegada al entrar (mapa grande); abrirla dura solo la visita
 kt.onclick=()=>ponK(!document.body.classList.contains('kpis-min'))})();
 $('niv').querySelectorAll('button').forEach(b=>b.onclick=()=>{nivF=b.dataset.n;tab='sectores';fdpto='';ftxt='';go(nivF?{nivel:nivF}:{})});
 $('sw').querySelectorAll('button').forEach(b=>b.onclick=()=>{modo=b.dataset.m;$('sw').querySelectorAll('button').forEach(x=>x.classList.toggle('on',x===b));go(estado)});
