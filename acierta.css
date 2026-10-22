@@ -841,6 +841,11 @@ body.kpis-min .board:has(> #hero:not([hidden])){grid-template-columns:minmax(340
 body.kpis-min .board:has(> #hero:not([hidden])) #tcard{grid-column:1;grid-row:2}
 body.kpis-min .board:has(> #hero:not([hidden])) #rowmapa{grid-column:2;grid-row:1/3}
 body.kpis-min .board:has(> #hero:not([hidden])) #rowchart{grid-column:1}
+/* 22/10/2026: "Ampliar" con la cadena del gasto plegada: la tabla ocupa todo el ancho (antes quedaba en la columna angosta y el resto vacio) */
+body.kpis-min .board.wide:has(> #hero:not([hidden])){grid-template-columns:minmax(0,1fr) 44px}
+body.kpis-min .board.wide:has(> #hero:not([hidden])) #tcard{grid-column:1;grid-row:1/3}
+body.kpis-min .board.wide:has(> #hero:not([hidden])) #kpis{grid-column:2;grid-row:1/3}
+.board.wide:has(> #hero:not([hidden])) #tcard{align-self:start;max-height:100%}   /* tabla corta: la tarjeta termina donde termina la tabla; larga: desplaza dentro */
 body.kpis-min #rowmapa .cb{padding:6px 14px 12px}body.kpis-min #rowmapa h2{white-space:nowrap}body.kpis-min #rowmapa h2 small{flex:none;white-space:nowrap}
 body.kpis-min .kpis .tiles{display:none}body.kpis-min .kpis-h{flex-direction:column-reverse;justify-content:flex-end;gap:10px;padding:0;height:100%}
 body.kpis-min .kpis-h span{writing-mode:vertical-rl;transform:rotate(180deg);overflow:visible;white-space:nowrap;padding-top:8px}
