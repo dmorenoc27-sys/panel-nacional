@@ -21,6 +21,19 @@
   const titulo = s => String(s || '').toLowerCase().replace(/(^|[\s(\/-])([a-záéíóúñ])/g, (m, a, b) => a + b.toUpperCase()).split(' ')
     .map((w, i) => i && MIN.has(w.toLowerCase()) ? w.toLowerCase() : w).join(' ').replace(/\b(Jr|Av|Aa|Hh|Ca|Pv|Cp|Ug|Ie|Ii|Ee|Ptar|Ubs|Ex|Et|Uei|Opmi|Oarr|Ioarr|Gl|Gr|Gn|I{1,3}|Iv|Vi{0,3}|Ix|Xi{0,3})\b\.?/g, m => m.toUpperCase());
   const fis = v => v == null || v < 0 ? null : +v;
+  // tamaño de letra que cabe en una línea (Cambria negrita ≈ 0.56 em por carácter); PowerPoint no aplica 'shrink' hasta que se edita el texto
+  const ajusta = (txt, w, max) => Math.max(10, Math.min(max, Math.floor(w * 72 / (0.56 * String(txt).length))));
+  // fase de ejecución según el Banco de Inversiones (Directiva N.º 001-2019-EF/63.01: ET = Formato 08-A, seguimiento = Formato 12-B, cierre = Formato 09)
+  function fase(c, f) {
+    f = f || {}; const avF = fis(f.av_fis != null ? f.av_fis : c.avance_fisico), et = f.tiene_et === 'SI' || c.f8 === 'SI' || !!(f.et_fecha || c.et_fecha);
+    if (f.cierre === 'SI') return ['CERRADA · F09', VERDE, 'cierre registrado en el Banco de Inversiones'];
+    if (f.paralizada === 'SI') return ['PARALIZADA', ROJO, 'declarada paralizada en el F12-B'];
+    if (avF != null && avF >= 100) return ['CULMINADA · SIN CIERRE', VERDE, 'obra al 100 %: falta liquidar y registrar el Formato 09'];
+    if (avF != null && avF > 0) return ['EN EJECUCIÓN FÍSICA', '1B7F3B', `avance físico ${f1(avF)} % según el F12-B`];
+    if (et) return ['CON EXPEDIENTE TÉCNICO', AZUL, 'ET aprobado (Formato 08-A) · sin avance físico registrado'];
+    return ['SIN EXPEDIENTE TÉCNICO', AMBAR, 'viable/aprobada · falta elaborar y registrar el ET'];
+  }
+  const faseCorta = c => c.avance_fisico != null && c.avance_fisico >= 100 ? 'Culminada' : c.avance_fisico > 0 ? 'En ejecución' : c.f8 === 'SI' || c.et_fecha ? 'Con ET' : 'Sin ET';
   const sombra = () => ({ type: 'outer', blur: 6, offset: 2, angle: 90, color: NAVY, opacity: 0.12 });
 
   // ───────────── íconos de trazo e imágenes de fondo (se rasterizan a PNG: en el navegador con canvas, en Node con sharp) ─────────────
@@ -92,7 +105,7 @@
   function kpi(s, x, y, w, h, ico, color, etiqueta, valor, sub) {
     tarjeta(s, x, y, w, h); circulo(s, x + 0.22, y + 0.22, 0.5, color, ico);
     T(s, etiqueta, { x: x + 0.85, y: y + 0.22, w: w - 1.0, h: 0.5, fontSize: 14, color: MUT, valign: 'middle' });
-    T(s, valor, { x: x + 0.22, y: y + 0.8, w: w - 0.4, h: 0.6, fontFace: FH, fontSize: 26, bold: true, color: TINTA, fit: 'shrink' });
+    T(s, valor, { x: x + 0.22, y: y + 0.8, w: w - 0.4, h: 0.6, fontFace: FH, fontSize: ajusta(valor, w - 0.4, 26), bold: true, color: TINTA, valign: 'middle' });
     if (sub) T(s, sub, { x: x + 0.22, y: y + 1.4, w: w - 0.4, h: 0.3, fontSize: 12.5, color: MUT });
   }
   function dona(s, x, y, w, h, av, etiqueta, color) {
@@ -113,7 +126,7 @@
     const t = D.ue, av = pct(t.dev, t.pim), esCUI = D.tipo === 'cui';
     if (IMG.logoW) { s.addImage({ data: IMG.logoW, x: 0.75, y: 0.4, w: 1.05, h: 1.05 }); T(s, D.marca.toUpperCase(), { x: 1.9, y: 0.4, w: 4, h: 1.05, fontSize: 18, bold: true, color: 'FFFFFF', charSpacing: 10, valign: 'middle' }); } else T(s, D.marca.toUpperCase(), { x: 0.8, y: 0.6, w: 4, h: 0.5, fontSize: 18, bold: true, color: 'FFFFFF', charSpacing: 10 });
     T(s, (esCUI ? 'FICHA DE INVERSIÓN' : 'EXPEDIENTE DE INVERSIONES') + '  ·  ' + D.anio, { x: 0.8, y: 1.75, w: 8, h: 0.4, fontSize: 14, bold: true, color: ORO2, charSpacing: 3 });
-    T(s, titulo(t.nombre), { x: 0.8, y: 2.2, w: 8.0, h: 1.9, fontFace: FH, fontSize: t.nombre.length > 45 ? 38 : 46, bold: true, color: 'FFFFFF', valign: 'top', fit: 'shrink' });
+    T(s, titulo(t.nombre), { x: 0.8, y: 2.2, w: 8.0, h: 1.9, fontFace: FH, fontSize: Math.max(24, Math.min(46, Math.floor(2 * 8.0 * 72 / (0.56 * t.nombre.length)))), bold: true, color: 'FFFFFF', valign: 'top' });
     T(s, [t.nivel, titulo(t.dpto), t.cod ? 'Unidad ejecutora ' + t.cod : ''].filter(Boolean).join('  ·  '), { x: 0.8, y: 4.2, w: 8, h: 0.45, fontSize: 16, color: CLARO });
     if (t.pim) {
       [['PIM ' + D.anio, fM(t.pim)], ['Devengado', fM(t.dev)], [esCUI ? 'Avance físico' : 'Inversiones', esCUI ? (fis(D.cuis[0].avance_fisico) != null ? f1(D.cuis[0].avance_fisico) + ' %' : REG) : f0(t.n_cui)]].forEach(([k, v], i) => {
@@ -121,7 +134,7 @@
       // tarjeta derecha: avance de ejecución del año
       s.addShape('roundRect', { x: 9.15, y: 1.75, w: 3.4, h: 3.55, fill: { color: 'FFFFFF', transparency: 90 }, line: { color: 'FFFFFF', transparency: 70, width: 0.75 }, rectRadius: 0.15 });
       T(s, 'Avance de ejecución ' + D.anio, { x: 9.35, y: 1.95, w: 3.0, h: 0.4, fontSize: 14, color: CLARO });
-      T(s, f1(av) + ' %', { x: 9.35, y: 2.35, w: 3.0, h: 1.3, fontFace: FH, fontSize: 64, bold: true, color: 'FFFFFF', fit: 'shrink' });
+      T(s, f1(av) + ' %', { x: 9.35, y: 2.35, w: 3.0, h: 1.3, fontFace: FH, fontSize: ajusta(f1(av) + ' %', 3.0, 64), bold: true, color: 'FFFFFF', valign: 'middle' });
       T(s, 'devengado sobre el PIM', { x: 9.35, y: 3.6, w: 3.0, h: 0.35, fontSize: 13, color: CLARO });
       pastilla(s, 9.35, 4.3, 3.0, 0.6, sem(av), av >= 70 ? 'RITMO ADECUADO' : av >= 40 ? 'RITMO MODERADO' : 'RITMO LENTO');
     }
@@ -163,17 +176,17 @@
     const dists = {}; geo.forEach(c => { const k = [c.dist, c.prov].filter(Boolean).map(titulo).join(', ') || 'Sin distrito'; (dists[k] = dists[k] || { n: 0, pim: 0, dev: 0, lat: c.lat, lon: c.lon }); dists[k].n++; dists[k].pim += c.pim || 0; dists[k].dev += c.dev || 0; });
     const top = Object.entries(dists).sort((a, b) => b[1].pim - a[1].pim).slice(0, 7);
     const cab = [['pin', ROJO, 'Sede de la entidad', coord(lat, lon)], ['users', AZUL, 'Ámbito', [t.nivel, titulo(t.dpto || '')].filter(Boolean).join('  ·  ')], ['target', VERDE, 'Distritos con inversión', f0(Object.keys(dists).length)]];
-    cab.forEach(([ico, c, k, v], i) => { const x = 6.05 + i * 2.3; tarjeta(s, x, 1.7, 2.2, 1.3); circulo(s, x + 0.18, 1.88, 0.44, c, ico); T(s, k, { x: x + 0.72, y: 1.88, w: 1.4, h: 0.44, fontSize: 12, color: MUT, valign: 'middle' }); T(s, v, { x: x + 0.18, y: 2.38, w: 1.9, h: 0.55, fontFace: FH, fontSize: 16, bold: true, color: TINTA, valign: 'middle', fit: 'shrink' }); });
+    cab.forEach(([ico, c, k, v], i) => { const x = 6.05 + i * 2.3; tarjeta(s, x, 1.7, 2.2, 1.3); circulo(s, x + 0.18, 1.88, 0.44, c, ico); T(s, k, { x: x + 0.72, y: 1.88, w: 1.4, h: 0.44, fontSize: 12, color: MUT, valign: 'middle' }); T(s, v, { x: x + 0.18, y: 2.38, w: 1.9, h: 0.55, fontFace: FH, fontSize: ajusta(v, 1.9, 16), bold: true, color: TINTA, valign: 'middle' }); });
     tabla(s, 6.05, 3.2, 6.7, top.map(([k, v]) => [corto(k, 34), f0(v.n), fM(v.pim), { text: f1(pct(v.dev, v.pim)) + ' %', options: { bold: true, color: sem(pct(v.dev, v.pim)) } }, coord(v.lat, v.lon)]),
       [{ t: 'Distrito, provincia', w: 2.3 }, { t: 'Inv.', w: 0.6, a: 'right' }, { t: 'PIM', w: 1.1, a: 'right' }, { t: 'Avance', w: 0.9, a: 'right' }, { t: 'Coordenadas', w: 1.8 }], { rowH: 0.4 });
     return n + 1;
   }
   function cartera(px, D, n0, total) {
     const rows = D.cuis, por = 10, pag = Math.max(1, Math.ceil(rows.length / por)); let n = n0;
-    const cols = [{ t: 'CUI', w: 1.0 }, { t: 'Inversión', w: 6.3 }, { t: 'PIM', w: 1.3, a: 'right' }, { t: 'Devengado', w: 1.3, a: 'right' }, { t: 'Avance', w: 0.95, a: 'right' }, { t: 'Situación', w: 1.28 }];
+    const cols = [{ t: 'CUI', w: 1.0 }, { t: 'Inversión', w: 6.3 }, { t: 'PIM', w: 1.3, a: 'right' }, { t: 'Devengado', w: 1.3, a: 'right' }, { t: 'Avance', w: 0.95, a: 'right' }, { t: 'Fase', w: 1.28 }];
     for (let p = 0; p < pag; p++) {
       const s = marco(px, D, `Cartera de inversiones ${D.anio}`, `${f0(rows.length)} inversiones con presupuesto  ·  ordenadas por PIM  ·  página ${p + 1} de ${pag}`, n++, total, 'list', NAVY2);
-      const filas = rows.slice(p * por, (p + 1) * por).map(c => { const a = pct(c.dev, c.pim); return [c.cui, corto(titulo(c.nombre), 72), fM(c.pim), fM(c.dev), { text: f1(a) + ' %', options: { bold: true, color: sem(a) } }, corto(titulo(c.situacion || ''), 14)]; });
+      const filas = rows.slice(p * por, (p + 1) * por).map(c => { const a = pct(c.dev, c.pim); return [c.cui, corto(titulo(c.nombre), 72), fM(c.pim), fM(c.dev), { text: f1(a) + ' %', options: { bold: true, color: sem(a) } }, faseCorta(c)]; });
       tabla(s, 0.6, 1.7, 12.13, filas, cols);
     }
     return n;
@@ -196,23 +209,35 @@
   function fichaCUI(px, D, c, f, n, total, mapa) {
     f = f || {}; const av = pct(c.dev, c.pim), avF = fis(f.av_fis != null ? f.av_fis : c.avance_fisico), costo = f.costo || c.costo, devAc = f.dev_acum != null ? f.dev_acum : c.dev_acum_ant;
     const pref = /IOARR/i.test(f.tipo || c.tipo || '') ? 'IOARR' : /PROGRAMA/i.test(f.tipo || c.tipo || '') ? 'Programa de inversión' : 'Proyecto de inversión';
-    const est = (f.situacion || c.situacion || '').toUpperCase(); const estC = /CULMIN|CERRAD/.test(est) ? VERDE : /SUSPEND|PARALIZ/.test(est) ? ROJO : /EJECUCI/.test(est) ? '1B7F3B' : AZUL;
+    const [fsTxt, fsCol, fsSub] = fase(c, f);
     const s = px.addSlide(); s.background = { color: FONDO };
-    T(s, `${pref.toUpperCase()}  ·  CUI ${c.cui}` + (f.f12b || c.ult_f12b ? `  ·  último F12-B ${fecha(f.f12b || c.ult_f12b)}` : ''), { x: 0.6, y: 0.4, w: 9.5, h: 0.35, fontSize: 13, bold: true, color: ORO, charSpacing: 2 });
-    T(s, corto(titulo(f.nombre || c.nombre), 200), { x: 0.6, y: 0.75, w: 10.0, h: 1.05, fontFace: FH, fontSize: 20, bold: true, color: NAVY, valign: 'top', fit: 'shrink' });
+    T(s, `${pref.toUpperCase()}  ·  CUI ${c.cui}` + (f.f12b || c.ult_f12b ? `  ·  último F12-B ${fecha(f.f12b || c.ult_f12b)}` : ''), { x: 0.6, y: 0.4, w: 9.0, h: 0.35, fontSize: 13, bold: true, color: ORO, charSpacing: 2 });
+    const nom = corto(titulo(f.nombre || c.nombre), 210);
+    T(s, nom, { x: 0.6, y: 0.75, w: 9.0, h: 1.05, fontFace: FH, fontSize: nom.length > 150 ? 16 : nom.length > 100 ? 18 : 20, bold: true, color: NAVY, valign: 'top' });
     marca(s, D, false);
-    pastilla(s, W - 2.9, 1.05, 2.3, 0.45, estC, corto(est || 'EN REGISTRO', 18));
-    T(s, [f.modalidad && titulo(f.modalidad.split(',')[0]), f.uei && titulo(f.uei), f.paralizada === 'SI' ? 'PARALIZADA' : ''].filter(Boolean).join('  ·  '), { x: 0.6, y: 1.8, w: 12.1, h: 0.35, fontSize: 12.5, color: MUT, fit: 'shrink' });
-    const K = [['coins', AZUL, 'Costo actualizado', fS(costo), 'Banco de Inversiones'], ['check', VERDE, 'Devengado acumulado', fS(devAc), f.av_ejec != null ? f1(f.av_ejec) + ' % del costo' : (costo && devAc != null ? f1(pct(devAc, costo)) + ' % del costo' : '')], ['doc', AZUL, 'PIM ' + D.anio, fS(c.pim), 'devengado ' + fS(c.dev) + ' (' + f1(av) + ' %)'], ['clock', ORO, 'Saldo del año', fS(c.pim - c.dev), f1(100 - av) + ' % del PIM por ejecutar']];
-    K.push(['target', avF != null ? sem(avF) : MUT, 'Avance físico', avF != null ? f1(avF) + ' %' : 'Sin registro', avF != null ? 'según el último F12-B' : 'no consta en el F12-B']);
-    K.forEach(([ico, col, k, v, sub], i) => kpi(s, 0.6 + i * 2.46, 2.3, 2.3, 1.75, ico, col, k, v, sub));
+    pastilla(s, W - 3.35, 1.05, 2.75, 0.45, fsCol, fsTxt); T(s, fsSub, { x: W - 3.6, y: 1.52, w: 3.0, h: 0.3, fontSize: 10.5, color: MUT, align: 'center' });
+    T(s, [f.modalidad && titulo(f.modalidad.split(',')[0]), f.uei && titulo(f.uei), (f.situacion || c.situacion) ? titulo(f.situacion || c.situacion) + ' en el Banco de Inversiones' : ''].filter(Boolean).join('  ·  '), { x: 0.6, y: 1.85, w: 9.0, h: 0.35, fontSize: 12.5, color: MUT });
+    // fila didáctica: dos barras de avance (acumulado y del año) + avance físico
+    const barra = (x, y, w, p, col) => { s.addShape('roundRect', { x, y, w, h: 0.22, fill: { color: 'E6ECF3' }, line: { color: 'E6ECF3', width: 0 }, rectRadius: 0.11 }); if (p > 0) s.addShape('roundRect', { x, y, w: Math.max(0.22, w * Math.min(100, p) / 100), h: 0.22, fill: { color: col }, line: { color: col, width: 0 }, rectRadius: 0.11 }); };
+    const panel = (x, w, ico, col, tit, p, a, b, etA, etB) => {
+      tarjeta(s, x, 2.3, w, 1.75); circulo(s, x + 0.22, 2.5, 0.5, col, ico);
+      T(s, tit, { x: x + 0.85, y: 2.5, w: w - 1.0, h: 0.5, fontSize: 14, color: MUT, valign: 'middle' });
+      T(s, p == null ? REG : f1(p) + ' %', { x: x + 0.22, y: 3.02, w: 1.6, h: 0.5, fontFace: FH, fontSize: p == null ? 12 : 28, bold: true, color: p == null ? MUT : col, valign: 'middle' });
+      T(s, [{ text: etA + ' ', options: { color: MUT } }, { text: fS(a), options: { bold: true, color: TINTA, breakLine: true } }, { text: etB + ' ', options: { color: MUT } }, { text: fS(b), options: { bold: true, color: TINTA } }], { x: x + 1.9, y: 2.98, w: w - 2.1, h: 0.6, fontSize: 11.5, valign: 'middle' });
+      barra(x + 0.22, 3.68, w - 0.44, p || 0, col);
+    };
+    panel(0.6, 4.35, 'coins', AZUL, 'Avance financiero acumulado', costo && devAc != null ? pct(devAc, costo) : null, devAc, costo, 'Devengado', 'Costo');
+    panel(5.1, 4.35, 'check', VERDE, `Ejecución del año ${D.anio}`, c.pim ? av : null, c.dev, c.pim, 'Devengado', 'PIM');
+    tarjeta(s, 9.6, 2.3, 3.13, 1.75);
+    if (avF != null) { dona(s, 9.65, 2.35, 1.65, 1.65, avF, '', sem(avF)); T(s, [{ text: 'Avance físico', options: { bold: true, color: TINTA, fontSize: 13, breakLine: true } }, { text: 'según el último F12-B' + (f.f12b ? ' (' + fecha(f.f12b) + ')' : ''), options: { color: MUT, fontSize: 11 } }], { x: 11.3, y: 2.5, w: 1.35, h: 1.4, valign: 'middle' }); }
+    else { circulo(s, 9.82, 2.5, 0.5, MUT, 'target'); T(s, 'Avance físico', { x: 10.45, y: 2.5, w: 2.2, h: 0.5, fontSize: 14, color: MUT, valign: 'middle' }); T(s, [{ text: 'Sin registro', options: { fontFace: FH, fontSize: 22, bold: true, color: MUT, breakLine: true } }, { text: 'no consta en el F12-B', options: { fontSize: 11.5, color: MUT } }], { x: 9.82, y: 3.0, w: 2.8, h: 0.9, valign: 'middle' }); }
     // situación actual
     tarjeta(s, 0.6, 4.2, 6.4, 2.65); circulo(s, 0.8, 4.4, 0.45, VERDE, 'list'); T(s, 'Situación actual (Formato 12-B)' + (f.f12b ? '  ·  ' + fecha(f.f12b) : ''), { x: 1.4, y: 4.4, w: 5.4, h: 0.45, fontSize: 14, bold: true, color: NAVY, valign: 'middle' });
     const situ = (f.situ_act || '').replace(/\s+/g, ' ').trim(); const acc = (f.acciones || c.acc || '').replace(/\s+/g, ' ').trim();
     T(s, situ ? [{ text: corto(situ, 330), options: { color: TINTA, breakLine: !!acc } }, ...(acc ? [{ text: 'Acciones previstas: ', options: { bold: true, color: NAVY } }, { text: corto(acc, 200), options: { color: TINTA } }] : [])] : REG, { x: 0.8, y: 4.95, w: 6.0, h: 1.8, fontSize: 12.5, color: situ ? TINTA : MUT, valign: 'top', paraSpaceAfter: 6 });
     // datos generales + mapa con coordenadas
     tarjeta(s, 7.2, 4.2, 5.53, 2.65);
-    const dg = [['calendar', 'Inicio de ejecución', fecha(f.inicio || c.ini_fisica)], ['flag', 'Fin previsto', fecha(f.fin || c.fin_fisica)], ['doc', 'Expediente técnico', f.et_fecha ? fecha(f.et_fecha) + (f.et_monto ? '  ·  ' + fM(f.et_monto) : '') : REG], ['users', 'Beneficiarios', f.beneficiarios || c.beneficiarios ? f0(f.beneficiarios || c.beneficiarios) : REG]];
+    const dg = [['calendar', 'Inicio de ejecución', fecha(f.inicio || c.ini_fisica)], ['flag', 'Fin previsto', fecha(f.fin || c.fin_fisica)], ['doc', 'Expediente técnico', f.et_fecha ? fecha(f.et_fecha) + (f.et_monto ? '  ·  ' + fM(f.et_monto) : '') : 'sin registro'], ['users', 'Beneficiarios', f.beneficiarios || c.beneficiarios ? f0(f.beneficiarios || c.beneficiarios) : 'sin registro']];
     dg.forEach(([ico, k, v], i) => { circulo(s, 7.4, 4.42 + i * 0.6, 0.4, NAVY2, ico); T(s, [{ text: k, options: { color: MUT, fontSize: 11, breakLine: true } }, { text: String(v), options: { bold: v !== REG, color: v === REG ? MUT : TINTA, fontSize: 12.5 } }], { x: 7.9, y: 4.35 + i * 0.6, w: 2.6, h: 0.55, valign: 'middle', fit: 'shrink' }); });
     if (mapa) s.addImage({ data: mapa, x: 10.6, y: 4.3, w: 2.0, h: 1.75 }); else circulo(s, 11.35, 4.7, 0.6, MUT, 'pin');
     T(s, [{ text: [c.dist, c.prov, c.dpto].filter(Boolean).map(titulo).join(' / ') || REG, options: { bold: true, color: TINTA, fontSize: 11.5, breakLine: true } }, { text: coord(c.lat, c.lon), options: { color: MUT, fontSize: 11 } }], { x: 10.5, y: 6.05, w: 2.2, h: 0.7, align: 'center', valign: 'top', fit: 'shrink' });
