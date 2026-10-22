@@ -60,12 +60,14 @@
   async function imagenes(D) {
     if (IMG) return IMG; const o = {};
     if (!D.geo && typeof fetch !== 'undefined' && typeof document !== 'undefined') { try { D.geo = await (await fetch('geo/peru_departamentos.json', { cache: 'force-cache' })).json(); } catch (e) { D.geo = null; } }
-    await Promise.all([...Object.keys(ICO).map(async n => { o[n] = await png(svgIco(n), 256, 256); }), (async () => { o.f1 = await png(svgFondo(NAVY, NAVY2), 1333, 750); o.f2 = await png(svgFondo(NAVY2, NAVY), 1333, 750); o.montes = await png(svgMontes(), 1333, 220); })()]);
+    await Promise.all([...Object.keys(ICO).map(async n => { o[n] = await png(svgIco(n), 256, 256); }), (async () => { o.f1 = await png(svgFondo(NAVY, NAVY2), 1333, 750); o.f2 = await png(svgFondo(NAVY2, NAVY), 1333, 750); o.montes = await png(svgMontes(), 1333, 220);
+      const A = root.ACIERTA; if (A && A.isoSVG) { const iso = ring => A.isoSVG({ size: 400, ring }).replace('<svg ', '<svg xmlns="http://www.w3.org/2000/svg" '); o.logoW = await png(iso('#FFFFFF'), 400, 400); o.logoN = await png(iso('#' + NAVY), 400, 400); } })()]);
     return IMG = o;
   }
   const mapaPng = (D, pts, w, h, oscuro) => D.geo ? png(svgMapa(D.geo, D.ue.dpto, pts, w, h, oscuro), w, h) : null;
 
   // ───────────── piezas ─────────────
+  const marca = (s, D, oscuro, x, y, d) => { x = x == null ? W - 3.35 : x; y = y == null ? 0.3 : y; d = d || 0.7; const L = oscuro ? IMG.logoW : IMG.logoN; if (L) s.addImage({ data: L, x, y, w: d, h: d }); T(s, D.marca.toUpperCase(), { x: x + d + 0.05, y, w: 2.0, h: d, fontSize: 14, bold: true, color: oscuro ? 'FFFFFF' : NAVY, charSpacing: 6, valign: 'middle' }); };
   const T = (s, t, o) => s.addText(t, Object.assign({ fontFace: FB, margin: 0, isTextBox: true }, o));
   const circulo = (s, x, y, d, color, ico) => { s.addShape('ellipse', { x, y, w: d, h: d, fill: { color }, line: { color, width: 0 } }); s.addImage({ data: IMG[ico], x: x + d * 0.24, y: y + d * 0.24, w: d * 0.52, h: d * 0.52 }); };
   const tarjeta = (s, x, y, w, h, fill) => s.addShape('roundRect', { x, y, w, h, fill: { color: fill || 'FFFFFF' }, line: { color: BORDE, width: 0.75 }, rectRadius: 0.12, shadow: sombra() });
@@ -82,7 +84,7 @@
     let x = 0.6; if (ico) { circulo(s, 0.6, 0.45, 0.6, color || NAVY, ico); x = 1.4; }
     T(s, tit, { x, y: 0.38, w: 10.2, h: 0.7, fontFace: FH, fontSize: 34, bold: true, color: NAVY, valign: 'middle' });
     if (sub) T(s, sub, { x, y: 1.08, w: 10.6, h: 0.4, fontSize: 15, color: MUT });
-    T(s, D.marca.toUpperCase(), { x: W - 2.6, y: 0.45, w: 2.0, h: 0.4, fontSize: 14, bold: true, color: NAVY, align: 'right', charSpacing: 6 });
+    marca(s, D, false);
     pie(s, D, n, total);
     return s;
   }
@@ -108,7 +110,7 @@
   function portada(px, D) {
     const s = px.addSlide(); s.addImage({ data: IMG.f1, x: 0, y: 0, w: W, h: H }); s.addImage({ data: IMG.montes, x: 0, y: H - 2.2, w: W, h: 2.2 });
     const t = D.ue, av = pct(t.dev, t.pim), esCUI = D.tipo === 'cui';
-    T(s, D.marca.toUpperCase(), { x: 0.8, y: 0.6, w: 4, h: 0.5, fontSize: 18, bold: true, color: 'FFFFFF', charSpacing: 10 });
+    if (IMG.logoW) { s.addImage({ data: IMG.logoW, x: 0.75, y: 0.4, w: 1.05, h: 1.05 }); T(s, D.marca.toUpperCase(), { x: 1.9, y: 0.4, w: 4, h: 1.05, fontSize: 18, bold: true, color: 'FFFFFF', charSpacing: 10, valign: 'middle' }); } else T(s, D.marca.toUpperCase(), { x: 0.8, y: 0.6, w: 4, h: 0.5, fontSize: 18, bold: true, color: 'FFFFFF', charSpacing: 10 });
     T(s, (esCUI ? 'FICHA DE INVERSIÓN' : 'EXPEDIENTE DE INVERSIONES') + '  ·  ' + D.anio, { x: 0.8, y: 1.75, w: 8, h: 0.4, fontSize: 14, bold: true, color: ORO2, charSpacing: 3 });
     T(s, titulo(t.nombre), { x: 0.8, y: 2.2, w: 8.0, h: 1.9, fontFace: FH, fontSize: t.nombre.length > 45 ? 38 : 46, bold: true, color: 'FFFFFF', valign: 'top', fit: 'shrink' });
     T(s, [t.nivel, titulo(t.dpto), t.cod ? 'Unidad ejecutora ' + t.cod : ''].filter(Boolean).join('  ·  '), { x: 0.8, y: 4.2, w: 8, h: 0.45, fontSize: 16, color: CLARO });
@@ -197,8 +199,8 @@
     const s = px.addSlide(); s.background = { color: FONDO };
     T(s, `${pref.toUpperCase()}  ·  CUI ${c.cui}` + (f.f12b || c.ult_f12b ? `  ·  último F12-B ${fecha(f.f12b || c.ult_f12b)}` : ''), { x: 0.6, y: 0.4, w: 9.5, h: 0.35, fontSize: 13, bold: true, color: ORO, charSpacing: 2 });
     T(s, corto(titulo(f.nombre || c.nombre), 200), { x: 0.6, y: 0.75, w: 10.0, h: 1.05, fontFace: FH, fontSize: 20, bold: true, color: NAVY, valign: 'top', fit: 'shrink' });
-    T(s, D.marca.toUpperCase(), { x: W - 2.6, y: 0.45, w: 2.0, h: 0.4, fontSize: 14, bold: true, color: NAVY, align: 'right', charSpacing: 6 });
-    pastilla(s, W - 2.9, 0.95, 2.3, 0.45, estC, corto(est || 'EN REGISTRO', 18));
+    marca(s, D, false);
+    pastilla(s, W - 2.9, 1.05, 2.3, 0.45, estC, corto(est || 'EN REGISTRO', 18));
     T(s, [f.modalidad && titulo(f.modalidad.split(',')[0]), f.uei && titulo(f.uei), f.paralizada === 'SI' ? 'PARALIZADA' : ''].filter(Boolean).join('  ·  '), { x: 0.6, y: 1.8, w: 12.1, h: 0.35, fontSize: 12.5, color: MUT, fit: 'shrink' });
     const K = [['coins', AZUL, 'Costo actualizado', fS(costo), 'Banco de Inversiones'], ['check', VERDE, 'Devengado acumulado', fS(devAc), f.av_ejec != null ? f1(f.av_ejec) + ' % del costo' : (costo && devAc != null ? f1(pct(devAc, costo)) + ' % del costo' : '')], ['doc', AZUL, 'PIM ' + D.anio, fS(c.pim), 'devengado ' + fS(c.dev) + ' (' + f1(av) + ' %)'], ['clock', ORO, 'Saldo del año', fS(c.pim - c.dev), f1(100 - av) + ' % del PIM por ejecutar']];
     K.push(['target', avF != null ? sem(avF) : MUT, 'Avance físico', avF != null ? f1(avF) + ' %' : 'Sin registro', avF != null ? 'según el último F12-B' : 'no consta en el F12-B']);
@@ -221,7 +223,7 @@
   function cierre(px, D, n, total) {
     const t = D.ue, av = pct(t.dev, t.pim), A = D.alertas || {}, mes = new Date().getMonth() + 1, meses = Math.max(1, 12 - mes);
     const s = px.addSlide(); s.addImage({ data: IMG.f2, x: 0, y: 0, w: W, h: H }); s.addImage({ data: IMG.montes, x: 0, y: H - 2.2, w: W, h: 2.2 });
-    T(s, 'Decisiones sugeridas', { x: 0.8, y: 0.5, w: 9, h: 0.75, fontFace: FH, fontSize: 36, bold: true, color: 'FFFFFF' });
+    marca(s, D, true, W - 3.35, 0.45, 0.75); T(s, 'Decisiones sugeridas', { x: 0.8, y: 0.5, w: 9, h: 0.75, fontFace: FH, fontSize: 36, bold: true, color: 'FFFFFF' });
     T(s, `para los ${meses} meses que quedan del ${D.anio}  ·  ${titulo(t.nombre)}`, { x: 0.8, y: 1.25, w: 11.5, h: 0.4, fontSize: 15, color: CLARO });
     const S = [];
     if (av < 40) S.push(['alert', ROJO, 'Acelerar el devengado', `Con ${f1(av)} % de avance, quedan ${fM(t.pim - t.dev)} por ejecutar. Se sugiere priorizar las inversiones con certificación y contrato vigentes para evitar reversión de saldos.`]);
