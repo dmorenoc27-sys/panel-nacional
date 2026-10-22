@@ -21,21 +21,21 @@
   addEventListener('pagehide', () => { try { const s = JSON.parse(localStorage.getItem(K)); s.vivo = 0; localStorage.setItem(K, JSON.stringify(s)); } catch (e) { } });
   setInterval(() => anota('latido', location.hash), 5000);   // si el último latido es viejo, ahí se congeló
 
-  // cortacircuitos: un MutationObserver que se dispara > 300 veces en 1 s se desconecta y queda anotado (antes congelaba la pestaña)
+  // cortacircuitos: un MutationObserver que se dispara una y otra vez SIN que el navegador recupere el turno (bucle de microtareas, lo que
+  // congela la pestaña) se desconecta al llegar a 200 seguidas y queda anotado. Uso normal: la racha vuelve a 0 en cuanto la página respira.
   const MO = window.MutationObserver;
   window.MutationObserver = function (cb) {
-    const de = origen(); let n = 0, ventana = Date.now(), obs;
-    obs = new MO(function (ms, o) {
-      const ahora = Date.now(); if (ahora - ventana > 1000) { ventana = ahora; n = 0; }
-      if (++n > 300) { o.disconnect(); anota('BUCLE', `MutationObserver de ${de} desconectado (se disparó ${n} veces en 1 s)`); return; }
+    const de = origen(); let racha = 0, pend = false;
+    return new MO(function (ms, o) {
+      if (!pend) { pend = true; setTimeout(() => { racha = 0; pend = false; }, 0); }
+      if (++racha > 200) { o.disconnect(); anota('BUCLE', `MutationObserver de ${de} desconectado: ${racha} disparos seguidos sin respiro`); return; }
       return cb.call(this, ms, o);
     });
-    return obs;
   };
   window.MutationObserver.prototype = MO.prototype;
 
   // tareas largas (> 1 s) con el script responsable, cuando el navegador lo informa (Chrome 123+)
-  try { new PerformanceObserver(l => l.getEntries().forEach(e => { if (e.duration > 1000) anota('lento', `${Math.round(e.duration)} ms en ${location.hash} · ${(e.scripts || []).slice(0, 2).map(s => `${(s.sourceURL || '').split('/').pop().split('?')[0]}:${s.sourceFunctionName || s.invoker || ''}`).join(', ')}`); })).observe({ type: 'long-animation-frame', buffered: true }); } catch (e) { }
+  try { new PerformanceObserver(l => l.getEntries().forEach(e => { if (e.duration > 1000 && document.visibilityState === 'visible') anota('lento', `${Math.round(e.duration)} ms en ${location.hash} · ${(e.scripts || []).slice(0, 2).map(s => `${(s.sourceURL || '').split('/').pop().split('?')[0]}:${s.sourceFunctionName || s.invoker || ''}`).join(', ')}`); })).observe({ type: 'long-animation-frame', buffered: true }); } catch (e) { }
   // inicio y fin de cada cambio de vista: si queda un 'go' sin su 'go fin', el cuelgue fue al pintar esa vista
   document.addEventListener('DOMContentLoaded', () => { const g = window.go; if (typeof g !== 'function') return;
     window.go = async function (r) { let s = ''; try { s = JSON.stringify(r || {}); } catch (e) { } anota('go', s.slice(0, 100)); try { return await g.apply(this, arguments); } finally { anota('go fin', location.hash); } }; });

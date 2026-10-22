@@ -60,7 +60,11 @@
   }
   // mapa: los departamentos aparecen en cascada desde el centro
   function mapa() {
-    if (!g || RM.matches) return; const ps = $('mapa').querySelectorAll('path'); if (!ps.length) return;
+    // 22/10/2026 · CUELGUE CORREGIDO: si el mapa llega por la red cuando la persona ya cambió de vista, queda escondido; GSAP, para medir
+    // un SVG escondido, lo saca y lo vuelve a poner en el documento, eso disparaba de nuevo el vigilante del mapa y se armaba un bucle
+    // infinito. Ahora: (1) un mapa que no se ve no se anima; (2) el vigilante solo reacciona a un mapa nuevo (no a los movimientos de GSAP)
+    // y como mucho una vez por cuadro.
+    const m = $('mapa'); if (!g || RM.matches || !m || !vis(m)) return; const ps = m.querySelectorAll('path'); if (!ps.length) return;
     g.fromTo(ps, { opacity: 0, scale: .6, transformOrigin: '50% 50%' }, { opacity: 1, scale: 1, duration: .55, ease: 'back.out(1.6)', stagger: { each: .018, from: 'center' }, clearProps: 'transform,opacity', overwrite: true });
     g.fromTo($('mapa').querySelectorAll('text'), { opacity: 0 }, { opacity: 1, duration: .4, delay: .5, clearProps: 'opacity' });
   }
@@ -112,7 +116,9 @@
     fondo(); indicador();
     // engancha el enrutador: después de cada go() se anima la vista que quedó
     if (typeof window.go === 'function' && !window.go.__m) { const _go = window.go; window.go = async function () { const r = await _go.apply(this, arguments); try { vista(); } catch (e) { } return r; }; window.go.__m = 1; }
-    const mp = $('mapa'); if (mp) new MutationObserver(() => mapa()).observe(mp, { childList: true });
+    const mp = $('mapa'); if (mp) { let pend = 0;
+      // un mapa nuevo llega de golpe (innerHTML: muchos nodos en un solo registro); GSAP mueve de a uno: eso se ignora
+      new MutationObserver(ms => { if (pend || !ms.some(r => r.addedNodes.length > 1)) return; pend = requestAnimationFrame(() => { pend = 0; mapa(); }); }).observe(mp, { childList: true }); }
     // las fichas UE/CUI terminan de pintarse después (datos asíncronos): se animan al llegar su contenido, una vez por vista
     const u = $('uep'); if (u) { let k = ''; new MutationObserver(() => { const w = $('uep-wrap'); if (w && w.children.length && k !== location.hash) { k = location.hash; fichas(); } }).observe(u, { childList: true, subtree: true }); }
     addEventListener('resize', indicador);
