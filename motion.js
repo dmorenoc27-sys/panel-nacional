@@ -100,7 +100,12 @@
     pon(); new MutationObserver(pon).observe(hero, { childList: true });
     hero.addEventListener('pointermove', e => { const r = cv.getBoundingClientRect(); mx = e.clientX - r.left; my = e.clientY - r.top; }); hero.addEventListener('pointerleave', () => { mx = -1; });
     if (RM.matches) { P.forEach(p => { p.vx = p.vy = 0; }); const fijo = () => requestAnimationFrame(() => pinta(t0 + 1500)); fijo(); addEventListener('resize', fijo); new MutationObserver(fijo).observe(hero, { attributes: true, attributeFilter: ['hidden'] }); return; }   // sin movimiento: un cuadro fijo
-    (function f(t) { if (cv.offsetParent !== null && !document.hidden) pinta(t); requestAnimationFrame(f); })(t0);
+    // 22/10/2026: el bucle ya no corre ni consulta el layout (offsetParent) en cada cuadro cuando la portada no se ve: solo anima si el canvas está en pantalla
+    let ve = false, corre = false;
+    const f = t => { if (!ve || document.hidden) { corre = false; return; } pinta(t); requestAnimationFrame(f); };
+    const sigue = () => { if (ve && !document.hidden && !corre) { corre = true; requestAnimationFrame(f); } };
+    new IntersectionObserver(es => { ve = es[es.length - 1].isIntersecting; sigue(); }).observe(cv);
+    document.addEventListener('visibilitychange', sigue);
   }
 
   function arranca() {
