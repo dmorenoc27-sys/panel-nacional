@@ -49,9 +49,10 @@
   const svgIco = n => `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">${ICO[n]}</svg>`;
   const svgFondo = (c1, c2) => `<svg xmlns="http://www.w3.org/2000/svg" width="1333" height="750"><defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#${c1}"/><stop offset="1" stop-color="#${c2}"/></linearGradient><radialGradient id="r" cx="0.82" cy="0.25" r="0.5"><stop offset="0" stop-color="#C9A227" stop-opacity="0.22"/><stop offset="1" stop-color="#C9A227" stop-opacity="0"/></radialGradient></defs><rect width="1333" height="750" fill="url(#g)"/><rect width="1333" height="750" fill="url(#r)"/></svg>`;
   // jpg=true para fondos degradados: en PNG pesan ~1 MB cada uno y el PPT tarda 10 s más en empaquetarse; en JPEG, 14 KB
+  // jpg = color de fondo (hex) para aplanar en JPEG: el PPT pesa 3-4 veces menos y se genera en un tercio del tiempo (los PNG del canvas no se comprimen)
   async function png(svg, w, h, jpg) {
-    if (typeof document !== 'undefined') return new Promise((ok, no) => { const im = new Image(); im.onload = () => { const c = document.createElement('canvas'); c.width = w; c.height = h; c.getContext('2d').drawImage(im, 0, 0, w, h); ok(c.toDataURL(jpg ? 'image/jpeg' : 'image/png', 0.88).replace(/^data:/, '')); }; im.onerror = () => no(new Error('svg')); im.src = 'data:image/svg+xml;base64,' + btoa(unescape(encodeURIComponent(svg))); });
-    const sharp = require('sharp'), im = sharp(Buffer.from(svg)).resize(w, h); return (jpg ? 'image/jpeg;base64,' : 'image/png;base64,') + (await (jpg ? im.jpeg({ quality: 88 }) : im.png()).toBuffer()).toString('base64');
+    if (typeof document !== 'undefined') return new Promise((ok, no) => { const im = new Image(); im.onload = () => { const c = document.createElement('canvas'); c.width = w; c.height = h; const g = c.getContext('2d'); if (jpg) { g.fillStyle = '#' + jpg; g.fillRect(0, 0, w, h); } g.drawImage(im, 0, 0, w, h); ok(c.toDataURL(jpg ? 'image/jpeg' : 'image/png', 0.86).replace(/^data:/, '')); }; im.onerror = () => no(new Error('svg')); im.src = 'data:image/svg+xml;base64,' + btoa(unescape(encodeURIComponent(svg))); });
+    const sharp = require('sharp'), im = sharp(Buffer.from(svg)).resize(w, h); return (jpg ? 'image/jpeg;base64,' : 'image/png;base64,') + (await (jpg ? im.flatten({ background: '#' + jpg }).jpeg({ quality: 86 }) : im.png()).toBuffer()).toString('base64');
   }
   // silueta de cordillera (adorno de portada y cierre), blanca y casi transparente
   const svgMontes = () => `<svg xmlns="http://www.w3.org/2000/svg" width="1333" height="220" viewBox="0 0 1333 220"><path d="M0 220V150L90 95l70 40 110-85 80 60 120-100 90 70 110-55 100 80 90-45 120 65 100-70 90 55 173-60V220z" fill="#FFFFFF" fill-opacity="0.07"/><path d="M0 220v-35l120-55 80 45 130-70 100 55 150-85 110 70 120-40 110 60 130-75 100 50 183-50v130z" fill="#FFFFFF" fill-opacity="0.09"/></svg>`;
@@ -74,11 +75,11 @@
   async function imagenes(D) {
     if (IMG) return IMG; const o = {};
     if (!D.geo && typeof fetch !== 'undefined' && typeof document !== 'undefined') { try { D.geo = await (await fetch('geo/peru_departamentos.json', { cache: 'force-cache' })).json(); } catch (e) { D.geo = null; } }
-    await Promise.all([...Object.keys(ICO).map(async n => { o[n] = await png(svgIco(n), 256, 256); }), (async () => { o.f1 = await png(svgFondo(NAVY, NAVY2), 1333, 750, true); o.f2 = await png(svgFondo(NAVY2, NAVY), 1333, 750, true); o.montes = await png(svgMontes(), 1333, 220);
-      const A = root.ACIERTA; if (A && A.isoSVG) { const iso = ring => A.isoSVG({ size: 400, ring }).replace('<svg ', '<svg xmlns="http://www.w3.org/2000/svg" '); o.logoW = await png(iso('#FFFFFF'), 300, 300); o.logoN = await png(iso('#' + NAVY), 300, 300); } })()]);
+    await Promise.all([...Object.keys(ICO).map(async n => { o[n] = await png(svgIco(n), 96, 96); }), (async () => { o.f1 = await png(svgFondo(NAVY, NAVY2), 1333, 750, NAVY); o.f2 = await png(svgFondo(NAVY2, NAVY), 1333, 750, NAVY); o.montes = await png(svgMontes(), 800, 132);
+      const A = root.ACIERTA; if (A && A.isoSVG) { const iso = ring => A.isoSVG({ size: 400, ring }).replace('<svg ', '<svg xmlns="http://www.w3.org/2000/svg" '); o.logoW = await png(iso('#FFFFFF'), 240, 240); o.logoN = await png(iso('#' + NAVY), 240, 240, FONDO); } })()]);
     return IMG = o;
   }
-  const mapaPng = (D, pts, w, h, oscuro) => D.geo ? png(svgMapa(D.geo, D.ue.dpto, pts, w, h, oscuro), w, h) : null;
+  const mapaPng = (D, pts, w, h, oscuro) => D.geo ? png(svgMapa(D.geo, D.ue.dpto, pts, w, h, oscuro), w, h, 'FFFFFF') : null;
 
   // ───────────── piezas ─────────────
   const marca = (s, D, oscuro, x, y, d) => { x = x == null ? W - 3.35 : x; y = y == null ? 0.3 : y; d = d || 0.7; const L = oscuro ? IMG.logoW : IMG.logoN; if (L) s.addImage({ data: L, x, y, w: d, h: d }); T(s, D.marca.toUpperCase(), { x: x + d + 0.05, y, w: 2.0, h: d, fontSize: 14, bold: true, color: oscuro ? 'FFFFFF' : NAVY, charSpacing: 6, valign: 'middle' }); };
