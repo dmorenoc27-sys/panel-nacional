@@ -9,7 +9,9 @@
   // ponytail: la clave solo se usa para derivar la llave AES (PBKDF2); en el navegador se guarda la llave derivada (kb), nunca la clave
   let ultimaLlave = null;
   async function descifrar(ue, clave, kb) {
-    const p = await j(`data/entidad/${ue}.enc`);
+    // 22/10/2026: el paquete puede venir del servicio de carga del Agente (api.acierta.pe, R2) o del repositorio; el agente manda si existe
+    let p = null; if (window.ACIERTA_API) { try { p = await j(`${window.ACIERTA_API}/v1/paquete/${ue}.enc`); } catch (e) { p = null; } }
+    if (!p) p = await j(`data/entidad/${ue}.enc`);
     let raw;
     if (kb) raw = b64(kb);
     else { const km = await crypto.subtle.importKey('raw', new TextEncoder().encode(clave), 'PBKDF2', false, ['deriveBits']); raw = new Uint8Array(await crypto.subtle.deriveBits({ name: 'PBKDF2', salt: b64(p.salt), iterations: p.iter, hash: 'SHA-256' }, km, 256)); }

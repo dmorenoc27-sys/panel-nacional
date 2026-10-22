@@ -3,9 +3,10 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/ https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.4.0/ https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/ https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/ https://cdn.jsdelivr.net/npm/pptxgenjs@3.12.0/ https://static.cloudflareinsights.com/beacon.min.js; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data: blob: https://*.tile.openstreetmap.org https://ofi5.mef.gob.pe; connect-src 'self' https://cloudflareinsights.com; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/ https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.4.0/ https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/ https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/ https://cdn.jsdelivr.net/npm/pptxgenjs@3.12.0/ https://static.cloudflareinsights.com/beacon.min.js; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data: blob: https://*.tile.openstreetmap.org https://ofi5.mef.gob.pe; connect-src 'self' https://cloudflareinsights.com https://api.acierta.pe; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self'">
 <meta name="referrer" content="strict-origin-when-cross-origin">
 <script src="diag.js"></script>
+<script>window.ACIERTA_API='';/* servicio de carga del Agente Acierta (api.acierta.pe). Vacío hasta desplegar el Worker: ver Agente/worker/DESPLIEGUE.md */</script>
 <script>/* setImmediate con MessageChannel: PptxGenJS/JSZip empaquetan el PPT en cientos de pasos y sin esto cada paso espera un setTimeout(0) (4-10 ms): 5 s en vez de 0.5 s */if(!window.setImmediate){const ch=new MessageChannel(),q=[];ch.port1.onmessage=()=>{const f=q.shift();if(f)f()};window.setImmediate=f=>{q.push(f);ch.port2.postMessage(0)}}</script>
 <script>// ponytail: monitor minimo sin servicio externo: ultimos 20 errores en sessionStorage (acierta_err) y un aviso; track() lista para enchufar analytics (Cloudflare Web Analytics o GA4) cuando exista la cuenta
 window.__errs=[];function pnErr(m,w){try{__errs.push({t:Date.now(),m:String(m).slice(0,200),w});if(__errs.length>20)__errs.shift();sessionStorage.setItem('acierta_err',JSON.stringify(__errs))}catch(x){}const e=document.getElementById('toast');if(e&&!window.__errAviso){window.__errAviso=1;e.textContent='Algo no cargó bien; si persiste, recarga la página (Ctrl+F5)';e.style.display='block';setTimeout(()=>e.style.display='none',4000)}}
@@ -115,7 +116,7 @@ details.pd-col{cursor:default}details.pd-col>summary{cursor:pointer;list-style:n
 <script src="expediente.js?v=15dca4b"></script>
 <script src="incentivos.js?v=26101009"></script>
 <script src="fed.js?v=fbbc718"></script>
-<script src="entidad.js?v=20261017c"></script>
+<script src="entidad.js?v=86fd141"></script>
 <script src="reportes_siaf.js?v=20261017c"></script>
 <script src="cierre.js?v=26101009"></script>
 <script src="proveedores.js"></script>
