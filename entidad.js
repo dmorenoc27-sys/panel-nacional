@@ -437,6 +437,7 @@
   // Reutilizable: recibe T/items/opts ya armados (Mi entidad con SIAF o ficha pública con Transparencia). Expuesta en window.ResumenInversion.
   const RMQ = matchMedia('(prefers-reduced-motion: reduce)');
   let PANEL_ABIERTO = null;   // panel desplegado sobre el mapa (se conserva entre repintados)
+  let VISTA = { ue: null, v: null };   // hub o cartera; se conserva entre repintados de la misma entidad
   function resumenInversion(b, T, items, opts) {
     opts = opts || {};
     const fts = opts.fts || [];
@@ -461,13 +462,34 @@
     const tot = items.length || 1;
     const filas = Object.entries(est).filter(([, v]) => v.length).map(([k, v]) => { const [l, c] = ESTINV[k], on = !estSel || k === estSel; return `<button type="button" class="ca-f ${estSel === k ? 'on' : ''}" data-est="${k}" style="--c:${c};opacity:${on ? 1 : .45}" aria-pressed="${estSel === k}"><i style="${ESTSHAPE[k]}"></i><span class="ca-l">${l}</span><span class="ca-b"><span style="width:${Math.max(1.5, 100 * v.length / tot)}%"></span></span><span class="ca-n">${N(v.length)}</span></button>`; }).join('');
     const lista = estSel ? (() => { const [lbl, c] = ESTINV[estSel], arr = est[estSel]; return `<div class="ca-lista" style="--c:${c}"><div class="ca-lh"><span>${lbl}: ${arr.length} inversi${arr.length === 1 ? 'ón' : 'ones'}</span><button type="button" data-est-clear class="x" aria-label="Volver a la cartera">×</button></div><div class="ca-cuis">${arr.map(it => `<button type="button" data-inv-goto="${it.act_proy}" title="${(it.c.nombre || '').replace(/"/g, '&quot;').slice(0, 120)}">${it.act_proy}</button>`).join('')}</div><div class="ca-nota">Clic en un código para abrir su ficha</div></div>`; })() : '';
-    // ---- ir al detalle: lista de enlaces, sin cajas ----
-    const GO = [['pi', ...(opts.nivel === 'R' ? ['FED', 'Fondo de Estímulo al Desempeño', 'medal', '#7A5B12'] : opts.nivel === 'E' ? ['Metas', 'metas e indicadores', 'target', '#7A5B12'] : ['Plan de Incentivos', 'compromisos municipales', 'medal', '#7A5B12']), ''], ['sea', 'Contrataciones', 'procesos y contratos en el SEACE', 'doc', '#1E5AA8', ''], ['al', 'Alertas', 'lo que requiere decisión', 'siren', '#B42A2A', nAl ? N(nAl) : '']];
-    if (opts.cierre) GO.push(['cierre', 'Cierre de gestión', 'transferencia 2026', 'building', '#0F2A43', '']);
-    if (!opts.siaf && window.FlujoCaja && opts.ue) GO.push(['flujo', 'Flujo de caja', 'caja mes a mes hasta diciembre · Excel y PPT', 'wallet', '#147A45', '']);   // 17/10/2026: con SIAF vive dentro de Reportes SIAF
-    if (opts.siaf) GO.unshift(['rep', 'Reportes SIAF', 'deuda a proveedores, velocidad de pago, contratos, reservas, cierre e ingresos', 'chart', '#0F2E57', '']);
-    const mayores = items.filter(it => it.c.pim > 0).sort((a, b2) => (b2.c.pim || 0) - (a.c.pim || 0)).slice(0, 6);
-    const detalle = `<nav class="ri-go" aria-label="Ir al detalle"><div class="ri-goh">Ir al detalle</div>${GO.map(([id, t, d, ic, col, n]) => `<button type="button" class="ri-gob${id === 'rep' ? ' ri-prem' : ''}" data-go="${id}" style="--c:${col}"><span class="ri-goi">${ico(ic)}</span><span class="ri-got"><b>${t}</b><small>${d}</small></span>${n ? `<span class="ri-gon">${n}</span>` : ''}<span class="ri-goa" aria-hidden="true">›</span></button>`).join('')}</nav>`;
+    // ---- accesos del hub (22/10/2026): una cara simple, cada módulo a un clic, sin vueltas ----
+    const sinSiaf = !opts.siaf;
+    const TILES = [
+      ['pi', ...(opts.nivel === 'R' ? ['FED', 'Fondo de Estímulo al Desempeño: metas, plazos y lo que falta', 'medal'] : opts.nivel === 'E' ? ['Metas', 'metas e indicadores de la entidad', 'target'] : ['Incentivos municipales', 'metas del Plan de Incentivos, plazos y qué falta cumplir', 'medal']), '#7A5B12', ''],
+      ['sea', 'Contrataciones', 'SEACE: procesos, PAC, proveedores, contratos y penalidades', 'doc', '#1E5AA8', ''],
+      ['inv', 'Inversiones públicas', `${N(items.length)} en cartera: ficha, avance físico y financiero de cada CUI`, 'crane', '#1565C0', N(items.length)],
+      ['flujo', 'Tesorería', 'flujo de caja proyectado mes a mes hasta diciembre · Excel y PPT', 'wallet', '#147A45', ''],
+      ['al', 'Alertas', 'lo que requiere una decisión hoy', 'siren', '#B42A2A', nAl ? N(nAl) : ''],
+      ['pres', 'Presupuesto', `cadena del gasto ${ANIO}: PIM, certificado, comprometido, devengado y fuentes`, 'coins', '#0F2A43', `${pct(T.dev)} %`],
+      ['cal', 'Calendario', 'plazos con semáforo: F12-B, devengado, girado, PMI y reversiones', 'calendar', '#8E24AA', ''],
+      ['ges', 'Gestión', 'índice Acierta, PMI vs presupuesto, procesos en curso y proyección al cierre', 'compass', '#0F6E4F', '']
+    ];
+    if (sinSiaf && !(window.FlujoCaja && opts.ue)) TILES.splice(TILES.findIndex(t => t[0] === 'flujo'), 1);
+    if (opts.cierre) TILES.push(['cierre', 'Cierre de gestión', 'transferencia 2026: lo que debe quedar listo', 'building', '#5D4037', '']);
+    if (opts.siaf) TILES.push(['rep', 'Reportes SIAF', 'deuda a proveedores, velocidad de pago, reservas, cierre e ingresos', 'chart', '#0F2E57', 'SIAF'], ['prov', 'Proveedores', 'a quién se paga, cuánto y con qué demora', 'users', '#37474F', ''], ['exp', 'Expedientes', 'cada expediente SIAF con sus fases', 'folder', '#455A64', '']);
+    TILES.push(['ppt', 'Expediente PPT', 'presentación oficial a la fecha de corte, lista para la sesión', 'download', '#C9A227', '']);
+    const detalle = `<nav class="hb" aria-label="Módulos">${TILES.map(([id, t, d, ic, col, n], i) => `<button type="button" class="hb-t" data-go="${id}" style="--c:${col};--i:${i}"><span class="hb-i">${ico(ic)}</span><span class="hb-x"><b>${t}</b><small>${d}</small></span>${n ? `<span class="hb-n">${n}</span>` : ''}</button>`).join('')}</nav>`;
+    // ---- resumen en una franja: lo esencial sin scroll ----
+    const dias = Math.max(0, Math.round((new Date(ANIO, 11, 31) - Date.now()) / 864e5));
+    const franja = `<header class="hb-res"><small class="hb-src">${opts.siaf ? 'SIAF de la entidad' : (opts.fuenteTxt || 'Transparencia Económica, MEF')} · ${dias} días para el cierre del año</small>
+      <div class="hb-k">
+        <button type="button" data-p="kpi" style="--c:#0F2A43"><small>PIM ${ANIO}</small><b data-cuenta="${Math.round(T.pim || 0)}">${FM(T.pim)}</b></button>
+        <button type="button" data-p="dev" style="--c:#147A45"><small>Devengado</small><b>${pct(T.dev)} %</b><i class="hb-bar"><span style="width:${Math.min(100, pct(T.dev))}%"></span></i></button>
+        <button type="button" data-p="comp" style="--c:#2F69B3"><small>Comprometido</small><b>${pct(T.comp_anual)} %</b><i class="hb-bar"><span style="width:${Math.min(100, pct(T.comp_anual))}%"></span></i></button>
+        <button type="button" data-go="inv" style="--c:#1565C0"><small>Inversiones</small><b>${N(items.length)}</b><i class="hb-est">${Object.entries(est).filter(([, v]) => v.length).map(([k, v]) => `<span style="flex:${v.length};background:${ESTINV[k][1]}" title="${ESTINV[k][0]}: ${v.length}"></span>`).join('')}</i></button>
+        <button type="button" data-go="al" style="--c:${nAl ? '#B42A2A' : '#5F6B7A'}"><small>Alertas</small><b>${N(nAl)}</b></button>
+        <button type="button" data-p="benef" style="--c:#7A5B12"><small>Beneficiarios</small><b>${bc ? N(bc.total) : '…'}</b></button>
+      </div></header>`;
     // ---- cartera de inversiones: tarjetas con filtro por estado, orden y búsqueda; cada tarjeta abre su ficha ----
     const ORD = { pim: ['PIM', (x, y) => (y.c.pim || 0) - (x.c.pim || 0)], dev: ['Devengado', (x, y) => (y.c.dev || 0) - (x.c.dev || 0)], fis: ['Avance físico', (x, y) => (y.c.avance_fisico ?? -1) - (x.c.avance_fisico ?? -1)], nom: ['Nombre', (x, y) => String(x.c.nombre || '').localeCompare(String(y.c.nombre || ''))] };
     let orden = 'pim', busca = '';
@@ -476,29 +498,37 @@
     const cartGrid = () => { const arr = (estSel ? est[estSel] : items).filter(it => !busca || String(it.act_proy).includes(busca) || nomDe(it).toLowerCase().includes(busca)).sort(ORD[orden][1]);
       return arr.length ? arr.slice(0, 120).map((it, i) => { const k = estadoInv(it.c), [l, c] = ESTINV[k], fis = it.c.avance_fisico != null && it.c.avance_fisico >= 0 ? Math.round(it.c.avance_fisico) : null, av = it.c.pim ? Math.round(100 * (it.c.dev || 0) / it.c.pim) : null;
         return `<div role="button" tabindex="0" class="ca-card" data-inv-goto="${it.act_proy}" style="--c:${c};--i:${i}" title="Abrir la ficha de la inversión"><span class="ca-in"><span class="ca-ch"><span class="ca-cc">${it.act_proy}</span><span class="ca-ce"><i style="${ESTSHAPE[k]}"></i>${l.split(' ·')[0].split(' /')[0]}</span></span><span class="ca-cn">${nomDe(it).toLowerCase().replace(/^\w/, ch => ch.toUpperCase())}</span><span class="ca-cm"><span><small>PIM</small><b>${FM(it.c.pim || 0)}</b></span><span><small>devengado</small><b>${FM(it.c.dev || 0)}${av != null ? ` <em>${av} %</em>` : ''}</b></span><span class="ca-cr" style="--p:${fis ?? 0}"><b><i></i><span>${fis != null ? fis + '%' : '—'}</span></b><small>físico</small></span></span></span><span class="ca-ca" aria-hidden="true">›</span></div>`; }).join('') + (arr.length > 120 ? `<p class="ca-nota">Se muestran las 120 primeras de ${N(arr.length)}; afina con el buscador.</p>` : '') : '<p class="vacio">Ninguna inversión coincide.</p>'; };
-    const btnCadena = `<button type="button" class="ri-gob ri-cadb" data-cadena style="--c:#0F2A43"><span class="ri-goi">${ico('wallet')}</span><span class="ri-got"><b>Cadena del gasto</b><small>PIM ${FM(T.pim)} · devengado ${pct(T.dev)} %</small></span><span class="ri-goa" aria-hidden="true">›</span></button>`;
-    b.innerHTML = `<div class="ri">
+    if (VISTA.ue !== opts.ue) VISTA = { ue: opts.ue, v: null };
+    const enCartera = VISTA.v === 'cartera';
+    b.innerHTML = `<div class="ri hb-ri">
       <dialog class="gx-dlg" aria-label="Cadena del gasto ${ANIO}"><button type="button" class="ov-volver gx-cerrar" data-cadena-cerrar><span class="ov-fl" aria-hidden="true">←</span>Volver</button>${cadena}</dialog>
-      <div class="ri-mapa ri-cart"><div class="ri-mh"><h2 class="ca-tit">Inversiones públicas <small>${N(items.length)} en la cartera${estSel ? ` · ${N(est[estSel].length)} ${ESTINV[estSel][0].toLowerCase()}` : ''}</small></h2>
+      <div class="hb-hub"${enCartera ? ' hidden' : ''}>${franja}${detalle}</div>
+      <div class="ri-mapa ri-cart"${enCartera ? '' : ' hidden'}><div class="ri-mh"><button type="button" class="ov-volver" data-hub><span class="ov-fl" aria-hidden="true">←</span>Volver</button><h2 class="ca-tit">Inversiones públicas <small>${N(items.length)} en la cartera${estSel ? ` · ${N(est[estSel].length)} ${ESTINV[estSel][0].toLowerCase()}` : ''}</small></h2>
           <span class="ca-tools"><label class="ca-busca">${ico('search')}<input type="search" placeholder="CUI o nombre…" aria-label="Buscar en la cartera"></label></span></div>
         ${filtroChips}<div class="ca-grid" id="ca-grid">${cartGrid()}</div></div>
-      <aside class="ri-der">${btnCadena}${detalle}<button type="button" class="ri-ppt" data-ppt>${ico('download')}<span><b>Reporte PPT</b><small>presentación oficial a la fecha de corte</small></span></button></aside>
     </div>`;
+    const hub = b.querySelector('.hb-hub'), cart = b.querySelector('.ri-cart');
+    const verCartera = v => { VISTA.v = v ? 'cartera' : null; hub.hidden = !!v; cart.hidden = !v; if (v) entra(); };
+    b.querySelector('[data-hub]').onclick = () => verCartera(false);
+    // el brillo sigue al mouse: dos variables por tarjeta, un solo listener
+    b.querySelector('.hb').addEventListener('pointermove', ev => { const t = ev.target.closest('.hb-t'); if (!t) return; const r = t.getBoundingClientRect(); t.style.setProperty('--mx', (ev.clientX - r.left) + 'px'); t.style.setProperty('--my', (ev.clientY - r.top) + 'px'); });
     const grid = b.querySelector('#ca-grid'), RMq = matchMedia('(prefers-reduced-motion: reduce)').matches;
     const entra = () => { if (RMq) return; grid.querySelectorAll('.ca-card').forEach((x, i) => { if (i < 24 && x.animate) x.animate([{ opacity: 0, transform: 'translateY(10px)' }, { opacity: 1, transform: 'none' }], { duration: 420, delay: 30 * i, easing: 'cubic-bezier(.2,.8,.2,1)', fill: 'backwards' }); }); };
     const repinta = () => { grid.innerHTML = cartGrid(); grid.querySelectorAll('[data-inv-goto]').forEach(x => { x.onclick = () => opts.onCuiGoto && opts.onCuiGoto(x.dataset.invGoto); x.onkeydown = ev => { if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); x.click(); } }; }); entra(); };
     grid.querySelectorAll('.ca-card').forEach(x => x.onkeydown = ev => { if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); x.click(); } });
     b.querySelector('.ca-busca input').oninput = ev => { busca = ev.target.value.trim().toLowerCase(); repinta(); };
     entra();
-    const ppt = b.querySelector('[data-ppt]'); if (ppt) ppt.onclick = () => { const r = document.getElementById('rep-ppt'); if (r) r.click(); else if (window.CorteReporte) CorteReporte.sinPago(opts.nombre || ''); };
     const dlg = b.querySelector('.gx-dlg');
     const kpi = (id, cb) => b.querySelectorAll(`[data-p="${id}"]`).forEach(el2 => el2.onclick = () => { if (dlg.open) dlg.close(); cb(); });
     kpi('kpi', () => opts.onKpi && opts.onKpi('kpi', T)); kpi('cert', () => opts.onKpi && opts.onKpi('cert', T)); kpi('comp', () => opts.onKpi && opts.onKpi('comp', T)); kpi('dev', () => opts.onKpi && opts.onKpi('dev', T)); kpi('gir', () => opts.onKpi && opts.onKpi('dev', T));
     kpi('benef', () => opts.onKpi && opts.onKpi('benef', T, bc)); kpi('fuentes', () => opts.onKpi && opts.onKpi('fuentes', T, fts));
-    b.querySelector('[data-cadena]').onclick = () => { dlg.showModal(); animarTablero(dlg); };
     b.querySelector('[data-cadena-cerrar]').onclick = () => dlg.close();
     dlg.onclick = ev => { if (ev.target === dlg) dlg.close(); };
-    b.querySelectorAll('[data-go]').forEach(x => x.onclick = () => opts.onNav && opts.onNav(x.dataset.go));
+    b.querySelectorAll('[data-go]').forEach(x => x.onclick = () => { const id = x.dataset.go;
+      if (id === 'inv') return verCartera(true);
+      if (id === 'pres' && !opts.siaf) { dlg.showModal(); animarTablero(dlg); return; }
+      if (id === 'ppt') { const r = document.getElementById('rep-ppt'); if (r) r.click(); else if (window.CorteReporte) CorteReporte.sinPago(opts.nombre || ''); return; }
+      opts.onNav && opts.onNav(id); });
     b.querySelectorAll('[data-est]').forEach(x => x.onclick = () => { const k = x.dataset.est; opts.onEstSel && opts.onEstSel(estSel === k ? null : k); });
     if (b.querySelector('[data-est-clear]')) b.querySelector('[data-est-clear]').onclick = () => opts.onEstSel && opts.onEstSel(null);
     b.querySelectorAll('[data-inv-goto]').forEach(x => x.onclick = () => opts.onCuiGoto && opts.onCuiGoto(x.dataset.invGoto));
@@ -513,7 +543,7 @@
     b.querySelectorAll('.gx-n[data-cuenta]').forEach((el, i) => { const fin = +el.dataset.cuenta, txt = el.textContent; if (!fin) return; const t0 = performance.now(), d = 900 + i * 120;
       const f = t => { const p = Math.min(1, (t - t0) / d), e = 1 - Math.pow(1 - p, 3); el.textContent = FM(fin * e); if (p < 1) requestAnimationFrame(f); else el.textContent = txt; }; requestAnimationFrame(f); });
     b.querySelectorAll('.ca-b>span,.gx-b>span').forEach(s => { const w = s.style.width; s.style.width = '0'; requestAnimationFrame(() => requestAnimationFrame(() => { s.style.width = w; })); });
-    b.querySelectorAll('.gx-e,.ri-mapa,.ri-gob,.ri-ppt').forEach((el, i) => el.animate && el.animate([{ opacity: 0, transform: 'translateY(6px)' }, { opacity: 1, transform: 'none' }], { duration: 500, delay: 250 + i * 90, easing: 'cubic-bezier(.2,.8,.2,1)', fill: 'backwards' }));
+    b.querySelectorAll('.gx-e,.hb-res,.hb-t').forEach((el, i) => el.animate && el.animate([{ opacity: 0, transform: 'translateY(6px)' }, { opacity: 1, transform: 'none' }], { duration: 500, delay: 250 + i * 90, easing: 'cubic-bezier(.2,.8,.2,1)', fill: 'backwards' }));
   }
   window.ResumenInversion = resumenInversion;
   window.ResumenInversionUtil = { funnelGasto, verDetalleResumen, cerrarDetalleResumen, estadoInv };
@@ -878,7 +908,7 @@
         const nAl = (E.alertas?.dev_sin_girar?.length || 0) + (E.alertas?.comp_sin_devengar?.length || 0) + (E.alertas?.cert_sin_comp?.length || 0);
         resumenInversion(b, T, items, {
           nivel: E._ue.nivel, ue: E._ue.cod, nombre: E._ue.nombre, fts, beneficiarios: bc, nAlertas: nAl, estSel: abiertos.invEstado, nombreFallback: nombreMeta, cierre: E._ue.nivel === 'M' || E._ue.nivel === 'R', siaf: !E.publico && !!window.ReportesSIAF,
-          onNav: id => { if (id === 'rep') { window.ReportesSIAF.abrir(E); return; } tabE = id === 'cierre' ? 'cie' : id; render(); },
+          onNav: id => { if (id === 'rep' || id === 'flujo') { window.ReportesSIAF.abrir(E); return; } tabE = { cierre: 'cie', cal: 'plz', pres: 'ppto' }[id] || id; render(); },
           onEstSel: k => { abiertos.invEstado = k; cuerpo(); },
           onCuiGoto: cui => { abiertos.inv = cui; cuerpo(); },
           onKpi: (id, T2, extra) => {

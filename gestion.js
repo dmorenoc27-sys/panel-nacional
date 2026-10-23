@@ -152,6 +152,7 @@
     if (!g) { el.innerHTML = `<div style="padding:8px">${cab(u, '', opts)}<div class="card" style="padding:18px;text-align:center"><b style="color:var(--p2)">Sin inversiones activas registradas en el Banco de Inversiones para esta unidad ejecutora</b></div></div>`; const ba = el.querySelector('#gs-atras'); if (ba) ba.onclick = () => opts.onAtras(); el.querySelector('#gs-limpiar').onclick = () => { }; return; }
     if (gi && gi.corte) g.corte = gi.corte;
     vista(el, u, g, pac, opts);
+    if (opts.abrir) { const p = el.querySelector(`.gs-p[data-p="${opts.abrir}"]`); if (p) { p.click(); p.scrollIntoView({ block: 'start' }); } }
   }
   window.Gestion = { ui };
 })();
