@@ -128,6 +128,22 @@
       <div style="font-size:20px;color:var(--mut);flex:0 0 auto">›</div></div>`;
   }
   let abiertoN = null, ultimo = null;
+  // 22/10/2026: lo que la municipalidad recibió del Plan de Incentivos, año por año (Transferencias del Tesoro, MEF; recurso "Plan de Incentivos")
+  const SHPI = {};
+  function recibidoPI(ue, U) {
+    if (U && U.cod === ue && U.pi_hist) return Promise.resolve(U.pi_hist);
+    const k = (parseInt(ue, 10) % 64).toString().padStart(2, '0');
+    if (!SHPI[k]) SHPI[k] = fetch(`data/ue/${k}.json`).then(r => r.json()).catch(() => ({}));
+    return SHPI[k].then(b => (b[ue] && b[ue].pi_hist) || []);
+  }
+  function bloqueRecibido(hist) {
+    if (!hist || !hist.length) return '';
+    const max = Math.max(...hist.map(h => h[1])), tot = hist.reduce((a, h) => a + h[1], 0), F = v => 'S/ ' + Math.round(v).toLocaleString('es-PE');
+    const ult = hist[hist.length - 1], prev = hist.length > 1 ? hist[hist.length - 2] : null, var_ = prev && prev[1] ? Math.round(100 * (ult[1] - prev[1]) / prev[1]) : null;
+    return `<section class="pi-rec" aria-label="Recibido por el Plan de Incentivos"><div class="pi-rech"><div><b>Lo que recibió por el Plan de Incentivos</b><small>${F(tot)} acreditados entre ${hist[0][0]} y ${ult[0]}${var_ != null ? ` · ${ult[0]}: ${var_ >= 0 ? '+' : ''}${var_} % frente a ${prev[0]}` : ''}</small></div><small class="pi-recs">Transferencias del Tesoro Público, MEF · lo acreditado cada año</small></div>
+      <div class="pi-recg">${hist.map(([a, v]) => `<div class="pi-recb" title="${a}: ${F(v)}"><b>${v >= 1e6 ? (v / 1e6).toFixed(1) + ' M' : v >= 1e3 ? Math.round(v / 1e3) + ' mil' : Math.round(v)}</b><i style="height:${Math.max(3, Math.round(100 * v / (max || 1)))}%"></i><span>${a}${a === new Date().getFullYear() ? ' <em>en curso</em>' : ''}</span></div>`).join('')}</div></section>`;
+  }
+  function pintarRecibido(el, ue, U) { recibidoPI(ue, U).then(h => { const html = bloqueRecibido(h); if (!html) return; const slot = el.querySelector('[data-pi-rec]'); if (slot) slot.outerHTML = html; }); }
   function render(el, E, META, ue, onExp) {
     ultimo = [el, E, META, ue, onExp];
     const S = st.get(ue), corte = E.corte; MCUR = metasDe(ue); if (!METAS) cargarMetas(() => render(el, E, META, ue, onExp));
@@ -140,8 +156,9 @@
     } else {
       el.innerHTML = `<div style="padding:8px">
        <div class="pd-lbl">Plan de Incentivos ${PI.anio}<small>${PI.norma}</small></div>
-       <p class="mutx" style="font-size:11.5px;margin:0 0 10px">Clic en una meta para ver su detalle.</p>
+       <p class="mutx" style="font-size:11.5px;margin:0 0 10px">Clic en una meta para ver su detalle.</p><div data-pi-rec></div>
        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">${PI.compromisos.map(c => compactCard(c, S, E, META)).join('')}</div></div>`;
+      pintarRecibido(el, String(ue), null);
     }
     el.querySelectorAll('[data-abrir]').forEach(x => x.onclick = () => { abiertoN = +x.dataset.abrir; render(el, E, META, ue, onExp); });
     el.querySelectorAll('[data-aplica]').forEach(x => x.onchange = () => { S['aplica' + x.dataset.aplica] = x.checked; st.set(ue, S); render(el, E, META, ue, onExp); });
@@ -257,6 +274,7 @@
         <p>${tp ? `<span class="pm-tipo">Tipo ${esc(tp)}</span> Municipalidad ${esc(PIT[tp] || '')}` : 'Tipo de municipalidad no registrado en la clasificación del MEF'} · ${todas.length} meta${todas.length === 1 ? '' : 's'} que le corresponden${m ? ' (Anexo C del MEF)' : ''} · ${nOk} en camino, ${nMal} atrasada${nMal === 1 ? '' : 's'}</p></div>
         <div class="pi-cal"><div class="pi-calh">Calendario del MEF${prox ? ` <small>· faltan ${Math.round((new Date(prox[0]) - new Date(hoy)) / 864e5)} días para ${prox[1].toLowerCase()}</small>` : ''}</div>
           <ol class="pm-cal">${cal.map(([f, t]) => `<li class="${f <= hoy ? 'ok' : ''}"><b>${fD(f)}</b><span>${esc(t)}</span></li>`).join('')}</ol></div></header>
+      <div data-pi-rec></div>
       <section class="pm-g" aria-label="Metas de la municipalidad">${todas.map(x => `<article class="pm-c ${x.k}" style="--c:${x.col}">
         <div class="pm-ch"><span class="pm-ci">${ico(x.ico)}</span><div class="pm-ct"><b>${x.n ? x.n + '. ' : ''}${esc(x.titulo)}</b><small>${esc(x.sub)}${x.ap === 'lista' ? ` · <em>solo si figura en ${esc(LISTA[x.n] || 'la lista del MEF')}</em>` : ''}</small></div><span class="pm-sem ${x.k}">${SEM[x.k]}</span></div>
         <div class="pm-r"><span class="pm-l">${ico('target')}Qué debe lograr</span><p>${esc(x.meta)}</p></div>
@@ -265,6 +283,7 @@
       ${noAp.length ? `<p class="pm-no">${m ? 'No le corresponden según el Anexo C del MEF' : 'No le corresponden por su tipo'}: ${noAp.map(c => `${c.n}. ${esc(c.corto)}`).join(' · ')}.</p>` : ''}
       <div class="pi-f"><a href="#/entidad" class="pi-cta">${ico('lock')}<span><b>Diagnóstico en vivo con el SIAF</b><small>recaudación del predial, producto 3000882 y programas 0001, 0030 y 0138, en Mi entidad</small></span></a><span class="pi-src">Fuente: MEF (DS 003-2026-EF, RD 0003-2026-EF/50.01, fichas técnicas), Consulta Amigable y Banco de Inversiones. Herramienta de apoyo, no oficial.</span></div>
     </div>`;
+    pintarRecibido(el, ux.cod, U);
     if (!RM && !el.dataset.animado) { el.dataset.animado = 1; el.querySelectorAll('.pm-c,.pi-cal').forEach((x, i) => x.animate && x.animate([{ opacity: 0, transform: 'translateY(8px)' }, { opacity: 1, transform: 'none' }], { duration: 480, delay: 80 + i * 60, easing: 'cubic-bezier(.2,.8,.2,1)', fill: 'backwards' })); }
   }
   function publico(el, opts) {
