@@ -21,27 +21,27 @@
   function css() {
     if (document.getElementById('ct-css')) return;
     const st = document.createElement('style'); st.id = 'ct-css'; st.textContent = `
-      .ct-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+      .ct-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
       .ct-bars i{position:relative}.ct-bars i em{position:absolute;left:0;right:0;bottom:0;background:#1B9E5A;border-radius:inherit}@media(max-width:1100px){.ct-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}@media(max-width:560px){.ct-grid{grid-template-columns:1fr}}
-      .ct-p{position:relative;overflow:hidden;background:#fff;border-radius:14px;padding:14px 16px 12px;border:1px solid rgba(15,42,67,.08);border-left:5px solid var(--c);box-shadow:0 1px 2px rgba(15,42,67,.06),0 6px 16px -8px rgba(15,42,67,.18);cursor:pointer;transition:transform .18s ease,box-shadow .18s ease,background .18s ease;user-select:none}
+      .ct-p{position:relative;overflow:hidden;background:#fff;border-radius:14px;padding:10px 14px 9px;border:1px solid rgba(15,42,67,.08);border-left:5px solid var(--c);box-shadow:0 1px 2px rgba(15,42,67,.06),0 6px 16px -8px rgba(15,42,67,.18);cursor:pointer;transition:transform .18s ease,box-shadow .18s ease,background .18s ease;user-select:none}
       .ct-p:hover{transform:translateY(-3px);box-shadow:0 2px 4px rgba(15,42,67,.08),0 14px 28px -10px rgba(15,42,67,.32)}
       .ct-p:active{transform:translateY(-1px) scale(.995)}
       .ct-p.on{background:linear-gradient(135deg,var(--c) 0%,color-mix(in srgb,var(--c) 78%,#0F2A43) 100%);color:#fff;border-color:transparent;box-shadow:0 10px 26px -8px color-mix(in srgb,var(--c) 70%,transparent)}
       .ct-p.on .ct-k,.ct-p.on .ct-s,.ct-p.on .ct-y{color:rgba(255,255,255,.85)}.ct-p.on .ct-v{color:#fff}
       .ct-p::after{content:'▾';position:absolute;right:11px;top:8px;font-size:14px;color:var(--mut);transition:transform .25s ease}.ct-p.on::after{transform:rotate(180deg);color:#fff}
-      .ct-k{font-size:10px;font-weight:800;color:var(--mut);text-transform:uppercase;letter-spacing:.7px;padding-right:16px}.ct-v{font-size:21px;font-weight:800;color:var(--c);line-height:1.1;margin-top:4px;font-variant-numeric:tabular-nums}
+      .ct-k{font-size:10px;font-weight:800;color:var(--mut);text-transform:uppercase;letter-spacing:.7px;padding-right:16px}.ct-v{font-size:19px;font-weight:800;color:var(--c);line-height:1.1;margin-top:3px;font-variant-numeric:tabular-nums}
       .ct-s{font-size:11px;color:var(--ink2);margin-top:2px}.ct-y{font-size:10.5px;color:var(--ink);margin-top:3px}
       .ct-det{margin-top:12px;border-radius:14px;background:#fff;border:1px solid rgba(15,42,67,.08);box-shadow:0 8px 24px -12px rgba(15,42,67,.25);padding:14px 16px;animation:ctIn .28s ease}
       .ct-det .pd-lbl:first-child{margin-top:0}
       @keyframes ctIn{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:none}}
       .ct-hero{position:relative;overflow:hidden;border-radius:16px;background:radial-gradient(900px 300px at 10% -20%,rgba(255,255,255,.14),transparent 60%),linear-gradient(135deg,#164A8C 0%,#1E5AA8 55%,#2F6FC2 100%);color:#fff;padding:18px 20px;box-shadow:0 14px 34px -14px rgba(22,74,140,.5)}
       .ct-hero input{transition:box-shadow .2s ease,transform .2s ease}.ct-hero input:focus{outline:0;box-shadow:0 0 0 4px rgba(255,255,255,.45);transform:scale(1.01)}
-      .ct-top{display:flex;gap:12px;align-items:center;margin:0 0 12px;padding:10px 14px;background:linear-gradient(135deg,#fff 60%,#EDF3FC);border:1px solid var(--line);border-left:5px solid var(--p);border-radius:12px;box-shadow:var(--sh)}
+      .ct-top{display:flex;gap:12px;align-items:center;margin:0 0 10px;padding:7px 14px;background:linear-gradient(135deg,#fff 60%,#EDF3FC);border:1px solid var(--line);border-left:5px solid var(--p);border-radius:12px;box-shadow:var(--sh)}
       .ct-top .ct-mod{font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;font-weight:800;color:var(--p)}
       .ct-top .ct-nom{font-size:17px;font-weight:800;color:var(--p2);line-height:1.15;margin:2px 0}
       .ct-top .btn{white-space:nowrap}
       .ct-top select{padding:7px 12px;border:1.5px solid var(--p);border-radius:999px;font:inherit;font-size:12.5px;font-weight:700;color:var(--p2);background:#fff;cursor:pointer}
-      .ct-strip{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:0 0 12px}
+      .ct-strip{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:0 0 10px}
       .ct-strip .tag{font-size:11px;padding:3px 9px;box-shadow:0 1px 2px rgba(15,42,67,.08)}
       .ct-bars{display:flex;gap:6px;align-items:flex-end;height:96px;padding:8px 4px 0}.ct-bars>div{flex:1;text-align:center;font-size:10px;color:var(--ink2)}.ct-bars i{display:block;border-radius:5px 5px 0 0;margin:2px 5px 0;background:var(--c,var(--p2));transform-origin:bottom;animation:ctGrow .5s ease both}
       @keyframes ctGrow{from{transform:scaleY(0)}to{transform:scaleY(1)}}
@@ -59,7 +59,7 @@
   const barsPA = pares => { const mx = Math.max(...pares.map(p => p[1])) || 1; return `<div class="ct-bars" style="--c:#5C6BC0">${pares.map(([m, n, a]) => `<div title="${m}: ${n} programado${n === 1 ? '' : 's'}${a != null ? ` · ${a} con buena pro` : ''}"><div style="font-size:9.5px;font-weight:700;color:var(--ink)">${n || ''}</div><i style="height:${Math.max(3, Math.round(56 * n / mx))}px">${a ? `<em style="height:${Math.round(100 * a / n)}%"></em>` : ''}</i>${m}</div>`).join('')}</div>`; };
   const NIV = { E: 'Gobierno Nacional', R: 'Gobierno Regional', M: 'Gobierno Local', L: 'Gobierno Local' };
   // cabecera fija del modulo: siempre se ve que entidad se analiza y en que modulo estamos; Atras cierra, Limpiar deja todo como al entrar
-  const cabecera = (u, sub, opts, sel) => `<div class="ct-top">${opts.onAtras ? '<button type="button" class="ov-volver" id="ct-atras"><span class="ov-fl" aria-hidden="true">←</span>Volver</button>' : ''}<div style="flex:1;min-width:0"><div class="ct-mod">📑 Módulo de Contrataciones · SEACE</div><div class="ct-nom">${esc(u.nombre || ('UE ' + u.cod))}</div><div class="mutx" style="font-size:11.5px">Unidad ejecutora ${esc(u.cod)}${NIV[u.nivel] ? ' · ' + NIV[u.nivel] : ''}${sub ? ' · ' + sub : ''}</div></div>${sel || ''}<button class="btn" id="ct-limpiar" title="Cerrar paneles y borrar la búsqueda de proveedor">🧹 Limpiar</button></div>`;
+  const cabecera = (u, sub, opts, sel) => `<div class="ct-top">${opts.onAtras ? '<button type="button" class="ov-volver" id="ct-atras"><span class="ov-fl" aria-hidden="true">←</span>Volver</button>' : ''}<div style="flex:1;min-width:0"><div class="ct-mod">📑 Contrataciones · SEACE</div><div class="mutx" style="font-size:11.5px">${esc(u.nombre || ('UE ' + u.cod))} · UE ${esc(u.cod)}${sub ? ' · ' + sub : ''}</div></div>${sel || ''}<button class="btn" id="ct-limpiar" title="Cerrar paneles y borrar la búsqueda de proveedor">🧹 Limpiar</button></div>`;
   function vista(el, u, d, opts, Y) {
     css(); Y = Y || '';   // Y = anio elegido en la cabecera ('' = todos): TODO el modulo se recalcula para ese anio
     const anios = Object.keys(d.anios || {}).sort(), act = (d.anios || {})[String(ANIO)] || {};
@@ -129,8 +129,8 @@
     el.innerHTML = `<div style="padding:8px">
       ${cabecera(u, `${totN} proceso${totN === 1 ? '' : 's'} ${rango}`, opts, `<select id="ct-anio" title="Año: todo el módulo se recalcula"><option value="">Todos los años · 2018–${ANIO}</option>${[...anios].reverse().map(y => { const r = d.anios[y] || {}, n = ORDEN.reduce((a, x) => a + (r[x] ? r[x][0] : 0), 0); return `<option value="${y}"${y === Y ? ' selected' : ''}>${y} · ${n} proceso${n === 1 ? '' : 's'}</option>`; }).join('')}</select>`)}
       <div class="ct-strip"><span class="tag" style="background:#EDF3FC;color:var(--p2)">${totN} proceso${totN === 1 ? '' : 's'} · ${S(totM)} adjudicados ${rango}</span><span class="tag ${n_res ? 'bad' : 'ok'}">${n_res} contrato${n_res === 1 ? '' : 's'} resuelto${n_res === 1 ? '' : 's'}</span><span class="tag ${pen_tot ? 'warn' : 'ok'}">${pen_tot ? `${pen_tot[0]} penalidad${pen_tot[0] > 1 ? 'es' : ''}` : 'sin penalidades'}</span><span class="mutx" style="margin-left:auto;font-size:11px">Clic en un panel para desplegar su detalle · SEACE · corte ${D(d.corte)}</span></div>
+      <div id="ct-prov" style="margin:0 0 12px"></div>
       ${grid}<div id="ct-det"></div>
-      <div id="ct-prov" style="margin-top:14px"></div>
       <p class="mutx" style="font-size:10px;margin-top:10px">Fuente: OECE · CONOSCE datos abiertos (Plan Anual de Contrataciones, adjudicaciones, contratos, penalidades y arbitrajes del SEACE, 2018 en adelante). El PAC abierto no incluye montos. Las órdenes de compra y servicio (compras menores a 8 UIT) no forman parte de la descarga masiva del OECE.${(d.alertas || []).length ? ` <b style="color:#D64545" title="${esc(d.alertas.join('\n'))}">⚠ ${d.alertas.length} fuente${d.alertas.length === 1 ? '' : 's'} del OECE sin actualizar (ver Logs/fuentes_pendientes.txt)</b>` : ' Fuentes verificadas al día.'}</p></div>`;
     countUp(el);
     const det = el.querySelector('#ct-det'); let abierto = null;
