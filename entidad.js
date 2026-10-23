@@ -465,23 +465,23 @@
     // ---- accesos del hub (22/10/2026): una cara simple, cada módulo a un clic, sin vueltas ----
     const sinSiaf = !opts.siaf;
     const TILES = [
-      ['pi', ...(opts.nivel === 'R' ? ['FED', 'Fondo de Estímulo al Desempeño: metas, plazos y lo que falta', 'medal'] : opts.nivel === 'E' ? ['Metas', 'metas e indicadores de la entidad', 'target'] : ['Incentivos municipales', 'metas del Plan de Incentivos, plazos y qué falta cumplir', 'medal']), '#7A5B12', ''],
-      ['sea', 'Contrataciones', 'SEACE: procesos, PAC, proveedores, contratos y penalidades', 'doc', '#1E5AA8', ''],
       ['inv', 'Inversiones públicas', `${N(items.length)} en cartera: ficha, avance físico y financiero de cada CUI`, 'crane', '#1565C0', N(items.length)],
-      ['flujo', 'Tesorería', 'flujo de caja proyectado mes a mes hasta diciembre · Excel y PPT', 'wallet', '#147A45', ''],
-      ['al', 'Alertas', 'lo que requiere una decisión hoy', 'siren', '#B42A2A', nAl ? N(nAl) : ''],
+      ['sea', 'Contrataciones', 'SEACE: procesos, PAC, proveedores, contratos y penalidades', 'doc', '#1E5AA8', ''],
       ['pres', 'Presupuesto', `cadena del gasto ${ANIO}: PIM, certificado, comprometido, devengado y fuentes`, 'coins', '#0F2A43', `${pct(T.dev)} %`],
-      ['cal', 'Calendario', 'plazos con semáforo: F12-B, devengado, girado, PMI y reversiones', 'calendar', '#8E24AA', ''],
-      ['ges', 'Gestión', 'índice Acierta, PMI vs presupuesto, procesos en curso y proyección al cierre', 'compass', '#0F6E4F', '']
+      ['pi', ...(opts.nivel === 'R' ? ['FED', 'Fondo de Estímulo al Desempeño: metas, plazos y lo que falta', 'medal'] : opts.nivel === 'E' ? ['Metas', 'metas e indicadores de la entidad', 'target'] : ['Incentivos municipales', 'metas del Plan de Incentivos, plazos y qué falta cumplir', 'medal']), '#7A5B12', ''],
+      ['al', 'Alertas', 'lo que requiere una decisión hoy', 'siren', '#B42A2A', nAl ? N(nAl) : ''],
+      ['flujo', 'Tesorería', 'flujo de caja proyectado mes a mes hasta diciembre · Excel y PPT', 'wallet', '#147A45', ''],
+      ['ges', 'Gestión', 'índice Acierta, PMI vs presupuesto, procesos en curso y proyección al cierre', 'compass', '#0F6E4F', ''],
+      ['cierre', 'Cierre de gestión', 'transferencia 2026: lo que debe quedar listo', 'building', '#5D4037', ''],
+      ['cal', 'Calendario', 'plazos con semáforo: F12-B, devengado, girado, PMI y reversiones', 'calendar', '#8E24AA', '']
     ];
     if (sinSiaf && !(window.FlujoCaja && opts.ue)) TILES.splice(TILES.findIndex(t => t[0] === 'flujo'), 1);
-    if (opts.cierre) TILES.push(['cierre', 'Cierre de gestión', 'transferencia 2026: lo que debe quedar listo', 'building', '#5D4037', '']);
+    if (!opts.cierre) TILES.splice(TILES.findIndex(t => t[0] === 'cierre'), 1);
     if (opts.siaf) TILES.push(['rep', 'Reportes SIAF', 'deuda a proveedores, velocidad de pago, reservas, cierre e ingresos', 'chart', '#0F2E57', 'SIAF'], ['prov', 'Proveedores', 'a quién se paga, cuánto y con qué demora', 'users', '#37474F', ''], ['exp', 'Expedientes', 'cada expediente SIAF con sus fases', 'folder', '#455A64', '']);
-    TILES.push(['ppt', 'Expediente PPT', 'presentación oficial a la fecha de corte, lista para la sesión', 'download', '#C9A227', '']);
     const detalle = `<nav class="hb" aria-label="Módulos">${TILES.map(([id, t, d, ic, col, n], i) => `<button type="button" class="hb-t" data-go="${id}" style="--c:${col};--i:${i}"><span class="hb-i">${ico(ic)}</span><span class="hb-x"><b>${t}</b><small>${d}</small></span>${n ? `<span class="hb-n">${n}</span>` : ''}</button>`).join('')}</nav>`;
     // ---- resumen en una franja: lo esencial sin scroll ----
     const dias = Math.max(0, Math.round((new Date(ANIO, 11, 31) - Date.now()) / 864e5));
-    const franja = `<header class="hb-res"><small class="hb-src">${opts.siaf ? 'SIAF de la entidad' : (opts.fuenteTxt || 'Transparencia Económica, MEF')} · ${dias} días para el cierre del año</small>
+    const franja = `<header class="hb-res"><div class="hb-top"><small class="hb-src">${opts.siaf ? 'SIAF de la entidad' : (opts.fuenteTxt || 'Transparencia Económica, MEF')} · ${dias} días para el cierre del año</small><button type="button" class="hb-ppt" data-go="ppt">${ico('download')}Expediente PPT<small>a la fecha de corte</small></button></div>
       <div class="hb-k">
         <button type="button" data-p="kpi" style="--c:#0F2A43"><small>PIM ${ANIO}</small><b data-cuenta="${Math.round(T.pim || 0)}">${FM(T.pim)}</b></button>
         <button type="button" data-p="dev" style="--c:#147A45"><small>Devengado</small><b>${pct(T.dev)} %</b><i class="hb-bar"><span style="width:${Math.min(100, pct(T.dev))}%"></span></i></button>
