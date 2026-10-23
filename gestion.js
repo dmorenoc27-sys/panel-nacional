@@ -36,7 +36,7 @@
       .gs-call{margin-top:14px;padding:14px 16px;border-radius:14px;background:linear-gradient(135deg,#164A8C,#2F6FC2);color:#fff}.gs-call b{color:#fff}.gs-call ol{margin:6px 0 0 18px;padding:0;font-size:12px;line-height:1.5}`;
     document.head.appendChild(st);
   }
-  const cab = (u, sub, opts) => `<div class="gs-top">${opts.onAtras ? '<button type="button" class="ov-volver" id="gs-atras"><span class="ov-fl" aria-hidden="true">←</span>Volver</button>' : ''}<div style="flex:1;min-width:0"><div class="m">🧭 Módulo de Gestión · Invierte.pe + SIAF + SEACE</div><div class="n">${esc(u.nombre || ('UE ' + u.cod))}</div><div class="mutx" style="font-size:11.5px">Unidad ejecutora ${esc(u.cod)}${NIV[u.nivel] ? ' · ' + NIV[u.nivel] : ''}${sub ? ' · ' + sub : ''}</div></div><button class="btn" id="gs-limpiar" title="Cerrar paneles">🧹 Limpiar</button></div>`;
+  const cab = (u, sub, opts) => `<div class="gs-top">${opts.onAtras ? '<button type="button" class="ov-volver" id="gs-atras"><span class="ov-fl" aria-hidden="true">←</span>Volver</button>' : ''}<div style="flex:1;min-width:0"><div class="m">🧭 Seguimiento de inversiones · Invierte.pe + SIAF + SEACE</div><div class="n">${esc(u.nombre || ('UE ' + u.cod))}</div><div class="mutx" style="font-size:11.5px">Unidad ejecutora ${esc(u.cod)}${NIV[u.nivel] ? ' · ' + NIV[u.nivel] : ''}${sub ? ' · ' + sub : ''}</div></div><button class="btn" id="gs-limpiar" title="Cerrar paneles">🧹 Limpiar</button></div>`;
   const chk = (ok, t) => `<span class="gs-chk" style="background:${ok === true ? '#1B9E5A' : ok === false ? '#D64545' : '#B0BEC5'}" title="${esc(t || '')}">${ok === true ? '✓' : ok === false ? '✗' : '·'}</span>`;
 
   function vista(el, u, g, pac, opts) {

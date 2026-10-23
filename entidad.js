@@ -228,7 +228,7 @@
     const cab = `<div class="pd-cui"><span>MI ENTIDAD · UE ${u.cod}</span><span>· ${E.publico ? 'Datos MEF' : 'SIAF'} al ${E.corte}${(d => d > 1 ? ` · <b style="color:${d > 30 ? '#D64545' : d > 7 ? '#E39B1E' : 'inherit'}" title="días desde la fecha de corte de los datos">hace ${d} días</b>` : '')(Math.round((Date.now() - new Date(String(E.corte).slice(0, 10))) / 864e5))}</span>${E._corteVista ? `<span style="background:var(--p);color:#fff;border-radius:6px;padding:1px 8px;margin-left:6px">CORTE ${fDMY(E._corteVista)}</span>` : ''}<span>· Transparencia al ${R.corte}</span><button type="button" id="ent-salir" title="Cerrar la sesión de la entidad (pedirá la clave otra vez)" style="margin-left:auto;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.3);border-radius:999px;padding:3px 10px;cursor:pointer;color:inherit;font:inherit;font-size:11px">Cerrar sesión ×</button></div><div class="pd-title">${u.nombre}</div>`;
     // 22/10/2026: mismo esquema que la ficha pública — el hub (tabE 'inv') es la portada; cada módulo abre con cabecera + un solo Volver, sin barra de pestañas
     if (tabE !== 'inv') {
-      const LBL = { c8: '🧾 Compras menores a 8 UIT', res: '📊 Detalle técnico', ppto: '💰 Presupuesto', exp: '📁 Expedientes' + (filtroMeta ? ' · ' + filtroMeta : ''), ing: '🏦 Ingresos', plz: '📅 Calendario de plazos', ges: '🧭 Gestión', al: `🎯 Alertas (${nAl})`, prov: '👥 Proveedores', cert: '📋 Certificaciones', cie: '🏛 Cierre de gestión', sea: '📑 Contrataciones', hoy: '📈 Hoy', pi: E._ue.nivel === 'R' ? '🏅 FED · Fondo de Estímulo al Desempeño' : E._ue.nivel === 'E' ? '🎯 Metas' : '🏅 Plan de Incentivos ' + ANIO };
+      const LBL = { c8: '🧾 Compras menores a 8 UIT', res: '📊 Detalle técnico', ppto: '💰 Presupuesto', exp: '📁 Expedientes' + (filtroMeta ? ' · ' + filtroMeta : ''), ing: '🏦 Ingresos', plz: '📅 Calendario de plazos', ges: '🧭 Seguimiento de inversiones', al: `🎯 Alertas (${nAl})`, prov: '👥 Proveedores', cert: '📋 Certificaciones', cie: '🏛 Cierre de gestión', sea: '📑 Contrataciones', hoy: '📈 Hoy', pi: E._ue.nivel === 'R' ? '🏅 FED · Fondo de Estímulo al Desempeño' : E._ue.nivel === 'E' ? '🎯 Metas' : '🏅 Plan de Incentivos ' + ANIO };
       const conBusca = !['res', 'ppto', 'ing', 'pi', 'ges', 'cie', 'sea', 'plz'].includes(tabE), conXls = !['pi', 'ges', 'cie', 'sea'].includes(tabE), tec = tabE === 'res';
       const GRUPOS = [['sea', 'Contrataciones'], ['c8', 'Compras < 8 UIT'], ['prov', 'Proveedores'], ['exp', 'Expedientes']], GRUPOP = [['ppto', 'Presupuesto'], ['ing', 'Ingresos'], ['cert', 'Certificaciones'], ['res', 'Detalle técnico']];
       const grupo = GRUPOS.some(g => g[0] === tabE) ? GRUPOS : GRUPOP.some(g => g[0] === tabE) ? GRUPOP : null;
@@ -340,7 +340,7 @@
   function pintarMapaInv(items, estSel, onGoto) {
     cargarLeaflet().then(() => {
       const el = $('inv-mapa'); if (!el || !window.L || el._leaflet_id) return;   // ya pintado por una llamada anterior (dos render seguidos)
-      const mp = L.map(el, { scrollWheelZoom: false });
+      const mp = L.map(el, { scrollWheelZoom: false }); el._leaflet_map = mp;
       L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '© OpenStreetMap', maxZoom: 18 }).addTo(mp);
       // ponytail: halo pulsante
       if (!document.getElementById('nac-pulse-css')) {
@@ -440,7 +440,7 @@
   // Reutilizable: recibe T/items/opts ya armados (Mi entidad con SIAF o ficha pública con Transparencia). Expuesta en window.ResumenInversion.
   const RMQ = matchMedia('(prefers-reduced-motion: reduce)');
   let PANEL_ABIERTO = null;   // panel desplegado sobre el mapa (se conserva entre repintados)
-  let VISTA = { ue: null, v: null };   // hub o cartera; se conserva entre repintados de la misma entidad
+  let VISTA = { ue: null, v: null, sub: null }; let gesAbrir = null;   // hub o cartera; se conserva entre repintados de la misma entidad
   function resumenInversion(b, T, items, opts) {
     opts = opts || {};
     const fts = opts.fts || [];
@@ -468,13 +468,13 @@
     // ---- accesos del hub (22/10/2026): una cara simple, cada módulo a un clic, sin vueltas ----
     const sinSiaf = !opts.siaf;
     const TILES = [
-      ['inv', 'Inversiones públicas', `${N(items.length)} en cartera: ficha, avance físico y financiero de cada CUI`, 'crane', '#1565C0', N(items.length)],
+      ['inv', 'Inversiones públicas', `${N(items.length)} en cartera · mapa, seguimiento, cierre y Reglamento 2026`, 'crane', '#1565C0', N(items.length)],
       ['sea', 'Contrataciones', 'SEACE: procesos, PAC, proveedores, contratos y penalidades', 'doc', '#1E5AA8', ''],
       ['pres', 'Presupuesto', `cadena del gasto ${ANIO}: PIM, certificado, comprometido, devengado y fuentes`, 'coins', '#0F2A43', `${pct(T.dev)} %`],
       ['pi', ...(opts.nivel === 'R' ? ['FED', 'Fondo de Estímulo al Desempeño: metas, plazos y lo que falta', 'medal'] : opts.nivel === 'E' ? ['Metas', 'metas e indicadores de la entidad', 'target'] : ['Incentivos municipales', 'metas del Plan de Incentivos, plazos y qué falta cumplir', 'medal']), '#7A5B12', ''],
       ['al', 'Alertas', 'lo que requiere una decisión hoy', 'siren', '#B42A2A', nAl ? N(nAl) : ''],
       ['flujo', 'Tesorería', 'flujo de caja proyectado mes a mes hasta diciembre · Excel y PPT', 'wallet', '#147A45', ''],
-      ['ges', 'Gestión', 'índice Acierta, PMI vs presupuesto, procesos en curso y proyección al cierre', 'compass', '#0F6E4F', ''],
+      ['prov', 'Proveedores', 'verifica cualquier RUC: sanciones, penalidades, contratos resueltos y vínculos', 'users', '#0F6E4F', ''],
       ['cierre', 'Cierre de gestión', 'transferencia 2026: lo que debe quedar listo', 'building', '#5D4037', ''],
       ['cal', 'Calendario', 'plazos con semáforo: F12-B, devengado, girado, PMI y reversiones', 'calendar', '#8E24AA', '']
     ];
@@ -501,18 +501,26 @@
     const cartGrid = () => { const arr = (estSel ? est[estSel] : items).filter(it => !busca || String(it.act_proy).includes(busca) || nomDe(it).toLowerCase().includes(busca)).sort(ORD[orden][1]);
       return arr.length ? arr.slice(0, 120).map((it, i) => { const k = estadoInv(it.c), [l, c] = ESTINV[k], fis = it.c.avance_fisico != null && it.c.avance_fisico >= 0 ? Math.round(it.c.avance_fisico) : null, av = it.c.pim ? Math.round(100 * (it.c.dev || 0) / it.c.pim) : null;
         return `<div role="button" tabindex="0" class="ca-card" data-inv-goto="${it.act_proy}" style="--c:${c};--i:${i}" title="Abrir la ficha de la inversión"><span class="ca-in"><span class="ca-ch"><span class="ca-cc">${it.act_proy}</span><span class="ca-ce"><i style="${ESTSHAPE[k]}"></i>${l.split(' ·')[0].split(' /')[0]}</span></span><span class="ca-cn">${nomDe(it).toLowerCase().replace(/^\w/, ch => ch.toUpperCase())}</span><span class="ca-cm"><span><small>PIM</small><b>${FM(it.c.pim || 0)}</b></span><span><small>devengado</small><b>${FM(it.c.dev || 0)}${av != null ? ` <em>${av} %</em>` : ''}</b></span><span class="ca-cr" style="--p:${fis ?? 0}"><b><i></i><span>${fis != null ? fis + '%' : '—'}</span></b><small>físico</small></span></span></span><span class="ca-ca" aria-hidden="true">›</span></div>`; }).join('') + (arr.length > 120 ? `<p class="ca-nota">Se muestran las 120 primeras de ${N(arr.length)}; afina con el buscador.</p>` : '') : '<p class="vacio">Ninguna inversión coincide.</p>'; };
-    if (VISTA.ue !== opts.ue) VISTA = { ue: opts.ue, v: null };
+    if (VISTA.ue !== opts.ue) VISTA = { ue: opts.ue, v: null, sub: null };
     const enCartera = VISTA.v === 'cartera';
     b.innerHTML = `<div class="ri hb-ri">
       <dialog class="gx-dlg" aria-label="Cadena del gasto ${ANIO}"><button type="button" class="ov-volver gx-cerrar" data-cadena-cerrar><span class="ov-fl" aria-hidden="true">←</span>Volver</button>${cadena}</dialog>
       <div class="hb-hub"${enCartera ? ' hidden' : ''}>${franja}${detalle}</div>
       <div class="ri-mapa ri-cart"${enCartera ? '' : ' hidden'}><div class="ri-mh"><button type="button" class="ov-volver" data-hub><span class="ov-fl" aria-hidden="true">←</span>Volver</button><h2 class="ca-tit">Inversiones públicas <small>${N(items.length)} en la cartera${estSel ? ` · ${N(est[estSel].length)} ${ESTINV[estSel][0].toLowerCase()}` : ''}</small></h2>
+          <span class="sw ca-sub"><button class="${VISTA.sub === 'mapa' ? '' : 'on'}" data-sub="cartera">Cartera</button><button class="${VISTA.sub === 'mapa' ? 'on' : ''}" data-sub="mapa">Mapa</button><button data-sub="ges">Seguimiento</button><button data-sub="norma">Reglamento 2026</button></span>
           <span class="ca-tools"><label class="ca-busca">${ico('search')}<input type="search" placeholder="CUI o nombre…" aria-label="Buscar en la cartera"></label></span></div>
-        ${filtroChips}<div class="ca-grid" id="ca-grid">${cartGrid()}</div></div>
+        <div class="ca-cuerpo"${VISTA.sub === 'mapa' ? ' hidden' : ''}>${filtroChips}<div class="ca-grid" id="ca-grid">${cartGrid()}</div></div>
+        <div class="ca-mapa"${VISTA.sub === 'mapa' ? '' : ' hidden'}><div id="inv-mapa" style="flex:1;min-height:0"></div><div class="ca-nota">${N(mapItems.filter(m => m.lat && m.lon).length)} inversiones con coordenadas registradas en el Banco de Inversiones · clic en un punto para abrir su ficha</div></div></div>
     </div>`;
     const hub = b.querySelector('.hb-hub'), cart = b.querySelector('.ri-cart');
     const verCartera = v => { VISTA.v = v ? 'cartera' : null; hub.hidden = !!v; cart.hidden = !v; if (v) entra(); };
     b.querySelector('[data-hub]').onclick = () => verCartera(false);
+    b.querySelectorAll('.ca-sub button').forEach(x => x.onclick = () => { const k = x.dataset.sub;
+      if (k === 'ges' || k === 'norma') { opts.onNav && opts.onNav(k); return; }
+      VISTA.sub = k === 'mapa' ? 'mapa' : null; b.querySelectorAll('.ca-sub button').forEach(y => y.classList.toggle('on', y.dataset.sub === k));
+      b.querySelector('.ca-cuerpo').hidden = k === 'mapa'; b.querySelector('.ca-mapa').hidden = k !== 'mapa';
+      if (k === 'mapa') { pintarMapaInv(mapItems, estSel, opts.onCuiGoto); setTimeout(() => { const el2 = $('inv-mapa'); if (el2 && el2._leaflet_map) el2._leaflet_map.invalidateSize(); }, 50); } });
+    if (enCartera && VISTA.sub === 'mapa') setTimeout(() => pintarMapaInv(mapItems, estSel, opts.onCuiGoto), 30);
     // el brillo sigue al mouse: dos variables por tarjeta, un solo listener
     b.querySelector('.hb').addEventListener('pointermove', ev => { const t = ev.target.closest('.hb-t'); if (!t) return; const r = t.getBoundingClientRect(); t.style.setProperty('--mx', (ev.clientX - r.left) + 'px'); t.style.setProperty('--my', (ev.clientY - r.top) + 'px'); });
     const grid = b.querySelector('#ca-grid'), RMq = matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -535,7 +543,6 @@
     b.querySelectorAll('[data-est]').forEach(x => x.onclick = () => { const k = x.dataset.est; opts.onEstSel && opts.onEstSel(estSel === k ? null : k); });
     if (b.querySelector('[data-est-clear]')) b.querySelector('[data-est-clear]').onclick = () => opts.onEstSel && opts.onEstSel(null);
     b.querySelectorAll('[data-inv-goto]').forEach(x => x.onclick = () => opts.onCuiGoto && opts.onCuiGoto(x.dataset.invGoto));
-    pintarMapaInv(mapItems, estSel, opts.onCuiGoto);
     animarTablero(b);
   }
   // un solo momento de movimiento al entrar: el caudal se extiende de izquierda a derecha y las cifras cuentan hasta su valor;
@@ -871,7 +878,7 @@
       const irCui = cui => { filtroMeta = cui; tabE = 'exp'; render(); };
       (async () => { let pub = null; try { const r = await fetch(`data/ue/${String(+E._ue.cod % 64).padStart(2, '0')}.json`); if (r.ok) pub = (await r.json())[String(E._ue.cod)]; } catch (e) { }
         if (!pub) { b.innerHTML = '<p class="mutx" style="padding:12px">Sin ficha pública para esta unidad ejecutora.</p>'; return; }
-        if (window.Gestion) Gestion.ui(b, Object.assign({ cod: String(E._ue.cod), nombre: E._ue.nombre, nivel: E._ue.nivel }, pub), { onCui: irCui }); })();
+        if (window.Gestion) Gestion.ui(b, Object.assign({ cod: String(E._ue.cod), nombre: E._ue.nombre, nivel: E._ue.nivel }, pub), { onCui: irCui, abrir: gesAbrir }); gesAbrir = null; })();
     } else if (tabE === 'sea') {
       const cuis = Object.values(LAKE).filter(c => c.pim > 0 || c.dev > 0 || c.avance_fisico > 0), sea = c => SEA_R[c.cui];
       const procs = cuis.map(c => ({ c, s: sea(c) })).filter(x => x.s);
@@ -911,7 +918,7 @@
         const nAl = (E.alertas?.dev_sin_girar?.length || 0) + (E.alertas?.comp_sin_devengar?.length || 0) + (E.alertas?.cert_sin_comp?.length || 0);
         resumenInversion(b, T, items, {
           nivel: E._ue.nivel, ue: E._ue.cod, nombre: E._ue.nombre, fts, beneficiarios: bc, nAlertas: nAl, estSel: abiertos.invEstado, nombreFallback: nombreMeta, cierre: E._ue.nivel === 'M' || E._ue.nivel === 'R', siaf: !E.publico && !!window.ReportesSIAF,
-          onNav: id => { if (id === 'rep' || id === 'flujo') { window.ReportesSIAF.abrir(E); return; } tabE = { cierre: 'cie', cal: 'plz', pres: 'ppto' }[id] || id; render(); },
+          onNav: id => { if (id === 'rep' || id === 'flujo') { window.ReportesSIAF.abrir(E); return; } if (id === 'norma') { gesAbrir = 'norma'; id = 'ges'; } tabE = { cierre: 'cie', cal: 'plz', pres: 'ppto' }[id] || id; render(); },
           onEstSel: k => { abiertos.invEstado = k; cuerpo(); },
           onCuiGoto: cui => { abiertos.inv = cui; cuerpo(); },
           onKpi: (id, T2, extra) => {

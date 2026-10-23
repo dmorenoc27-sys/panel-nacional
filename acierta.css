@@ -974,3 +974,6 @@ body tr.l:hover{filter:brightness(1.04);background:color-mix(in srgb,var(--p) 7%
 .pi-rech{display:flex;justify-content:space-between;gap:12px;align-items:flex-start;flex-wrap:wrap}.pi-rech b{font-size:14px;color:var(--p2)}.pi-rech small{display:block;font-size:11.5px;color:#5F6B7A;margin-top:2px}.pi-recs{color:#8A7A4A!important;text-align:right}
 .pi-recg{display:flex;gap:8px;align-items:flex-end;height:120px;margin-top:8px}
 .pi-recb{flex:1;min-width:0;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%;gap:3px}.pi-recb b{font-size:10.5px;color:var(--p2);white-space:nowrap}.pi-recb i{display:block;width:100%;max-width:56px;border-radius:6px 6px 2px 2px;background:linear-gradient(180deg,#E9CF7A,#C9A227);transition:height .8s var(--ease)}.pi-recb:last-child i{background:linear-gradient(180deg,#2F69B3,#0F2A43)}.pi-recb span{font-size:10.5px;color:#5F6B7A}
+/* Inversiones públicas: pestañas internas y mapa */
+.ca-sub{margin-left:6px}.ca-sub button{padding:5px 11px;font-size:12px}
+.ca-cuerpo{display:flex;flex-direction:column;flex:1;min-height:0}.ca-mapa{display:flex;flex-direction:column;flex:1;min-height:0}.ca-mapa .ca-nota{padding:6px 12px}
