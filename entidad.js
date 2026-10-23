@@ -492,6 +492,7 @@
         <button type="button" data-go="inv" style="--c:#1565C0"><small>Inversiones</small><b>${N(items.length)}</b><i class="hb-est">${Object.entries(est).filter(([, v]) => v.length).map(([k, v]) => `<span style="flex:${v.length};background:${ESTINV[k][1]}" title="${ESTINV[k][0]}: ${v.length}"></span>`).join('')}</i></button>
         <button type="button" data-go="al" style="--c:${nAl ? '#B42A2A' : '#5F6B7A'}"><small>Alertas</small><b>${N(nAl)}</b></button>
         <button type="button" data-p="benef" style="--c:#7A5B12"><small>Beneficiarios</small><b>${bc ? N(bc.total) : '…'}</b></button>
+        <button type="button" data-go="idx" style="--c:#C9A227" title="Índice de gestión Acierta: ejecución, F12-B, cierre, PMI y procesos"><small>Índice Acierta</small><b id="hb-idx">…</b><i class="hb-bar"><span id="hb-idxb" style="width:0"></span></i></button>
       </div></header>`;
     // ---- cartera de inversiones: tarjetas con filtro por estado, orden y búsqueda; cada tarjeta abre su ficha ----
     const ORD = { pim: ['PIM', (x, y) => (y.c.pim || 0) - (x.c.pim || 0)], dev: ['Devengado', (x, y) => (y.c.dev || 0) - (x.c.dev || 0)], fis: ['Avance físico', (x, y) => (y.c.avance_fisico ?? -1) - (x.c.avance_fisico ?? -1)], nom: ['Nombre', (x, y) => String(x.c.nombre || '').localeCompare(String(y.c.nombre || ''))] };
@@ -521,6 +522,7 @@
       b.querySelector('.ca-cuerpo').hidden = k === 'mapa'; b.querySelector('.ca-mapa').hidden = k !== 'mapa';
       if (k === 'mapa') { pintarMapaInv(mapItems, estSel, opts.onCuiGoto); setTimeout(() => { const el2 = $('inv-mapa'); if (el2 && el2._leaflet_map) el2._leaflet_map.invalidateSize(); }, 50); } });
     if (enCartera && VISTA.sub === 'mapa') setTimeout(() => pintarMapaInv(mapItems, estSel, opts.onCuiGoto), 30);
+    if (opts.ue) fetch(`data/gestion/${opts.ue}.json`).then(r => r.ok ? r.json() : null).then(g => { const x = g && g.indice, e1 = b.querySelector('#hb-idx'), e2 = b.querySelector('#hb-idxb'); if (!e1) return; if (x && x.puntaje != null) { e1.textContent = `${x.puntaje} / 100`; if (e2) e2.style.width = x.puntaje + '%'; } else e1.textContent = '—'; }).catch(() => { const e1 = b.querySelector('#hb-idx'); if (e1) e1.textContent = '—'; });
     // el brillo sigue al mouse: dos variables por tarjeta, un solo listener
     b.querySelector('.hb').addEventListener('pointermove', ev => { const t = ev.target.closest('.hb-t'); if (!t) return; const r = t.getBoundingClientRect(); t.style.setProperty('--mx', (ev.clientX - r.left) + 'px'); t.style.setProperty('--my', (ev.clientY - r.top) + 'px'); });
     const grid = b.querySelector('#ca-grid'), RMq = matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -537,7 +539,6 @@
     dlg.onclick = ev => { if (ev.target === dlg) dlg.close(); };
     b.querySelectorAll('[data-go]').forEach(x => x.onclick = () => { const id = x.dataset.go;
       if (id === 'inv') return verCartera(true);
-      if (id === 'pres' && !opts.siaf) { dlg.showModal(); animarTablero(dlg); return; }
       if (id === 'ppt') { const r = document.getElementById('rep-ppt'); if (r) r.click(); else if (window.CorteReporte) CorteReporte.sinPago(opts.nombre || ''); return; }
       opts.onNav && opts.onNav(id); });
     b.querySelectorAll('[data-est]').forEach(x => x.onclick = () => { const k = x.dataset.est; opts.onEstSel && opts.onEstSel(estSel === k ? null : k); });
@@ -918,7 +919,7 @@
         const nAl = (E.alertas?.dev_sin_girar?.length || 0) + (E.alertas?.comp_sin_devengar?.length || 0) + (E.alertas?.cert_sin_comp?.length || 0);
         resumenInversion(b, T, items, {
           nivel: E._ue.nivel, ue: E._ue.cod, nombre: E._ue.nombre, fts, beneficiarios: bc, nAlertas: nAl, estSel: abiertos.invEstado, nombreFallback: nombreMeta, cierre: E._ue.nivel === 'M' || E._ue.nivel === 'R', siaf: !E.publico && !!window.ReportesSIAF,
-          onNav: id => { if (id === 'rep' || id === 'flujo') { window.ReportesSIAF.abrir(E); return; } if (id === 'norma') { gesAbrir = 'norma'; id = 'ges'; } tabE = { cierre: 'cie', cal: 'plz', pres: 'ppto' }[id] || id; render(); },
+          onNav: id => { if (id === 'rep' || id === 'flujo') { window.ReportesSIAF.abrir(E); return; } if (id === 'norma' || id === 'idx') { gesAbrir = id === 'idx' ? 'indice' : 'norma'; id = 'ges'; } tabE = { cierre: 'cie', cal: 'plz', pres: 'ppto' }[id] || id; render(); },
           onEstSel: k => { abiertos.invEstado = k; cuerpo(); },
           onCuiGoto: cui => { abiertos.inv = cui; cuerpo(); },
           onKpi: (id, T2, extra) => {
