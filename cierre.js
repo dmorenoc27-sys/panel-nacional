@@ -35,7 +35,7 @@
     por_cerrar: { n: 3, t: 'Obras casi terminadas sin cerrar', acc: 'Liquidar y registrar el cierre', med: 'saldo del presupuesto del año sin devengar', area: 'Programación Multianual y Gestión de Inversiones', pub: 1 },
     prog: { n: 4, t: 'Ejecución fuera de lo programado en el Formato 12-B', acc: 'Actualizar la programación en el Formato 12-B', med: 'saldo del presupuesto del año sin devengar', area: 'Programación Multianual y Gestión de Inversiones', pub: 1 },
     rezago: { n: 5, t: 'Inversiones con presupuesto y avance muy bajo', acc: 'Revisar el cronograma y reprogramar el saldo', med: 'saldo del presupuesto del año sin devengar', area: 'Programación Multianual y Gestión de Inversiones', pub: 1 },
-    dev_sin_girar: { n: 6, t: 'Devengado sin girar', acc: 'Girar o anular', med: 'devengado pendiente de giro', area: 'Tesorería' },
+    dev_sin_girar: { n: 6, t: 'Devengado sin girar', acc: 'Girar; si el devengado fue indebido, rebajarlo con sustento', med: 'devengado pendiente de giro', area: 'Tesorería' },
     comp_sin_devengar: { n: 7, t: 'Comprometido sin devengar', acc: 'Devengar o rebajar el compromiso', med: 'compromiso pendiente de devengar', area: 'Presupuesto Público' },
     cert_sin_comp: { n: 8, t: 'Certificación sin compromiso', acc: 'Comprometer o rebajar la certificación', med: 'certificación sin comprometer', area: 'Presupuesto Público' },
     rendiciones: { n: 9, t: 'Rendiciones pendientes', acc: 'Rendir o devolver', med: 'monto de la rendición', area: 'Tesorería', tab: ['RENDICION', 'RENDICION_DETALLE'] },
@@ -139,7 +139,7 @@ abbr[title]{text-decoration:underline dotted;cursor:help}
     const a = FECHAS[0].f, z = FECHAS[FECHAS.length - 1].f, tot = dif(a, z), pos = f => Math.max(0, Math.min(100, 100 * dif(a, f) / tot));
     const prox = FECHAS.find(h => h.f >= hoy);
     const cd = prox ? (d => d === 0 ? `<b>Hoy</b>: ${esc(prox.c)}` : `Faltan <b>${d} día${d === 1 ? '' : 's'}</b> para: ${esc(prox.c)} (${dmy(prox.f)}${prox.ast ? '*' : ''})`)(dif(hoy, prox.f)) : 'Todos los plazos de la transferencia ya pasaron.';
-    const tl = `<section class="cg-tl" aria-label="Fechas que manda la Contraloría"><div class="lbl">Fechas que manda la Contraloría</div>
+    const tl = `<section class="cg-tl" aria-label="Fechas según la Directiva de la Contraloría"><div class="lbl">Fechas según la Directiva de la Contraloría</div>
       <div class="cg-bar" role="img" aria-label="Línea de tiempo del 30/09/2026 al 15/01/2027; hoy ${dmy(hoy)}"><div class="pr" style="width:${pos(hoy)}%"></div>${FECHAS.map(h => `<i class="${h.f <= hoy ? 'ok' : ''}" style="left:${pos(h.f)}%" title="${dmy(h.f)}${h.ast ? '*' : ''} · ${esc(h.t)}"></i>`).join('')}${hoy >= a && hoy <= z ? `<div class="hoy" style="left:${pos(hoy)}%"><span>HOY</span></div>` : ''}</div>
       <div class="cg-hit">${FECHAS.map(h => `<div class="${h.f < hoy ? 'pas' : prox && h.f === prox.f ? 'prox' : ''}" title="${esc(h.t)}"><b>${dmy(h.f)}${h.ast ? '*' : ''}</b>${esc(h.c)}</div>`).join('')}</div>
       <div class="nota">Equipo del titular entrante: hasta 3 días hábiles tras la proclamación; Comisión de Transferencia: hasta 5 días hábiles después. Sin fecha fija: depende de la proclamación de cada localidad.</div></section>`;
@@ -198,7 +198,7 @@ abbr[title]{text-decoration:underline dotted;cursor:help}
         if (p.rows.length > 30) body += P(`• … y ${p.rows.length - 30} casos más (ver el Excel).`);
       });
     });
-    body += P('Herramienta de apoyo, no oficial. No reemplaza el aplicativo de la Contraloría ni constituye opinión de control. El informe de transferencia es declaración jurada: lo que no se pueda regularizar debe declararse.', { b: 1 });
+    body += P('Herramienta de apoyo, no oficial. No reemplaza el aplicativo de la Contraloría ni constituye opinión de control. La información del informe de transferencia es responsabilidad del titular saliente: lo que no se pueda regularizar debe declararse.', { b: 1 });
     const z = new JSZip();
     z.file('[Content_Types].xml', '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/></Types>');
     z.file('_rels/.rels', '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/></Relationships>');
@@ -226,7 +226,7 @@ abbr[title]{text-decoration:underline dotted;cursor:help}
           <button type="button" class="btn p" id="cg-prep">Preparar texto para el informe</button>${ctx.onAtras ? '<button type="button" class="ov-volver" id="cg-atras"><span class="ov-fl" aria-hidden="true">←</span>Volver</button>' : ''}</div>
         ${tl}
         <section class="cg-c" aria-label="Pendientes por ordenar">${c ? detalle(c, st.todo, fuente) : mod.map(tarjeta).join('')}</section>
-        <div class="cg-pie"><b>Herramienta de apoyo, no oficial. No reemplaza el aplicativo de la Contraloría ni constituye opinión de control. El informe de transferencia es declaración jurada: lo que no se pueda regularizar debe declararse.</b><br>
+        <div class="cg-pie"><b>Herramienta de apoyo, no oficial. No reemplaza el aplicativo de la Contraloría ni constituye opinión de control. La información del informe de transferencia es responsabilidad del titular saliente: lo que no se pueda regularizar debe declararse.</b><br>
         Base: Directiva N° 016-2022-CG/PREVI "Rendición de Cuentas de Titulares y Transferencia de Gestión" (R.C. 267-2022-CG), modificada por R.C. 344-2026-CG (03/07/2026). Cifras públicas: ${ab('MEF')} y ${ab('SEACE')} consultados al ${esc(ctx.corteAlertas || '—')}${ctx.siaf ? ` · ${ab('SIAF')} de la entidad con corte al ${esc(ctx.siaf.corte)}` : ''}. Semáforo rojo: algún caso con ${S(UMBRALES.monto_alto)} o más, o con ${UMBRALES.dias_antiguo} días o más.<br>
         * Fecha calculada con los feriados nacionales. Puede variar por feriados regionales o locales y por días no laborables que se declaren para el sector público; en ese caso rige el cómputo de días hábiles de la localidad.</div></div>`;
       el.querySelectorAll('[data-k]').forEach(b => b.onclick = () => { st.abierta = st.abierta === b.dataset.k ? null : b.dataset.k; pintar(); const f = el.querySelector(`[data-k="${b.dataset.k}"]`); if (f) f.focus(); });

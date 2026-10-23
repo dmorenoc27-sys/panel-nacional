@@ -181,18 +181,18 @@
   <div class="cn-tile"><small>SALDO</small><b>S/ ${M(d.pim - d.dev)} M</b><div class="cn-bar"><i style="--c:#F9A825"></i></div></div></div>
   <div class="cn-gauge"><svg viewBox="0 0 78 78"><circle cx="39" cy="39" r="31.5" fill="none" stroke="#E6EAF0" stroke-width="8"/><circle class="v" cx="39" cy="39" r="31.5" fill="none" stroke="#1E5AA8" stroke-width="8" stroke-linecap="round" transform="rotate(-90 39 39)"/></svg><b>${av.toFixed(0)}%</b></div>`)}
  ${mini('Mapa y territorio', 'Del país al departamento, la provincia y el distrito. Un clic y estás dentro de la municipalidad.', `${mapaSVG()}<div class="cn-pin"></div>`)}
- ${mini('Alertas tempranas', 'Lo que requiere decisión hoy: inversiones rezagadas, F12-B vencido, contratos sin devengar, obras por cerrar.', `
+ ${mini('Alertas tempranas', 'Lo que requiere decisión hoy: inversiones rezagadas, F12-B desactualizado, contratos sin devengar, obras por cerrar.', `
   <div class="cn-chip" style="--i:0;--c:#D64545"><i></i><b>${N(d.rez)}</b> inversiones grandes rezagadas</div>
   <div class="cn-chip" style="--i:1;--c:#936413"><i></i><b>${N(d.f12)}</b> con F12-B desactualizado</div>
   <div class="cn-chip" style="--i:2;--c:#D64545"><i></i><b>${N(d.csd)}</b> contratos firmados sin devengar</div>
   <div class="cn-chip" style="--i:3;--c:#1B9E5A"><i></i><b>${N(d.cer)}</b> obras por cerrar</div>`)}
  ${mini('Contrataciones', 'Obras, bienes, servicios y consultorías de la entidad, ordenadas por año y proceso, con sus proveedores, penalidades y resueltos.', `
   <div class="cn-pan"><div class="cn-p hot" style="--i:0;--c:#1E5AA8">OBRAS<b>S/ 48.2 M</b></div><div class="cn-p" style="--i:1;--c:#00897B">BIENES<b>S/ 6.1 M</b></div><div class="cn-p" style="--i:2;--c:#936413">SERVICIOS<b>S/ 9.7 M</b></div><div class="cn-p" style="--i:3;--c:#7B4FBF">CONSULT.<b>S/ 2.4 M</b></div></div>
-  <div class="cn-rows"><div class="cn-row" style="--i:0"><span>LP-001-2026 · Mejoramiento vía Pomabamba–Sicsibamba</span><b>S/ 21.4 M</b></div><div class="cn-row" style="--i:1"><span>CD-007-2025 · Puente Chuquiraga · <span style="color:#D64545">resuelto</span></span><b>S/ 3.2 M</b></div></div>`)}
- ${mini('Radar de proveedores', 'Escribe un RUC y en un clic cruza SUNAT, OECE, RNP, Tribunal, INFOBRAS y arbitrajes. Sanciones, penalidades y obras paralizadas desde 1993.', `
+  <div class="cn-rows"><div class="cn-row" style="--i:0"><span>LP-000-0000 · Mejoramiento de vía (ejemplo ilustrativo)</span><b>S/ 21.4 M</b></div><div class="cn-row" style="--i:1"><span>CD-000-0000 · Puente (ejemplo) · <span style="color:#D64545">resuelto</span></span><b>S/ 3.2 M</b></div></div>`)}
+ ${mini('Radar de proveedores', 'Escribe un RUC y en un clic cruza SUNAT, OECE, RNP, Tribunal, INFOBRAS y arbitrajes. Sanciones, penalidades y obras paralizadas desde 1998.', `
   <div class="cn-inp">🔍 <span>20512345678</span></div>
   <div class="cn-src"><span style="--i:0">SUNAT ✓</span><span style="--i:1">RNP ✓</span><span style="--i:2">OECE sanciones ✓</span><span style="--i:3">Penalidades ✓</span><span style="--i:4">INFOBRAS ✓</span><span style="--i:5">Arbitrajes ✓</span></div>
-  <div class="cn-ver">✔ Habilitado · sin sanciones vigentes · 2 penalidades · 1 obra paralizada</div>`)}
+  <div class="cn-ver">✔ Sin sanciones vigentes registradas (ejemplo) · 2 penalidades · 1 obra paralizada</div>`)}
  ${mini('Mi entidad · SIAF', 'Con clave: la cadena completa del gasto de tu entidad, expediente por expediente. Cifrado, solo tú lo abres. Pronto, Arkia te lo explicará.', `
   <div class="cn-lock">🔓</div>
   <div class="cn-chain">
@@ -203,7 +203,7 @@
    <div class="cn-st" style="--i:4"><span>Pagado</span><div class="cn-bar"><i style="--c:#0F2A43;--w:.50"></i></div><b>S/ 22.5 M</b></div></div>`)}
  ${mini('Exportaciones', 'Excel del detalle, Expediente PPT listo para exponer y PDF. Con tu plantilla institucional si la tienes.', `
   <div class="cn-files"><div class="cn-f" style="--i:0"><span class="ic">📊</span>EXCEL<div class="cn-bar"><i style="--c:#1B9E5A"></i></div></div><div class="cn-f" style="--i:1"><span class="ic">📑</span>POWERPOINT<div class="cn-bar"><i style="--c:#D64545"></i></div></div><div class="cn-f" style="--i:2"><span class="ic">📄</span>PDF<div class="cn-bar"><i style="--c:#1E5AA8"></i></div></div></div>
-  <div class="cn-ok">✅ <span>Reporte_Pomabamba.pptx listo · 14 láminas · corte de hoy</span></div>`)}
+  <div class="cn-ok">✅ <span>Expediente_Entidad.pptx listo · 14 láminas · corte de hoy (ejemplo)</span></div>`)}
  ${mini('Reportes a la fecha de corte', 'Elige cualquier día y el reporte sale con los datos de ese día. Ideal para informes mensuales y sesiones de consejo.', `
   <div class="cn-cal">${Array.from({ length: 28 }, (_, i) => `<i style="--i:${i};--c:${['#DCE7F5', '#B9D0EC', '#8FB4E0'][i % 3]}"${i === 16 ? ' class="sel"' : ''}></i>`).join('')}</div>
   <div class="cn-corte">📅 Corte 17 de setiembre · reporte generado con los datos de ese día</div>`)}
@@ -217,14 +217,14 @@
   <div class="cn-step cn-rv"><div class="n">1</div><h3>Cada mañana, datos abiertos</h3><p>Consulta Amigable, Banco de Inversiones, Formato 12-B, expedientes técnicos, ingresos y transferencias del MEF.</p></div>
   <div class="cn-step cn-rv"><div class="n">2</div><h3>Cruces automáticos</h3><p>SEACE, sanciones y penalidades de la OECE, padrón SUNAT, obras INFOBRAS de la Contraloría y el SSI de cada inversión.</p></div>
   <div class="cn-step cn-rv"><div class="n">3</div><h3>Tu entidad, con clave</h3><p>Con tu respaldo SIAF entras con clave y ves lo que Transparencia no muestra: expediente, proveedor, documento y fase de cada pago. Pronto, Arkia, la IA de ARKA, te lo explicará.</p></div>
-  <div class="cn-step cn-rv"><div class="n">4</div><h3>Reportes listos</h3><p>Expediente PPT con tu plantilla, Excel y PDF, a cualquier fecha de corte. Para el titular, el consejo o la Contraloría.</p></div>
+  <div class="cn-step cn-rv"><div class="n">4</div><h3>Reportes listos</h3><p>Expediente PPT con tu plantilla, Excel y PDF, a cualquier fecha de corte. Para el titular y el consejo; insumo de trabajo, no documento oficial.</p></div>
  </div>
  <div class="cn-src2 cn-rv"><span>MEF · Consulta Amigable</span><span>Banco de Inversiones</span><span>SEACE</span><span>OECE · CONOSCE</span><span>SUNAT</span><span>INFOBRAS · Contraloría</span><span>SSI</span><span>SIAF de la entidad</span></div>
 </section>
 
 <div class="cn-fin cn-rv">
  <h2>¿Tu entidad quiere Acierta?</h2>
- <p>Activamos tu unidad ejecutora en un día: acceso con clave, reportes a medida con tu plantilla y seguimiento diario. Un sistema de ARKA PROYECTOS.</p>
+ <p>Activación en pocos días, según el servicio contratado: acceso con clave, reportes a medida con tu plantilla y seguimiento diario. Un sistema de ARKA PROYECTOS.</p>
  <div class="cn-cta"><a class="cn-btn p" href="https://www.arkaproyectos.com.pe" target="_blank" rel="noopener">Solicitar Acierta para mi entidad</a><button class="cn-btn g" id="cn-go2">Entrar a Acierta</button></div>
 </div>`;
   }
